@@ -1,0 +1,5 @@
+<UserControl x:Class="ZoeyOS.App.Views.ParticleOrb"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Canvas x:Name="Surface" ClipToBounds="False"/>
+</UserControl>
