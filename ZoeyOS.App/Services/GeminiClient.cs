@@ -41,6 +41,52 @@ namespace ZoeyOS.App.Services
 
         private string Endpoint => $"{BaseUrl}{_model}:generateContent?key={_apiKey}";
 
+        /// <summary>Fetches the live list of every model this API key can see on Google's
+        /// Gemini API - chat models, embedding models, and preview/experimental ones
+        /// (Nano Banana image variants, Robotics-ER previews, etc.) all come back from the
+        /// same endpoint. Paginates through the full result set since Gemini's catalog is
+        /// large enough to span multiple pages. Strips the "models/" prefix Gemini puts on
+        /// every name, matching how model names are stored and used everywhere else in this
+        /// app (see the constructor above, which strips the same prefix defensively).</summary>
+        public async Task<List<string>> ListModelsAsync()
+        {
+            if (!IsConfigured) return new List<string>();
+
+            var ids = new List<string>();
+            string? pageToken = null;
+
+            do
+            {
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models?key={_apiKey}&pageSize=1000"
+                          + (pageToken != null ? $"&pageToken={Uri.EscapeDataString(pageToken)}" : "");
+
+                var response = await _http.GetAsync(url);
+                var text = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                    throw new InvalidOperationException($"Gemini returned {(int)response.StatusCode}: {text}");
+
+                using var doc = JsonDocument.Parse(text);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("models", out var models))
+                {
+                    foreach (var m in models.EnumerateArray())
+                    {
+                        if (!m.TryGetProperty("name", out var nameEl)) continue;
+                        var name = nameEl.GetString() ?? "";
+                        if (name.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
+                            name = name.Substring("models/".Length);
+                        if (!string.IsNullOrWhiteSpace(name)) ids.Add(name);
+                    }
+                }
+
+                pageToken = root.TryGetProperty("nextPageToken", out var tokenEl) ? tokenEl.GetString() : null;
+            } while (!string.IsNullOrEmpty(pageToken));
+
+            ids.Sort(StringComparer.OrdinalIgnoreCase);
+            return ids;
+        }
+
         private static List<object> BuildContents(IEnumerable<ChatMessage> history, string newUserMessage)
         {
             var contents = new List<object>();

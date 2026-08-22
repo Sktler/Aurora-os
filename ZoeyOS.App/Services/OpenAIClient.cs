@@ -35,6 +35,32 @@ namespace ZoeyOS.App.Services
 
         public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
 
+        /// <summary>Fetches the live list of every model this API key can see - includes
+        /// chat models, embeddings, moderation, realtime, and anything else OpenAI's
+        /// account returns. Deliberately unfiltered: which of these are actually usable for
+        /// chat is between the person and OpenAI's docs, not something this app decides for
+        /// them by silently dropping entries.</summary>
+        public async Task<List<string>> ListModelsAsync()
+        {
+            if (!IsConfigured) return new List<string>();
+
+            var response = await _http.GetAsync("https://api.openai.com/v1/models");
+            var text = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"OpenAI returned {(int)response.StatusCode}: {text}");
+
+            using var doc = JsonDocument.Parse(text);
+            var ids = new List<string>();
+            if (doc.RootElement.TryGetProperty("data", out var data))
+            {
+                foreach (var m in data.EnumerateArray())
+                    if (m.TryGetProperty("id", out var idEl))
+                        ids.Add(idEl.GetString() ?? "");
+            }
+            ids.Sort(StringComparer.OrdinalIgnoreCase);
+            return ids;
+        }
+
         private static List<object> BuildMessages(string systemPrompt, IEnumerable<ChatMessage> history, string newUserMessage)
         {
             var messages = new List<object> { new { role = "system", content = systemPrompt } };

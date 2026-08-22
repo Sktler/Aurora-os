@@ -18,6 +18,10 @@
             <Color x:Key="IdleGlowColor">#3A4356</Color>
 
             <SolidColorBrush x:Key="BgDeepBrush" Color="{StaticResource BgDeepColor}"/>
+            <!-- Same color as BgDeepBrush but with alpha, used only on window backgrounds
+                 (not on cards/content) so a hint of the Windows 11 Mica backdrop shows
+                 through at the very edges without touching text readability anywhere. -->
+            <SolidColorBrush x:Key="BgDeepTranslucentBrush" Color="#E60B0E14"/>
             <SolidColorBrush x:Key="BgPanelBrush" Color="{StaticResource BgPanelColor}"/>
             <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/>
             <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>

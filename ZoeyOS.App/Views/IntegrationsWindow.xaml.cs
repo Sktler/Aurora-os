@@ -1,7 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using ZoeyOS.App.Models;
+using ZoeyOS.App.Services;
 using ZoeyOS.App.ViewModels;
 
 namespace ZoeyOS.App.Views
@@ -19,6 +23,35 @@ namespace ZoeyOS.App.Views
             if (DataContext is IntegrationsViewModel vm && !string.IsNullOrEmpty(vm.GoogleClientSecret))
                 GoogleSecretBox.Password = vm.GoogleClientSecret;
         }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            MicaHelper.ApplyMica(new WindowInteropHelper(this).Handle);
+        }
+
+        /// <summary>Opens a URL in the system's default browser.</summary>
+        private void OpenUrl(string url)
+        {
+            try
+            {
+                // UseShellExecute is required here - without it, .NET tries to run the URL
+                // as an executable instead of handing it to the default browser.
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                if (DataContext is IntegrationsViewModel vm)
+                    vm.VoiceStatus = $"Couldn't open the browser automatically ({ex.Message}). Go to {url} manually.";
+            }
+        }
+
+        private void GetOpenAiKey_Click(object sender, RoutedEventArgs e) => OpenUrl("https://platform.openai.com/api-keys");
+
+        private void GetElevenLabsKey_Click(object sender, RoutedEventArgs e) => OpenUrl("https://elevenlabs.io/app/settings/api-keys");
+
+        private void GetAzureKey_Click(object sender, RoutedEventArgs e) =>
+            OpenUrl("https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices");
 
         private void OverrideCodeBox_PasswordChanged(object sender, RoutedEventArgs e)
         {

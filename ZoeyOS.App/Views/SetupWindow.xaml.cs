@@ -136,6 +136,58 @@ namespace ZoeyOS.App.Views
 
         private void GetFreeKey_Click(object sender, RoutedEventArgs e) => OpenUrl(SelectedProvider.GetKeyUrl);
 
+        private bool _checkingKey;
+
+        /// <summary>Once a key is typed in, tries to replace the static example model list
+        /// with the live catalog from the provider's own API - same principle as the Models
+        /// page in Settings, just reached earlier, before the key is even saved. Shows a
+        /// "checking your key..." state while the request is in flight (it can take a
+        /// second or two), and falls back to the static example list on any failure, since
+        /// an incomplete or not-yet-valid key while typing is completely expected here, not
+        /// an error worth alarming over - just said plainly rather than left unexplained.</summary>
+        private async void ApiKeyBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var key = ApiKeyBox.Password.Trim();
+            if (string.IsNullOrWhiteSpace(key) || ProviderCombo.SelectedItem == null) return;
+            if (_checkingKey) return; // already checking a key from a previous blur - let it finish first
+
+            var p = SelectedProvider;
+            _checkingKey = true;
+            ModelBox.IsEnabled = false;
+            ModelExamplesText.Text = $"Checking your {p.DisplayName} key...";
+            try
+            {
+                IChatEngine client = p.Key switch
+                {
+                    "groq" => new GroqClient(key, p.DefaultModel),
+                    "openai" => new OpenAIClient(key, p.DefaultModel),
+                    "claude" => new ClaudeClient(key, p.DefaultModel),
+                    _ => new GeminiClient(key, p.DefaultModel)
+                };
+                var models = await client.ListModelsAsync();
+                if (models.Count > 0)
+                {
+                    ModelBox.ItemsSource = models;
+                    ModelExamplesText.Text = $"{models.Count} models loaded live from {p.DisplayName}.";
+                }
+                else
+                {
+                    ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
+                }
+            }
+            catch
+            {
+                // Key not valid yet (still typing, or a typo) - revert to the static example
+                // list rather than leave the "Checking..." text stuck on screen.
+                ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
+            }
+            finally
+            {
+                ModelBox.IsEnabled = true;
+                _checkingKey = false;
+            }
+        }
+
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             var apiKey = ApiKeyBox.Password.Trim();

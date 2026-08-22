@@ -108,4 +108,23 @@ namespace ZoeyOS.App.Views
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
             throw new NotImplementedException();
     }
+
+    /// <summary>Visible only when the bound enum value's name matches ConverterParameter
+    /// (a string). Drives the Settings hub-and-pages navigation: each page's root element
+    /// binds CurrentSection with ConverterParameter set to that page's own enum name, so
+    /// exactly one is visible at a time with no per-page boilerplate beyond one binding.</summary>
+    public class EnumToVisibilityConverter : IValueConverter
+    {
+        public static readonly EnumToVisibilityConverter Instance = new();
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var match = value != null && parameter != null &&
+                        string.Equals(value.ToString(), parameter.ToString(), StringComparison.Ordinal);
+            return match ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+            throw new NotImplementedException();
+    }
 }

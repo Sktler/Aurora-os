@@ -25,7 +25,8 @@
             </Grid.ColumnDefinitions>
             <PasswordBox x:Name="ApiKeyBox" Grid.Column="0"
                          Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                         BorderThickness="0" Padding="10" FontSize="13"/>
+                         BorderThickness="0" Padding="10" FontSize="13"
+                         LostFocus="ApiKeyBox_LostFocus"/>
             <Button x:Name="GetKeyButton" Grid.Column="1" Content="Get a key" Margin="8,0,0,0" Padding="12,8"
                     Background="{StaticResource BgPanelBrush}" BorderThickness="0"
                     Foreground="{StaticResource AccentCyanBrush}" Cursor="Hand"

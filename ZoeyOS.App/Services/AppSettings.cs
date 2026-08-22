@@ -65,7 +65,30 @@ namespace ZoeyOS.App.Services
 
         // Which installed Windows voice to speak replies with (exact name from
         // GetInstalledVoices, e.g. "Microsoft David Desktop"). Empty = system default.
+        // Only used when TtsProvider is "windows".
         public string VoiceName { get; set; } = "";
+
+        // Which text-to-speech backend actually speaks replies: "openai" (default - the
+        // biggest, most natural-sounding pool without needing a second account, and falls
+        // back to the chat OpenAI key below if no separate TTS key is set), "elevenlabs" or
+        // "azure" (optional, bring-your-own-key, both with much larger voice catalogs than
+        // Windows ships with), or "windows" (fully offline, free, no key, smaller selection).
+        // Whichever is picked, VoiceService falls back to "windows" automatically if the
+        // configured provider has no key or a call fails - a reply is never silently unspoken.
+        public string TtsProvider { get; set; } = "openai";
+
+        // Optional - if left empty, TTS reuses OpenAIApiKey (the chat key) so anyone already
+        // using OpenAI for chat doesn't have to paste the same key twice.
+        public string OpenAiTtsApiKey { get; set; } = "";
+        public string OpenAiTtsVoice { get; set; } = "alloy";
+
+        public string ElevenLabsApiKey { get; set; } = "";
+        public string ElevenLabsVoiceId { get; set; } = "";
+        public string ElevenLabsVoiceName { get; set; } = ""; // display-only, for Settings
+
+        public string AzureSpeechKey { get; set; } = "";
+        public string AzureSpeechRegion { get; set; } = ""; // e.g. "eastus" - part of the endpoint URL
+        public string AzureVoiceName { get; set; } = "en-US-JennyNeural";
 
         // Whether companions speak their replies out loud without you having to tap the
         // speaker toggle every time. On by default now that voice mode is a core feature.

@@ -24,5 +24,10 @@ namespace ZoeyOS.App.Services
             string newUserMessage,
             List<object> toolDefinitions,
             Func<string, JsonElement, Task<string>> executeTool);
+
+        /// <summary>Live model catalog from this provider's own API - never hard-coded, since
+        /// providers add and retire models on their own schedule. Empty list if not configured
+        /// (no API key yet); throws on a real API error so the caller can show why.</summary>
+        Task<List<string>> ListModelsAsync();
     }
 }

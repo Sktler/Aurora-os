@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:ZoeyOS.App.ViewModels"
         xmlns:local="clr-namespace:ZoeyOS.App.Views"
-        Title="Settings" Height="1660" Width="640" MinHeight="600" MinWidth="540"
-        Background="{StaticResource BgDeepBrush}"
+        xmlns:models="clr-namespace:ZoeyOS.App.Models"
+        Title="Settings" Height="760" Width="720" MinHeight="560" MinWidth="620"
+        Background="{StaticResource BgDeepTranslucentBrush}"
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
@@ -27,453 +28,827 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Large hub tile button: icon, title, one-line description. Every tile shares
+             this one style, so the hub reads as one consistent grid rather than a pile of
+             ad-hoc buttons. -->
+        <Style x:Key="HubTileStyle" TargetType="Button">
+            <Setter Property="Width" Value="300"/>
+            <Setter Property="Height" Value="92"/>
+            <Setter Property="Margin" Value="0,0,14,14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Background" Value="{StaticResource BgPanelBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="TileBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="16,12">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TileBorder" Property="Background" Value="{StaticResource BgCardBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-            <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
-            <TextBlock Text="Engine, voice, integrations, and your local data." Style="{StaticResource MutedText}" Margin="0,0,0,20"/>
+    <Grid>
 
-            <!-- AI Engine -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="AI engine" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding CurrentEngineDescription}" Style="{StaticResource MutedText}" Margin="0,4,0,12"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Change API key / provider" Padding="16,8"
-                                Click="ChangeApiKey_Click"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                        <Button Content="Reset Aurora completely" Margin="10,0,0,0" Padding="16,8"
-                                Click="ResetAurora_Click"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="#F0745C"/>
-                    </StackPanel>
-                    <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="Resetting wipes every key, token, and companion's chat history and restarts Aurora as if freshly installed. This can't be undone."/>
+        <!-- ============================== HUB ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Hub}">
+            <StackPanel>
+                <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock Text="Engine, voice, integrations, and your local data." Style="{StaticResource MutedText}" Margin="0,0,0,20"/>
 
-                    <TextBlock Text="{Binding ModelFieldLabel}" FontWeight="SemiBold" Margin="0,16,0,4"/>
-                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,8" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="Not locked to one version - type any current or future model name your provider serves (e.g. a newer Gemini or Groq release) and it takes effect on your very next message, no restart needed."/>
-                    <StackPanel Orientation="Horizontal">
-                        <ComboBox Text="{Binding ModelName, UpdateSourceTrigger=PropertyChanged}"
-                                  ItemsSource="{Binding ModelSuggestions}"
-                                  IsEditable="True" IsTextSearchEnabled="True"
-                                  Width="260" Padding="8,6"
-                                  Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                  BorderThickness="0"/>
-                        <Button Content="Save model" Margin="10,0,0,0" Padding="16,6"
-                                Command="{Binding SaveModelCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextPrimaryBrush}"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding ModelStatus}" Margin="0,6,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                <WrapPanel>
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Engine}">
+                        <StackPanel>
+                            <TextBlock Text="🧠 AI engine" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Provider, API key, reset" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Models}">
+                        <StackPanel>
+                            <TextBlock Text="🧩 Models" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="{Binding ModelFieldLabel}" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Companions}">
+                        <StackPanel>
+                            <TextBlock Text="🎨 Companion colors" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Orb color per companion" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Voice}">
+                        <StackPanel>
+                            <TextBlock Text="🔊 Voice" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="OpenAI, ElevenLabs, Azure, or offline" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Documents}">
+                        <StackPanel>
+                            <TextBlock Text="📄 Documents" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Sift's trusted folder" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.System}">
+                        <StackPanel>
+                            <TextBlock Text="⚙️ System" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Volume, weather &amp; web search" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Music}">
+                        <StackPanel>
+                            <TextBlock Text="🎵 Music" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="{Binding SpotifyConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Foreground="{StaticResource AccentGreenBrush}" FontSize="11" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.SmartHome}">
+                        <StackPanel>
+                            <TextBlock Text="🏠 Smart home" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="SmartThings, Home Assistant, Alexa" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Google}">
+                        <StackPanel>
+                            <TextBlock Text="📧 Google" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="{Binding GoogleConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Foreground="{StaticResource AccentGreenBrush}" FontSize="11" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Developer}">
+                        <StackPanel>
+                            <TextBlock Text="🛠️ Developer" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Override-code-gated" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Memory}">
+                        <StackPanel>
+                            <TextBlock Text="💾 Memory &amp; data" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Where everything is stored" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== ENGINE ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Engine}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="AI engine" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
-            </Border>
 
-            <!-- Companion colors -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Companion colors" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="Changes the color of each companion's orb, both in the sidebar and the header - takes effect immediately, no restart needed."/>
-
-                    <ItemsControl ItemsSource="{Binding Companions}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="{StaticResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                            <local:Globe3D Width="24" Height="24" Margin="0,0,10,0" AccentColor="{Binding AccentHex}"/>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <WrapPanel>
-                                            <Button Tag="#4FD8E8" Background="#4FD8E8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Cyan"/>
-                                            <Button Tag="#5BC0F8" Background="#5BC0F8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Sky blue"/>
-                                            <Button Tag="#6F7FF0" Background="#6F7FF0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Indigo"/>
-                                            <Button Tag="#8C6FF0" Background="#8C6FF0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Violet"/>
-                                            <Button Tag="#F06FA8" Background="#F06FA8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Pink"/>
-                                            <Button Tag="#F0745C" Background="#F0745C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Coral"/>
-                                            <Button Tag="#F0B65C" Background="#F0B65C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Amber"/>
-                                            <Button Tag="#F0D45C" Background="#F0D45C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Gold"/>
-                                            <Button Tag="#5BE0A0" Background="#5BE0A0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Green"/>
-                                            <Button Tag="#4FD0A8" Background="#4FD0A8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Teal"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-
-            <!-- Voice -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Voice" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,12" TextWrapping="Wrap"
-                               Text="Runs fully offline through Windows' built-in voices - pick whichever's installed on this PC (male, female, different accents, whatever Windows offers)."/>
-
-                    <CheckBox Content="Companions speak their replies out loud by default" IsChecked="{Binding SpeakRepliesByDefault}"
-                              Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-
-                    <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}"
-                              DisplayMemberPath="DisplayName"
-                              Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                              BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Test voice" Padding="16,8"
-                                Command="{Binding TestVoiceCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <Button Content="Save" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding SaveVoiceCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding VoiceStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-
-                    <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="No voices showing up? Windows Settings → Time &amp; Language → Speech lets you add more."/>
-                </StackPanel>
-            </Border>
-
-            <!-- Sift's documents folder -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Sift's documents folder" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,10"
-                               Text="Sift can only read files inside one folder you choose here - never anything else on your PC, and it can't browse into subfolders or escape this one. Works for plain-text-style files (txt, md, csv, json, code files); PDFs, Word docs, spreadsheets, and images aren't readable yet."/>
-                    <TextBlock Text="{Binding TrustedFolderPath}" FontFamily="Consolas" FontSize="12"
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Choose folder..." Padding="16,8"
-                                Click="ChooseTrustedFolder_Click"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                        <Button Content="Clear" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding ClearTrustedFolderCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextMutedBrush}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Weather & web search - no setup needed -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Weather &amp; web search" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,0"
-                               Text="Nothing to set up here - Aurora and Scout can already check real-time weather (free, no key) and search the web (a quick free instant-answer lookup, falling back to opening full results in your browser) right now."/>
-                </StackPanel>
-            </Border>
-
-            <!-- System volume -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="System volume" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,12" TextWrapping="Wrap"
-                               Text="Controls your PC's master output volume directly - the same one the taskbar slider controls. Companions can also adjust this when you ask them to."/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding SystemVolume}" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Margin="10,0,0,0" Padding="12,6"
-                                Command="{Binding ToggleSystemMuteCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextPrimaryBrush}">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Content" Value="🔊 Mute"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSystemMuted}" Value="True">
-                                            <Setter Property="Content" Value="🔇 Unmute"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Spotify -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Spotify" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding SpotifyConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
-                                   Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                   Foreground="{StaticResource AccentGreenBrush}"/>
-                    </StackPanel>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
-                               Text="Real sign-in via Spotify's own OAuth flow - needs a free Client ID from Spotify's developer dashboard, no client secret required. Reading what's playing and searching works on any account; play/pause/skip needs Spotify Premium and an active device (Spotify open somewhere)."/>
-
-                    <Expander Header="How to get a Client ID" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
-                        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="1. Go to developer.spotify.com/dashboard and log in with any Spotify account.&#x0a;2. Create an app (any name/description works).&#x0a;3. In the app's settings, add this exact Redirect URI: http://127.0.0.1:8888/callback&#x0a;4. Copy the Client ID shown on the app's page into the box below."/>
-                    </Expander>
-
-                    <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding SpotifyClientId, UpdateSourceTrigger=PropertyChanged}"
-                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                             BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Connect with Spotify" Padding="16,8"
-                                Command="{Binding ConnectSpotifyCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                        <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding DisconnectSpotifyCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextMutedBrush}"/>
-                    </StackPanel>
-
-                    <TextBlock Text="{Binding SpotifyAccountName, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
-                               Foreground="{StaticResource AccentGreenBrush}"
-                               Visibility="{Binding SpotifyConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- SmartThings -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="SmartThings" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding SmartThingsVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
-                                   Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                   Foreground="{StaticResource AccentGreenBrush}"/>
-                    </StackPanel>
-                    <TextBlock Text="Personal Access Token from account.smartthings.com/tokens" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" Text="{Binding SmartThingsToken, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding SaveAndTestSmartThingsCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                    </Grid>
-                    <TextBlock Text="{Binding SmartThingsStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Home Assistant -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Home Assistant" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding HomeAssistantVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
-                                   Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                   Foreground="{StaticResource AccentGreenBrush}"/>
-                    </StackPanel>
-                    <TextBlock Text="Base URL and a long-lived access token from your HA profile page" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
-                    <TextBox Text="{Binding HomeAssistantUrl, UpdateSourceTrigger=PropertyChanged}"
-                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                             BorderThickness="0" Padding="10" Margin="0,0,0,8"
-                             Tag="http://homeassistant.local:8123"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" Text="{Binding HomeAssistantToken, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding SaveAndTestHomeAssistantCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                    </Grid>
-                    <TextBlock Text="{Binding HomeAssistantStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Alexa -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Amazon Alexa" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding AlexaConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
-                                   Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                   Foreground="{StaticResource AccentGreenBrush}"/>
-                    </StackPanel>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
-                               Text="This one can't be a real one-click connection: Alexa only talks to apps through a published Smart Home Skill, which means its own Amazon Developer account, a hosted Lambda function, and Amazon's account-linking flow - not something a token or key can shortcut. This toggle just tracks that you've set that up elsewhere; it doesn't verify anything."/>
-                    <Button Content="{Binding AlexaConnected, Converter={x:Static local:BoolToToggleLabelConverter.Instance}}"
-                            HorizontalAlignment="Left" Padding="16,8"
-                            Command="{Binding ToggleAlexaConnectedCommand}"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Google (Gmail / Drive & Docs) - real OAuth -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Google (Gmail, Drive &amp; Docs)" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding GoogleConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
-                                   Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                   Foreground="{StaticResource AccentGreenBrush}"/>
-                    </StackPanel>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
-                               Text="Powers Sift's access to your inbox and documents. This does a real Google sign-in - you'll need your own free OAuth client from Google Cloud Console (Aurora can't ship one for you, since every installed app registers its own)."/>
-
-                    <Expander Header="How to get a Client ID / Secret" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
-                        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="1. Go to console.cloud.google.com and create a project (or use an existing one).&#x0a;2. APIs &amp; Services → OAuth consent screen → set it up for your own use (External + add yourself as a test user is fine).&#x0a;3. APIs &amp; Services → Credentials → Create Credentials → OAuth client ID → Application type: Desktop app.&#x0a;4. Copy the Client ID and Client Secret it gives you into the two boxes below.&#x0a;5. APIs &amp; Services → Library → enable the Gmail API and Google Drive API."/>
-                    </Expander>
-
-                    <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding GoogleClientId, UpdateSourceTrigger=PropertyChanged}"
-                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                             BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-
-                    <TextBlock Text="Client Secret" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <PasswordBox x:Name="GoogleSecretBox" Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="10" Margin="0,0,0,10"
-                                 PasswordChanged="GoogleSecretBox_PasswordChanged"/>
-
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Connect with Google" Padding="16,8"
-                                Command="{Binding ConnectGoogleCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                        <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
-                                Command="{Binding DisconnectGoogleCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextMutedBrush}"/>
-                    </StackPanel>
-
-                    <TextBlock Text="{Binding GoogleAccountEmail, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
-                               Foreground="{StaticResource AccentGreenBrush}"
-                               Visibility="{Binding GoogleConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Developer -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Developer mode" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="Gated by an override code so it isn't a plain on/off switch. The first code you enter becomes your code - enter that same one again to unlock next time. Once unlocked: failed requests show the real error in chat, and you can directly rewrite any companion's role, system prompt, and tool access below."/>
-
-                    <!-- Locked: enter/set the override code -->
-                    <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}">
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="{Binding CurrentEngineDescription}" Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
                         <StackPanel Orientation="Horizontal">
-                            <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6"
+                            <Button Content="Change API key / provider" Padding="16,8"
+                                    Click="ChangeApiKey_Click"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            <Button Content="Reset Aurora completely" Margin="10,0,0,0" Padding="16,8"
+                                    Click="ResetAurora_Click"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="#F0745C"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Resetting wipes every key, token, and companion's chat history and restarts Aurora as if freshly installed. This can't be undone."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== MODELS ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Models}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Models" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding ModelFieldLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Content="Refresh" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                                    Command="{Binding RefreshModelsCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource AccentCyanBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="This list is fetched live from your provider's own API every time you open this page - not a fixed list baked into Aurora. New models your provider adds show up here as soon as they're live on your account; nothing to update in the app."/>
+
+                        <TextBlock Text="{Binding ModelListStatus}" Margin="0,0,0,8" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox Text="{Binding ModelName, UpdateSourceTrigger=PropertyChanged}"
+                                      ItemsSource="{Binding ModelSuggestions}"
+                                      IsEditable="True" IsTextSearchEnabled="True"
+                                      IsEnabled="{Binding CanEditModel}"
+                                      Width="280" Padding="8,6"
+                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      BorderThickness="0"/>
+                            <Button Content="Save model" Margin="10,0,0,0" Padding="16,6"
+                                    Command="{Binding SaveModelCommand}" IsEnabled="{Binding CanEditModel}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding ModelStatus}" Margin="0,6,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== COMPANIONS (colors) ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Companions}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Companion colors" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                           Text="Changes the color of each companion's orb, both in the sidebar and the header - takes effect immediately, no restart needed."/>
+
+                <ItemsControl ItemsSource="{Binding Companions}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <local:Globe3D Width="24" Height="24" Margin="0,0,10,0" AccentColor="{Binding AccentHex}"/>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <WrapPanel>
+                                        <Button Tag="#4FD8E8" Background="#4FD8E8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Cyan"/>
+                                        <Button Tag="#5BC0F8" Background="#5BC0F8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Sky blue"/>
+                                        <Button Tag="#6F7FF0" Background="#6F7FF0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Indigo"/>
+                                        <Button Tag="#8C6FF0" Background="#8C6FF0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Violet"/>
+                                        <Button Tag="#F06FA8" Background="#F06FA8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Pink"/>
+                                        <Button Tag="#F0745C" Background="#F0745C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Coral"/>
+                                        <Button Tag="#F0B65C" Background="#F0B65C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Amber"/>
+                                        <Button Tag="#F0D45C" Background="#F0D45C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Gold"/>
+                                        <Button Tag="#5BE0A0" Background="#5BE0A0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Green"/>
+                                        <Button Tag="#4FD0A8" Background="#4FD0A8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Teal"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== VOICE ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Voice}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Voice" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <CheckBox Content="Companions speak their replies out loud by default" IsChecked="{Binding SpeakRepliesByDefault}"
+                                  Margin="0,0,0,14"/>
+
+                        <TextBlock Text="Voice provider" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding TtsProvider}"
+                                  Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderThickness="0" Padding="10" Margin="0,0,0,4">
+                            <ComboBoxItem Content="OpenAI (default - biggest natural-sounding selection)" Tag="openai"/>
+                            <ComboBoxItem Content="ElevenLabs" Tag="elevenlabs"/>
+                            <ComboBoxItem Content="Azure Speech" Tag="azure"/>
+                            <ComboBoxItem Content="Windows built-in (offline, free, no key)" Tag="windows"/>
+                        </ComboBox>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="If the picked provider has no key saved yet, or a request to it fails, replies automatically fall back to the offline Windows voice instead of staying silent."/>
+
+                        <!-- === OpenAI === -->
+                        <StackPanel Visibility="{Binding TtsProvider, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=openai}">
+                            <TextBlock Text="API key" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding OpenAiTtsApiKey, UpdateSourceTrigger=PropertyChanged}"
                                          Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                         BorderThickness="0" PasswordChanged="OverrideCodeBox_PasswordChanged"/>
-                            <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6"
-                                    Click="UnlockDevMode_Click"
+                                         BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8"
+                                        Click="GetOpenAiKey_Click"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                        Command="{Binding SaveVoiceCommand}"
+                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            </Grid>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Leave blank to reuse your OpenAI chat API key from the AI engine section, if you've already set one. TTS is billed per character (a small fraction of a cent per reply) - a card on your OpenAI account is required, there's no free tier for this specific API."/>
+
+                            <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ComboBox Text="{Binding OpenAiTtsVoice, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True" IsTextSearchEnabled="True"
+                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      BorderThickness="0" Padding="10" Margin="0,0,0,4">
+                                <ComboBoxItem Content="alloy"/>
+                                <ComboBoxItem Content="echo"/>
+                                <ComboBoxItem Content="fable"/>
+                                <ComboBoxItem Content="onyx"/>
+                                <ComboBoxItem Content="nova"/>
+                                <ComboBoxItem Content="shimmer"/>
+                            </ComboBox>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="OpenAI doesn't publish a voice-listing API, so unlike the Models page this list is a starting point, not a live fetch - type any other voice name OpenAI adds and it'll work the same way."/>
+                        </StackPanel>
+
+                        <!-- === ElevenLabs === -->
+                        <StackPanel Visibility="{Binding TtsProvider, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=elevenlabs}">
+                            <TextBlock Text="API key" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding ElevenLabsApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8"
+                                        Click="GetElevenLabsKey_Click"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                        Command="{Binding SaveVoiceCommand}"
+                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            </Grid>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Free tier available (around 10,000 characters/month, no card required to start) - found under your account's Profile + API Key settings once signed in."/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                                        Command="{Binding LoadElevenLabsVoicesCommand}"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                            </StackPanel>
+                            <ComboBox ItemsSource="{Binding ElevenLabsVoices}" SelectedItem="{Binding SelectedElevenLabsVoice}"
+                                      DisplayMemberPath="Name"
+                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Includes any custom or cloned voices already in your ElevenLabs account, not just their stock ones. Save the key above first if &quot;Load voices&quot; comes back empty."/>
+                        </StackPanel>
+
+                        <!-- === Azure Speech === -->
+                        <StackPanel Visibility="{Binding TtsProvider, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=azure}">
+                            <TextBlock Text="Speech key" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding AzureSpeechKey, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                                <Button Grid.Column="1" Content="Create resource" Margin="8,0,0,0" Padding="12,8"
+                                        Click="GetAzureKey_Click"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                        Command="{Binding SaveVoiceCommand}"
+                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            </Grid>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Needs an Azure account (free tier includes 0.5M characters/month). &quot;Create resource&quot; opens the Azure Portal's Speech service page - after creating one, its key and region are under Keys and Endpoint in the resource's menu."/>
+
+                            <TextBlock Text="Region" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding AzureSpeechRegion, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" Margin="0,0,0,4"/>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="The short region code from your Azure resource, e.g. eastus or westeurope - it's part of the API endpoint, so it has to match exactly."/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                                        Command="{Binding LoadAzureVoicesCommand}"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                            </StackPanel>
+                            <ComboBox ItemsSource="{Binding AzureVoices}" SelectedItem="{Binding SelectedAzureVoice}"
+                                      DisplayMemberPath="DisplayName"
+                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Azure's catalog runs to hundreds of neural voices across languages - loading it live means new ones Microsoft adds show up here automatically."/>
+                        </StackPanel>
+
+                        <!-- === Windows (offline) === -->
+                        <StackPanel Visibility="{Binding TtsProvider, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=windows}">
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Runs fully offline through Windows' built-in voices - pick whichever's installed on this PC. Smaller selection than the cloud providers above, but free and needs no API key."/>
+                            <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}"
+                                      DisplayMemberPath="DisplayName"
+                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="No voices showing up? Windows Settings → Time &amp; Language → Speech lets you add more."/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button Content="Test voice" Padding="16,8"
+                                    Command="{Binding TestVoiceCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Button Content="Save" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding SaveVoiceCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
+                        <TextBlock Text="{Binding VoiceStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
-                    <!-- Unlocked: lock button + editable per-companion overrides -->
-                    <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
-                        <Button Content="Lock developer mode" HorizontalAlignment="Left" Padding="16,6"
-                                Command="{Binding LockDevModeCommand}"
+        <!-- ============================== DOCUMENTS ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Documents}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Sift's documents folder" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,0,0,10"
+                                   Text="Sift can only read files inside one folder you choose here - never anything else on your PC, and it can't browse into subfolders or escape this one. Works for plain-text-style files (txt, md, csv, json, code files); PDFs, Word docs, spreadsheets, and images aren't readable yet."/>
+                        <TextBlock Text="{Binding TrustedFolderPath}" FontFamily="Consolas" FontSize="12"
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Choose folder..." Padding="16,8"
+                                    Click="ChooseTrustedFolder_Click"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            <Button Content="Clear" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding ClearTrustedFolderCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== SYSTEM ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=System}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="System" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Weather &amp; web search" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                                   Text="Nothing to set up here - Aurora and Scout can already check real-time weather (free, no key) and search the web (a quick free instant-answer lookup, falling back to opening full results in your browser) right now."/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="System volume" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,12" TextWrapping="Wrap"
+                                   Text="Controls your PC's master output volume directly - the same one the taskbar slider controls. Companions can also adjust this when you ask them to."/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding SystemVolume}" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Margin="10,0,0,0" Padding="12,6"
+                                    Command="{Binding ToggleSystemMuteCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextPrimaryBrush}">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Content" Value="🔊 Mute"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSystemMuted}" Value="True">
+                                                <Setter Property="Content" Value="🔇 Unmute"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== MUSIC ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Music}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Music" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Spotify" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding SpotifyConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
+                                   Text="Real sign-in via Spotify's own OAuth flow - needs a free Client ID from Spotify's developer dashboard, no client secret required. Reading what's playing and searching works on any account; play/pause/skip needs Spotify Premium and an active device (Spotify open somewhere)."/>
+
+                        <Expander Header="How to get a Client ID" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
+                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="1. Go to developer.spotify.com/dashboard and log in with any Spotify account.&#x0a;2. Create an app (any name/description works).&#x0a;3. In the app's settings, add this exact Redirect URI: http://127.0.0.1:8888/callback&#x0a;4. Copy the Client ID shown on the app's page into the box below."/>
+                        </Expander>
+
+                        <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding SpotifyClientId, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Connect with Spotify" Padding="16,8"
+                                    Command="{Binding ConnectSpotifyCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding DisconnectSpotifyCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding SpotifyAccountName, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
+                                   Foreground="{StaticResource AccentGreenBrush}"
+                                   Visibility="{Binding SpotifyConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== SMART HOME ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=SmartHome}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Smart home" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="SmartThings" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding SmartThingsVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="Personal Access Token from account.smartthings.com/tokens" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding SmartThingsToken, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding SaveAndTestSmartThingsCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        </Grid>
+                        <TextBlock Text="{Binding SmartThingsStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Home Assistant" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding HomeAssistantVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="Base URL and a long-lived access token from your HA profile page" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
+                        <TextBox Text="{Binding HomeAssistantUrl, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,8"
+                                 Tag="http://homeassistant.local:8123"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding HomeAssistantToken, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding SaveAndTestHomeAssistantCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        </Grid>
+                        <TextBlock Text="{Binding HomeAssistantStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Amazon Alexa" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding AlexaConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
+                                   Text="This one can't be a real one-click connection: Alexa only talks to apps through a published Smart Home Skill, which means its own Amazon Developer account, a hosted Lambda function, and Amazon's account-linking flow - not something a token or key can shortcut. This toggle just tracks that you've set that up elsewhere; it doesn't verify anything."/>
+                        <Button Content="{Binding AlexaConnected, Converter={x:Static local:BoolToToggleLabelConverter.Instance}}"
+                                HorizontalAlignment="Left" Padding="16,8"
+                                Command="{Binding ToggleAlexaConnectedCommand}"
                                 Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="#F0745C" Margin="0,0,0,10"/>
+                                Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </StackPanel>
+                </Border>
 
-                        <ItemsControl ItemsSource="{Binding Companions}">
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <TextBlock Text="Discovered devices" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Content="Refresh" Margin="12,0,0,0" Padding="14,6"
+                                    Command="{Binding DiscoverDevicesCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
+
+                        <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="0,0,0,8"/>
-
-                                            <TextBlock Text="Role label" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <TextBox Text="{Binding Role, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"
-                                                     Padding="6" Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                                     BorderThickness="0"/>
-
-                                            <TextBlock Text="Tool access" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <ComboBox ItemsSource="{x:Static vm:IntegrationsViewModel.ToolAccessValues}"
-                                                      SelectedItem="{Binding ToolAccess}" Margin="0,2,0,8" Padding="6"
-                                                      Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                                      BorderThickness="0"/>
-
-                                            <TextBlock Text="System prompt" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <TextBox Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
-                                                     TextWrapping="Wrap" AcceptsReturn="True" Height="80" VerticalScrollBarVisibility="Auto"
-                                                     Margin="0,2,0,8" Padding="6"
-                                                     Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                                     BorderThickness="0"/>
-
-                                            <Button Content="Save overrides" HorizontalAlignment="Left" Padding="14,6"
-                                                    Click="SaveOverrides_Click"
-                                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                                        </StackPanel>
+                                    <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding Source}" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
-                    <TextBlock Text="{Binding DevModeStatus}" Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+        <!-- ============================== GOOGLE ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Google}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Google" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
-            </Border>
 
-            <!-- Memory & Data -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                <StackPanel>
-                    <TextBlock Text="Memory &amp; data" FontSize="15" FontWeight="SemiBold"/>
-                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,0"
-                               Text="Every companion's chat history, renamed name, and all the keys/tokens above live only on this PC - nothing is synced anywhere else."/>
-                    <TextBlock Text="{Binding SettingsFilePath, StringFormat='Settings: {0}'}" Margin="0,10,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
-                    <TextBlock Text="{Binding DatabaseFilePath, StringFormat='Chat history: {0}'}" Margin="0,2,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
-                    <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                               Text="To clear everything, use &quot;Reset Aurora completely&quot; in the AI engine section above."/>
-                </StackPanel>
-            </Border>
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Gmail, Drive &amp; Docs" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding GoogleConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
+                                   Text="Powers Sift's access to your inbox and documents. This does a real Google sign-in - you'll need your own free OAuth client from Google Cloud Console (Aurora can't ship one for you, since every installed app registers its own)."/>
 
-            <!-- Device discovery -->
-            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,4,0,0">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                        <TextBlock Text="Discovered devices" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <Button Content="Refresh" Margin="12,0,0,0" Padding="14,6"
-                                Command="{Binding DiscoverDevicesCommand}"
-                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        <Expander Header="How to get a Client ID / Secret" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
+                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="1. Go to console.cloud.google.com and create a project (or use an existing one).&#x0a;2. APIs &amp; Services → OAuth consent screen → set it up for your own use (External + add yourself as a test user is fine).&#x0a;3. APIs &amp; Services → Credentials → Create Credentials → OAuth client ID → Application type: Desktop app.&#x0a;4. Copy the Client ID and Client Secret it gives you into the two boxes below.&#x0a;5. APIs &amp; Services → Library → enable the Gmail API and Google Drive API."/>
+                        </Expander>
+
+                        <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding GoogleClientId, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Client Secret" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <PasswordBox x:Name="GoogleSecretBox" Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" Margin="0,0,0,10"
+                                     PasswordChanged="GoogleSecretBox_PasswordChanged"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Connect with Google" Padding="16,8"
+                                    Command="{Binding ConnectGoogleCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding DisconnectGoogleCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding GoogleAccountEmail, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
+                                   Foreground="{StaticResource AccentGreenBrush}"
+                                   Visibility="{Binding GoogleConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                     </StackPanel>
-                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
-                    <ItemsControl ItemsSource="{Binding Devices}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
-                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="{Binding Source}" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+        <!-- ============================== DEVELOPER ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Developer}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Developer mode" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Gated by an override code so it isn't a plain on/off switch. The first code you enter becomes your code - enter that same one again to unlock next time. Once unlocked: failed requests show the real error in chat, and you can directly rewrite any companion's role, system prompt, and tool access below."/>
+
+                        <!-- Locked: enter/set the override code -->
+                        <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}">
+                            <StackPanel Orientation="Horizontal">
+                                <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6"
+                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderThickness="0" PasswordChanged="OverrideCodeBox_PasswordChanged"/>
+                                <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6"
+                                        Click="UnlockDevMode_Click"
+                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Unlocked: lock button + editable per-companion overrides -->
+                        <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                            <Button Content="Lock developer mode" HorizontalAlignment="Left" Padding="16,6"
+                                    Command="{Binding LockDevModeCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="#F0745C" Margin="0,0,0,10"/>
+
+                            <ItemsControl ItemsSource="{Binding Companions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                                                <TextBlock Text="Role label" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBox Text="{Binding Role, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"
+                                                         Padding="6" Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         BorderThickness="0"/>
+
+                                                <TextBlock Text="Tool access" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <ComboBox ItemsSource="{x:Static vm:IntegrationsViewModel.ToolAccessValues}"
+                                                          SelectedItem="{Binding ToolAccess}" Margin="0,2,0,8" Padding="6"
+                                                          Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                          BorderThickness="0"/>
+
+                                                <TextBlock Text="System prompt" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBox Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
+                                                         TextWrapping="Wrap" AcceptsReturn="True" Height="80" VerticalScrollBarVisibility="Auto"
+                                                         Margin="0,2,0,8" Padding="6"
+                                                         Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         BorderThickness="0"/>
+
+                                                <Button Content="Save overrides" HorizontalAlignment="Left" Padding="14,6"
+                                                        Click="SaveOverrides_Click"
+                                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding DevModeStatus}" Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== MEMORY & DATA ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Memory}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Memory &amp; data" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}"
+                                   Text="Every companion's chat history, renamed name, and all the keys/tokens above live only on this PC - nothing is synced anywhere else."/>
+                        <TextBlock Text="{Binding SettingsFilePath, StringFormat='Settings: {0}'}" Margin="0,10,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding DatabaseFilePath, StringFormat='Chat history: {0}'}" Margin="0,2,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="To clear everything, use &quot;Reset Aurora completely&quot; in the AI engine section."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
 </Window>

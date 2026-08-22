@@ -21,6 +21,21 @@ namespace ZoeyOS.App.ViewModels
         {
             Companions = new ObservableCollection<Companion>(companions);
         }
+
+        // --- Navigation (hub + dedicated pages) ---
+        [ObservableProperty] private SettingsSection _currentSection = SettingsSection.Hub;
+
+        [RelayCommand]
+        private void GoToSection(SettingsSection section)
+        {
+            CurrentSection = section;
+            if (section == SettingsSection.Models && ModelSuggestions.Count == 0 && !IsLoadingModels)
+                _ = RefreshModelsAsync();
+        }
+
+        [RelayCommand]
+        private void GoToHub() => CurrentSection = SettingsSection.Hub;
+
         // --- SmartThings ---
         [ObservableProperty] private string _smartThingsToken = App.Settings.SmartThingsToken;
         [ObservableProperty] private bool _smartThingsVerified = App.SmartThings.IsConfigured;
@@ -54,10 +69,85 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private string _statusMessage = "";
 
         // --- Voice ---
+        // Windows SAPI voices - only relevant when TtsProvider == "windows".
         public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice.GetAvailableVoices());
         [ObservableProperty] private VoiceOption? _selectedVoice;
         [ObservableProperty] private bool _speakRepliesByDefault = App.Settings.SpeakRepliesByDefault;
         [ObservableProperty] private string _voiceStatus = "";
+
+        [ObservableProperty] private string _ttsProvider = App.Settings.TtsProvider;
+
+        [ObservableProperty] private string _openAiTtsApiKey = App.Settings.OpenAiTtsApiKey;
+        [ObservableProperty] private string _openAiTtsVoice = App.Settings.OpenAiTtsVoice;
+
+        [ObservableProperty] private string _elevenLabsApiKey = App.Settings.ElevenLabsApiKey;
+        [ObservableProperty] private ObservableCollection<ElevenLabsVoiceOption> _elevenLabsVoices = new();
+        [ObservableProperty] private ElevenLabsVoiceOption? _selectedElevenLabsVoice;
+
+        [ObservableProperty] private string _azureSpeechKey = App.Settings.AzureSpeechKey;
+        [ObservableProperty] private string _azureSpeechRegion = App.Settings.AzureSpeechRegion;
+        [ObservableProperty] private ObservableCollection<AzureVoiceOption> _azureVoices = new();
+        [ObservableProperty] private AzureVoiceOption? _selectedAzureVoice;
+
+        [ObservableProperty] private bool _isLoadingVoices;
+
+        [RelayCommand]
+        private async Task LoadElevenLabsVoicesAsync()
+        {
+            if (string.IsNullOrWhiteSpace(ElevenLabsApiKey))
+            {
+                VoiceStatus = "Enter an ElevenLabs API key first.";
+                return;
+            }
+
+            IsLoadingVoices = true;
+            VoiceStatus = "Loading voices from ElevenLabs...";
+            try
+            {
+                var voices = await App.Voice.ListElevenLabsVoicesAsync(ElevenLabsApiKey);
+                ElevenLabsVoices = new ObservableCollection<ElevenLabsVoiceOption>(voices);
+                VoiceStatus = voices.Count > 0
+                    ? $"{voices.Count} voices loaded from ElevenLabs."
+                    : "ElevenLabs didn't return any voices for this key.";
+            }
+            catch (Exception ex)
+            {
+                VoiceStatus = $"Couldn't load ElevenLabs voices: {ex.Message}";
+            }
+            finally
+            {
+                IsLoadingVoices = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task LoadAzureVoicesAsync()
+        {
+            if (string.IsNullOrWhiteSpace(AzureSpeechKey) || string.IsNullOrWhiteSpace(AzureSpeechRegion))
+            {
+                VoiceStatus = "Enter an Azure Speech key and region first.";
+                return;
+            }
+
+            IsLoadingVoices = true;
+            VoiceStatus = "Loading voices from Azure...";
+            try
+            {
+                var voices = await App.Voice.ListAzureVoicesAsync(AzureSpeechKey, AzureSpeechRegion);
+                AzureVoices = new ObservableCollection<AzureVoiceOption>(voices);
+                VoiceStatus = voices.Count > 0
+                    ? $"{voices.Count} voices loaded from Azure."
+                    : "Azure didn't return any voices - check the region is correct.";
+            }
+            catch (Exception ex)
+            {
+                VoiceStatus = $"Couldn't load Azure voices: {ex.Message}";
+            }
+            finally
+            {
+                IsLoadingVoices = false;
+            }
+        }
 
         public string CurrentEngineDescription
         {
@@ -86,11 +176,49 @@ namespace ZoeyOS.App.ViewModels
 
         public string ModelFieldLabel => $"{ActiveProvider.DisplayName} model";
 
-        // Suggested models shown in the dropdown - not an exhaustive or enforced list, just
-        // a starting point. The field stays editable (ComboBox with IsEditable="True"), so
-        // typing any other model name your provider serves still works exactly as before.
-        public IEnumerable<string> ModelSuggestions =>
-            ActiveProvider.ModelExamples.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        // Live model catalog, fetched from the active provider's own API - never a
+        // hard-coded list, since providers add and retire models on their own schedule
+        // and this app has no way to know that in advance. The ComboBox stays editable
+        // (IsEditable="True") regardless, so typing any model name still always works
+        // even if the fetch fails or the provider adds something between refreshes.
+        [ObservableProperty] private ObservableCollection<string> _modelSuggestions = new();
+        [ObservableProperty] private bool _isLoadingModels;
+
+        partial void OnIsLoadingModelsChanged(bool value) => OnPropertyChanged(nameof(CanEditModel));
+
+        /// <summary>False while a live model fetch is in flight, so the picker can be
+        /// disabled during that brief wait instead of letting an edit race the fetch.</summary>
+        public bool CanEditModel => !IsLoadingModels;
+        [ObservableProperty] private string _modelListStatus = "";
+
+        [RelayCommand]
+        private async Task RefreshModelsAsync()
+        {
+            if (!App.AI.IsConfigured)
+            {
+                ModelListStatus = $"Save a {ActiveProvider.DisplayName} API key first.";
+                return;
+            }
+
+            IsLoadingModels = true;
+            ModelListStatus = $"Loading models from {ActiveProvider.DisplayName}...";
+            try
+            {
+                var models = await App.AI.ListModelsAsync();
+                ModelSuggestions = new ObservableCollection<string>(models);
+                ModelListStatus = models.Count > 0
+                    ? $"{models.Count} models loaded live from {ActiveProvider.DisplayName}."
+                    : $"{ActiveProvider.DisplayName} didn't return any models.";
+            }
+            catch (Exception ex)
+            {
+                ModelListStatus = $"Couldn't load models: {ex.Message}";
+            }
+            finally
+            {
+                IsLoadingModels = false;
+            }
+        }
 
         private static string GetActiveModel() => ActiveProvider.Key switch
         {
@@ -423,30 +551,49 @@ namespace ZoeyOS.App.ViewModels
         [RelayCommand]
         private void SaveVoice()
         {
+            App.Settings.TtsProvider = TtsProvider;
+
+            App.Settings.OpenAiTtsApiKey = (OpenAiTtsApiKey ?? "").Trim();
+            App.Settings.OpenAiTtsVoice = string.IsNullOrWhiteSpace(OpenAiTtsVoice) ? "alloy" : OpenAiTtsVoice.Trim();
+
+            App.Settings.ElevenLabsApiKey = (ElevenLabsApiKey ?? "").Trim();
+            if (SelectedElevenLabsVoice != null)
+            {
+                App.Settings.ElevenLabsVoiceId = SelectedElevenLabsVoice.VoiceId;
+                App.Settings.ElevenLabsVoiceName = SelectedElevenLabsVoice.Name;
+            }
+
+            App.Settings.AzureSpeechKey = (AzureSpeechKey ?? "").Trim();
+            App.Settings.AzureSpeechRegion = (AzureSpeechRegion ?? "").Trim();
+            if (SelectedAzureVoice != null)
+                App.Settings.AzureVoiceName = SelectedAzureVoice.ShortName;
+
             if (SelectedVoice != null)
             {
                 App.Voice.SelectVoice(SelectedVoice.Name);
                 App.Settings.VoiceName = SelectedVoice.Name;
             }
+
             App.Settings.SpeakRepliesByDefault = SpeakRepliesByDefault;
             App.Settings.Save();
-            VoiceStatus = "Saved. New chats will speak with this voice by default.";
+            VoiceStatus = "Saved. New replies will use this voice.";
         }
 
         [RelayCommand]
-        private void TestVoice()
+        private async Task TestVoiceAsync()
         {
-            if (SelectedVoice != null)
-                App.Voice.SelectVoice(SelectedVoice.Name);
+            // Save first so App.Voice - which reads settings fresh on every call, not
+            // whatever's in these unsaved form fields - actually tests what's shown here.
+            SaveVoice();
 
-            if (!App.Voice.CanSpeak)
+            if (TtsProvider == "windows" && !App.Voice.CanSpeak)
             {
                 VoiceStatus = "No speech voices are available on this Windows install.";
                 return;
             }
 
-            App.Voice.Speak("Hi, this is Aurora. This is what I sound like.");
             VoiceStatus = "Speaking a sample now...";
+            await App.Voice.SpeakAsync("Hi, this is Aurora. This is what I sound like.");
         }
 
         /// <summary>Pulls the current device/entity list from every verified integration - no per-device setup needed.</summary>
