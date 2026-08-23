@@ -9,7 +9,6 @@ namespace ZoeyOS.App.ViewModels
     public partial class MusicPlayerViewModel : ObservableObject
     {
         private readonly DispatcherTimer _pollTimer;
-
         [ObservableProperty] private bool _hasTrack;
         [ObservableProperty] private string _trackName = "";
         [ObservableProperty] private string _artistName = "";
@@ -17,7 +16,7 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _statusText = "Checking Jamendo...";
 
-        public bool IsConnected => App.Settings.JamendoConnected && App.Jamendo.IsConfigured;
+        public bool IsConnected => App.Jamendo.IsConfigured;
 
         public MusicPlayerViewModel()
         {
@@ -46,10 +45,7 @@ namespace ZoeyOS.App.ViewModels
                 ArtistName = info.Artist;
                 StatusText = "";
             }
-            else
-            {
-                StatusText = "Nothing is currently playing.";
-            }
+            else StatusText = "Nothing is currently playing.";
         }
 
         [RelayCommand]
@@ -59,8 +55,7 @@ namespace ZoeyOS.App.ViewModels
             IsBusy = true;
             try
             {
-                if (IsPlaying) App.Jamendo.Pause();
-                else App.Jamendo.Resume();
+                if (IsPlaying) App.Jamendo.Pause(); else App.Jamendo.Resume();
                 Refresh();
             }
             finally { IsBusy = false; }
