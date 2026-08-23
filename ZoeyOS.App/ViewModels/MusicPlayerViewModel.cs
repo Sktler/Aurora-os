@@ -6,13 +6,6 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ZoeyOS.App.ViewModels
 {
-    /// <summary>
-    /// Backs the in-app "Now playing" mini player, docked at the bottom of the sidebar.
-    /// Talks to the same shared App.Spotify client the chat tools use, so playback started
-    /// from a companion's chat shows up here too (and vice versa) - it's one connection,
-    /// two ways to control it. Polls every 15s so it stays in sync even when playback
-    /// changes elsewhere (phone, desktop Spotify app, etc.), not just from this app.
-    /// </summary>
     public partial class MusicPlayerViewModel : ObservableObject
     {
         private readonly DispatcherTimer _pollTimer;
@@ -22,104 +15,73 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private string _artistName = "";
         [ObservableProperty] private bool _isPlaying;
         [ObservableProperty] private bool _isBusy;
-        [ObservableProperty] private string _statusText = "Checking Spotify...";
+        [ObservableProperty] private string _statusText = "Checking Jamendo...";
 
-        public bool IsConnected => App.Settings.SpotifyConnected;
+        public bool IsConnected => App.Settings.JamendoConnected && App.Jamendo.IsConfigured;
 
         public MusicPlayerViewModel()
         {
-            _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
-            _pollTimer.Tick += async (_, _) => await RefreshAsync();
+            _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _pollTimer.Tick += (_, _) => Refresh();
             _pollTimer.Start();
-            _ = RefreshAsync();
+            Refresh();
         }
 
-        [RelayCommand]
-        private async Task RefreshAsync()
+        private void Refresh()
         {
             OnPropertyChanged(nameof(IsConnected));
-
-            if (!App.Spotify.IsConfigured)
+            if (!App.Jamendo.IsConfigured)
             {
                 HasTrack = false;
-                StatusText = "Not connected - set up Spotify in Settings.";
+                StatusText = "Not connected - add a Jamendo Client ID in Settings.";
                 return;
             }
 
-            try
+            var info = App.Jamendo.GetNowPlaying();
+            HasTrack = info.Found;
+            IsPlaying = info.IsPlaying;
+            if (info.Found)
             {
-                var info = await App.Spotify.GetNowPlayingAsync();
-                HasTrack = info.Found;
-                if (info.Found)
-                {
-                    TrackName = info.TrackName;
-                    ArtistName = info.Artist;
-                    IsPlaying = info.IsPlaying;
-                    StatusText = "";
-                }
-                else
-                {
-                    StatusText = "Nothing is currently playing.";
-                }
+                TrackName = info.TrackName;
+                ArtistName = info.Artist;
+                StatusText = "";
             }
-            catch (Exception ex)
+            else
             {
-                StatusText = $"Couldn't reach Spotify: {ex.Message}";
+                StatusText = "Nothing is currently playing.";
             }
         }
 
         [RelayCommand]
-        private async Task TogglePlayPauseAsync()
+        private void TogglePlayPause()
         {
-            if (IsBusy || !App.Spotify.IsConfigured) return;
+            if (IsBusy || !App.Jamendo.IsConfigured) return;
             IsBusy = true;
             try
             {
-                var result = IsPlaying ? await App.Spotify.PauseAsync() : await App.Spotify.ResumeAsync();
-                // Optimistic flip so the button responds immediately - RefreshAsync below
-                // corrects it if the command actually failed (e.g. no active device).
-                IsPlaying = !IsPlaying;
-                await RefreshAsync();
-                if (result.StartsWith("Couldn't")) StatusText = result;
+                if (IsPlaying) App.Jamendo.Pause();
+                else App.Jamendo.Resume();
+                Refresh();
             }
-            finally
-            {
-                IsBusy = false;
-            }
+            finally { IsBusy = false; }
         }
 
         [RelayCommand]
         private async Task SkipNextAsync()
         {
-            if (IsBusy || !App.Spotify.IsConfigured) return;
+            if (IsBusy || !App.Jamendo.IsConfigured) return;
             IsBusy = true;
-            try
-            {
-                await App.Spotify.SkipNextAsync();
-                await Task.Delay(400); // give Spotify a beat to update before we poll it
-                await RefreshAsync();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            try { await App.Jamendo.PlayNextAsync(); await Task.Delay(200); Refresh(); }
+            finally { IsBusy = false; }
         }
 
         [RelayCommand]
         private async Task SkipPreviousAsync()
         {
-            if (IsBusy || !App.Spotify.IsConfigured) return;
+            if (IsBusy || !App.Jamendo.IsConfigured) return;
             IsBusy = true;
-            try
-            {
-                await App.Spotify.SkipPreviousAsync();
-                await Task.Delay(400);
-                await RefreshAsync();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            try { await App.Jamendo.PlayPreviousAsync(); await Task.Delay(200); Refresh(); }
+            finally { IsBusy = false; }
         }
     }
 }
