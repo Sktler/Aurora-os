@@ -16,26 +16,21 @@ namespace ZoeyOS.App
         public static WeatherClient Weather { get; private set; } = null!;
         public static WebSearchClient WebSearch { get; private set; } = null!;
         public static SpotifyClient Spotify { get; private set; } = null!;
+        public static JamendoClient Jamendo { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // Load or create settings.json (API keys, preferences) in %AppData%\Aurora
             Settings = AppSettings.LoadOrCreate();
 
-            // First run (or the active provider's key was never set): collect it now
-            // instead of making the user hand-edit settings.json.
             if (!ActiveProviderIsConfigured())
             {
                 var setup = new Views.SetupWindow();
                 setup.ShowDialog();
             }
 
-            // Local SQLite store: one conversation history per companion, persists across launches
             Memory = new MemoryStore(Settings.DatabasePath);
             Memory.Initialize();
-
             AI = BuildChatEngine();
             ImageGen = BuildImageGenClient();
             SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
@@ -44,13 +39,12 @@ namespace ZoeyOS.App
             Weather = new WeatherClient();
             WebSearch = new WebSearchClient();
             Spotify = BuildSpotifyClient();
+            Jamendo = BuildJamendoClient();
         }
 
         private static SpotifyClient BuildSpotifyClient()
         {
             var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken);
-            // Spotify sometimes rotates the refresh token on use - keep settings.json in sync
-            // so the next launch doesn't start from a stale/invalid one.
             client.RefreshTokenRotated += newToken =>
             {
                 Settings.SpotifyRefreshToken = newToken;
@@ -58,6 +52,8 @@ namespace ZoeyOS.App
             };
             return client;
         }
+
+        private static JamendoClient BuildJamendoClient() => new(Settings.JamendoClientId);
 
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch
         {
@@ -81,45 +77,27 @@ namespace ZoeyOS.App
             return new ImageGenClient(key, Settings.ImageProvider);
         }
 
-        /// <summary>Rebuilds the integration clients after settings.json changes (e.g. from the Integrations window).</summary>
         public static void RefreshIntegrationClients()
         {
             SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
             HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
             ImageGen = BuildImageGenClient();
             Spotify = BuildSpotifyClient();
-            // Rebuilding here (rather than requiring a full app restart, like the provider/key
-            // change does) lets a model-name change - e.g. picking a newer Gemini or Groq
-            // model as Google/Groq release them - take effect on the very next message.
+            Jamendo = BuildJamendoClient();
             AI = BuildChatEngine();
         }
 
-        /// <summary>
-        /// Wipes all local Aurora data (keys, tokens, companion history) and restarts
-        /// as a fresh process, landing back on first-run setup. Closes the database
-        /// connection first so the folder can actually be deleted.
-        /// </summary>
         public static void ResetEverythingAndRestart()
         {
             Memory?.Dispose();
             Voice?.Dispose();
+            Jamendo?.Dispose();
             AppSettings.ResetAll();
-
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = exePath,
-                        UseShellExecute = true
-                    });
-                }
-                catch
-                {
-                    // Falling through to Exit still lets the user start Aurora again manually.
-                }
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); }
+                catch { }
             }
             Environment.Exit(0);
         }
@@ -128,6 +106,7 @@ namespace ZoeyOS.App
         {
             Memory?.Dispose();
             Voice?.Dispose();
+            Jamendo?.Dispose();
             base.OnExit(e);
         }
     }
