@@ -21,16 +21,15 @@ namespace ZoeyOS.App.Views
             InitializeComponent();
             DataContext = new IntegrationsViewModel(companions);
 
-            // Pre-fill the secret box from stored settings on open (PasswordBox can't be
-            // data-bound directly, so this and the PasswordChanged handler below keep it
-            // in sync with the view model manually).
             if (DataContext is IntegrationsViewModel vm && !string.IsNullOrEmpty(vm.GoogleClientSecret))
                 GoogleSecretBox.Password = vm.GoogleClientSecret;
 
-            // The Music page is already defined in the XAML for Spotify. Add the Jamendo
-            // card to that same live Music page so the Settings experience matches the
-            // first-run Jamendo setup instead of relying on the unused legacy SettingsView.
-            AddJamendoSettingsCard();
+            // Wait until WPF has fully materialized the Settings visual tree. The Music
+            // section is declared in XAML, but its contents are inside a ScrollViewer;
+            // adding the Jamendo card during the constructor can race visual-tree creation
+            // and make the card silently fail to appear in the running app.
+            Loaded += (_, _) => Dispatcher.BeginInvoke(new Action(AddJamendoSettingsCard),
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -39,13 +38,10 @@ namespace ZoeyOS.App.Views
             MicaHelper.ApplyMica(new WindowInteropHelper(this).Handle);
         }
 
-        /// <summary>Opens a URL in the system's default browser.</summary>
         private void OpenUrl(string url)
         {
             try
             {
-                // UseShellExecute is required here - without it, .NET tries to run the URL
-                // as an executable instead of handing it to the default browser.
                 Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             catch (Exception ex)
@@ -100,8 +96,6 @@ namespace ZoeyOS.App.Views
 
         private void ChangeApiKey_Click(object sender, RoutedEventArgs e)
         {
-            // SetupWindow's Save restarts the whole app, so nothing further to do here
-            // on success. If the user cancels, they're just back where they started.
             var setup = new SetupWindow { Owner = this };
             setup.ShowDialog();
         }
@@ -110,9 +104,7 @@ namespace ZoeyOS.App.Views
         {
             var confirm = MessageBox.Show(
                 this,
-                "This deletes every saved API key, integration token, and every companion's " +
-                "renamed name and chat history, then restarts Aurora as if freshly installed. " +
-                "This can't be undone.\n\nReset Aurora now?",
+                "This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?",
                 "Reset Aurora completely",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning,
@@ -142,7 +134,6 @@ namespace ZoeyOS.App.Views
             if (Content is not Grid root)
                 return;
 
-            // Avoid adding the card twice if the window is reinitialized.
             if (FindDescendant<TextBlock>(root, t => t.Text == "Jamendo") != null)
                 return;
 
@@ -161,7 +152,6 @@ namespace ZoeyOS.App.Views
             };
 
             var panel = new StackPanel();
-
             var heading = new StackPanel { Orientation = Orientation.Horizontal };
             heading.Children.Add(new TextBlock
             {
@@ -257,12 +247,7 @@ namespace ZoeyOS.App.Views
                 Foreground = (Brush)FindResource("TextPrimaryBrush"),
                 BorderThickness = new Thickness(0)
             };
-            skipButton.Click += (_, _) =>
-            {
-                if (_jamendoClientIdBox != null)
-                    _jamendoClientIdBox.Text = App.Settings.JamendoClientId ?? "";
-                UpdateJamendoStatus();
-            };
+            skipButton.Click += (_, _) => UpdateJamendoStatus();
             actionRow.Children.Add(skipButton);
             panel.Children.Add(actionRow);
 
@@ -276,18 +261,8 @@ namespace ZoeyOS.App.Views
         private void SaveJamendoSettings()
         {
             var clientId = _jamendoClientIdBox?.Text.Trim() ?? "";
-            if (string.IsNullOrWhiteSpace(clientId))
-            {
-                App.Settings.JamendoClientId = "";
-                App.Settings.JamendoConnected = false;
-                App.Settings.Save();
-                App.RefreshIntegrationClients();
-                UpdateJamendoStatus();
-                return;
-            }
-
             App.Settings.JamendoClientId = clientId;
-            App.Settings.JamendoConnected = true;
+            App.Settings.JamendoConnected = !string.IsNullOrWhiteSpace(clientId);
             App.Settings.Save();
             App.RefreshIntegrationClients();
             UpdateJamendoStatus();
