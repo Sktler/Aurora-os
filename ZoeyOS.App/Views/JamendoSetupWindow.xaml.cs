@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 
 namespace ZoeyOS.App.Views
@@ -8,6 +9,22 @@ namespace ZoeyOS.App.Views
         {
             InitializeComponent();
             ClientIdBox.Text = App.Settings.JamendoClientId;
+        }
+
+        private void GetClientId_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://devportal.jamendo.com/",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                StatusText.Text = "Couldn't open the browser. Open devportal.jamendo.com manually.";
+            }
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
