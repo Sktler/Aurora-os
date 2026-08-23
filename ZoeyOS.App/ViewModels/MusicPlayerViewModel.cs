@@ -3,79 +3,88 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App.ViewModels
 {
     public partial class MusicPlayerViewModel : ObservableObject
     {
         private readonly DispatcherTimer _pollTimer;
+        private readonly MediaControlService _media = new();
+
         [ObservableProperty] private bool _hasTrack;
         [ObservableProperty] private string _trackName = "";
         [ObservableProperty] private string _artistName = "";
+        [ObservableProperty] private string _sourceApp = "";
         [ObservableProperty] private bool _isPlaying;
         [ObservableProperty] private bool _isBusy;
-        [ObservableProperty] private string _statusText = "Checking Jamendo...";
+        [ObservableProperty] private string _statusText = "Checking what's playing...";
 
-        public bool IsConnected => App.Jamendo.IsConfigured;
+        public bool IsConnected => _media.IsAvailable;
 
         public MusicPlayerViewModel()
         {
-            _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             _pollTimer.Tick += (_, _) => Refresh();
             _pollTimer.Start();
-            Refresh();
+            _ = RefreshAsync();
         }
 
-        private void Refresh()
+        private void Refresh() => _ = RefreshAsync();
+
+        private async Task RefreshAsync()
         {
-            OnPropertyChanged(nameof(IsConnected));
-            if (!App.Jamendo.IsConfigured)
+            if (!_media.IsAvailable)
             {
                 HasTrack = false;
-                StatusText = "Not connected - add a Jamendo Client ID in Settings.";
+                IsPlaying = false;
+                StatusText = "Windows media controls aren't available on this PC.";
                 return;
             }
 
-            var info = App.Jamendo.GetNowPlaying();
-            HasTrack = info.Found;
-            IsPlaying = info.IsPlaying;
-            if (info.Found)
+            var info = await _media.GetNowPlayingAsync();
+            if (info == null || string.IsNullOrWhiteSpace(info.Title))
             {
-                TrackName = info.TrackName;
-                ArtistName = info.Artist;
-                StatusText = "";
+                HasTrack = false;
+                IsPlaying = false;
+                SourceApp = "";
+                StatusText = "Nothing is currently playing.";
+                return;
             }
-            else StatusText = "Nothing is currently playing.";
+
+            HasTrack = true;
+            TrackName = info.Title;
+            ArtistName = info.Artist;
+            SourceApp = info.AppName;
+            IsPlaying = string.Equals(info.PlaybackStatus, "Playing", StringComparison.OrdinalIgnoreCase);
+            StatusText = string.IsNullOrWhiteSpace(SourceApp) ? "Windows media" : SourceApp;
+            OnPropertyChanged(nameof(IsConnected));
         }
 
         [RelayCommand]
-        private void TogglePlayPause()
+        private async Task TogglePlayPauseAsync()
         {
-            if (IsBusy || !App.Jamendo.IsConfigured) return;
+            if (IsBusy) return;
             IsBusy = true;
-            try
-            {
-                if (IsPlaying) App.Jamendo.Pause(); else App.Jamendo.Resume();
-                Refresh();
-            }
+            try { await _media.ControlAsync("toggle"); await RefreshAsync(); }
             finally { IsBusy = false; }
         }
 
         [RelayCommand]
         private async Task SkipNextAsync()
         {
-            if (IsBusy || !App.Jamendo.IsConfigured) return;
+            if (IsBusy) return;
             IsBusy = true;
-            try { await App.Jamendo.PlayNextAsync(); await Task.Delay(200); Refresh(); }
+            try { await _media.ControlAsync("next"); await Task.Delay(200); await RefreshAsync(); }
             finally { IsBusy = false; }
         }
 
         [RelayCommand]
         private async Task SkipPreviousAsync()
         {
-            if (IsBusy || !App.Jamendo.IsConfigured) return;
+            if (IsBusy) return;
             IsBusy = true;
-            try { await App.Jamendo.PlayPreviousAsync(); await Task.Delay(200); Refresh(); }
+            try { await _media.ControlAsync("previous"); await Task.Delay(200); await RefreshAsync(); }
             finally { IsBusy = false; }
         }
     }
