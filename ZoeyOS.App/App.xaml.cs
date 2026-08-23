@@ -24,10 +24,11 @@ namespace ZoeyOS.App
             Settings = AppSettings.LoadOrCreate();
 
             if (!ActiveProviderIsConfigured())
-            {
-                var setup = new Views.SetupWindow();
-                setup.ShowDialog();
-            }
+                new Views.SetupWindow().ShowDialog();
+
+            // Jamendo is optional, but first launch now offers a dedicated setup screen.
+            if (string.IsNullOrWhiteSpace(Settings.JamendoClientId))
+                new Views.JamendoSetupWindow().ShowDialog();
 
             Memory = new MemoryStore(Settings.DatabasePath);
             Memory.Initialize();
