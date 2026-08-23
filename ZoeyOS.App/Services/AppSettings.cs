@@ -4,10 +4,6 @@ using System.Text.Json;
 
 namespace ZoeyOS.App.Services
 {
-    /// <summary>
-    /// Persisted locally at %AppData%\Aurora\settings.json.
-    /// Holds your own API keys - never sent anywhere except directly to each provider.
-    /// </summary>
     public class AppSettings
     {
         public string ChatProvider { get; set; } = "gemini";
@@ -31,8 +27,7 @@ namespace ZoeyOS.App.Services
         public bool GoogleConnected { get; set; } = false;
         public string GoogleAccountEmail { get; set; } = "";
 
-        // Legacy Spotify settings are retained so existing Aurora installs deserialize cleanly.
-        // Jamendo is now the primary in-app music provider.
+        // Kept for backward compatibility with existing Aurora settings. New music uses Jamendo.
         public string SpotifyClientId { get; set; } = "";
         public string SpotifyRefreshToken { get; set; } = "";
         public bool SpotifyConnected { get; set; } = false;
@@ -63,23 +58,28 @@ namespace ZoeyOS.App.Services
         public static AppSettings LoadOrCreate()
         {
             Directory.CreateDirectory(ConfigDir);
+            AppSettings loaded;
             if (File.Exists(ConfigPath))
             {
                 var json = File.ReadAllText(ConfigPath);
-                var loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
-                if (string.IsNullOrWhiteSpace(loaded.DatabasePath))
-                    loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
-
-                var originalModel = loaded.GeminiModel;
-                if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
-                loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
-                if (loaded.GeminiModel != originalModel) loaded.Save();
-                return loaded;
+                loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
+            else loaded = new AppSettings();
 
-            var fresh = new AppSettings { DatabasePath = Path.Combine(ConfigDir, "aurora.db") };
-            fresh.Save();
-            return fresh;
+            if (string.IsNullOrWhiteSpace(loaded.DatabasePath))
+                loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
+
+            if (string.IsNullOrWhiteSpace(loaded.JamendoClientId))
+                loaded.JamendoClientId = Environment.GetEnvironmentVariable("JAMENDO_CLIENT_ID") ?? "";
+
+            if (loaded.JamendoClientId.Length > 0)
+                loaded.JamendoConnected = true;
+
+            var originalModel = loaded.GeminiModel;
+            if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
+            loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
+            if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath)) loaded.Save();
+            return loaded;
         }
 
         private static string StripModelsPrefix(string? model)
