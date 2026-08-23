@@ -2,9 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
-    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <!-- Use the Windows 10 1809 API baseline so one Aurora binary runs on supported Windows 10 and Windows 11 versions. -->
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -14,11 +15,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Gemini API calls go over plain HttpClient, no SDK needed -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <!-- Windows' built-in speech recognition/synthesis - local, offline, free, no API key -->
     <PackageReference Include="System.Speech" Version="8.0.0" />
   </ItemGroup>
 
