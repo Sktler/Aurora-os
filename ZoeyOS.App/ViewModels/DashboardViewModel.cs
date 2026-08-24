@@ -15,6 +15,11 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty]
         private CompanionViewModel? _selectedCompanion;
 
+        [ObservableProperty]
+        private string _wakeWordStatus = "Listening for “Hey Aurora”";
+
+        public bool WakeWordAvailable => App.WakeWord?.IsAvailable == true;
+
         public DashboardViewModel()
         {
             var existing = App.Memory.LoadCompanions();
@@ -30,6 +35,39 @@ namespace ZoeyOS.App.ViewModels
                 Companions.Add(new CompanionViewModel(c));
 
             SelectedCompanion = Companions.FirstOrDefault();
+
+            if (App.WakeWord != null)
+            {
+                App.WakeWord.WakeWordDetected += OnWakeWordDetected;
+                App.WakeWord.CommandRecognized += OnWakeCommandRecognized;
+                App.WakeWord.StatusChanged += OnWakeStatusChanged;
+            }
+        }
+
+        private void OnWakeWordDetected()
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                WakeWordStatus = "Listening…";
+            });
+        }
+
+        private void OnWakeCommandRecognized(string command)
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                var target = SelectedCompanion;
+                if (target != null)
+                    target.SubmitVoiceUtterance(command);
+            });
+        }
+
+        private void OnWakeStatusChanged(string status)
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                WakeWordStatus = status;
+            });
         }
 
         [RelayCommand]
