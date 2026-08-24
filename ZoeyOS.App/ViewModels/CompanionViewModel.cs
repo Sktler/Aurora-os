@@ -36,11 +36,33 @@ namespace ZoeyOS.App.ViewModels
         [RelayCommand]
         private void Listen()
         {
-            if (IsListening) { App.Voice.StopContinuousListening(); IsListening = false; return; }
+            if (IsListening)
+            {
+                App.Voice.StopContinuousListening();
+                IsListening = false;
+                App.WakeWord?.Start();
+                return;
+            }
+
+            // The wake-word listener and manual dictation both need exclusive access to the
+            // default microphone. Temporarily hand the device to the manual recognizer.
+            App.WakeWord?.Stop();
             var started = App.Voice.StartContinuousListening(
                 onUtteranceRecognized: heard => System.Windows.Application.Current?.Dispatcher.Invoke(() => EnqueueHeardUtterance(heard)),
-                onStoppedByAnotherListener: () => System.Windows.Application.Current?.Dispatcher.Invoke(() => IsListening = false));
+                onStoppedByAnotherListener: () => System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    IsListening = false;
+                    App.WakeWord?.Start();
+                }));
+            if (!started)
+                App.WakeWord?.Start();
             IsListening = started;
+        }
+
+        /// <summary>Entry point used by the global Hey Aurora wake-word pipeline.</summary>
+        public void SubmitVoiceUtterance(string heard)
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => EnqueueHeardUtterance(heard));
         }
 
         private void EnqueueHeardUtterance(string heard)
@@ -97,9 +119,6 @@ namespace ZoeyOS.App.ViewModels
             try
             {
                 var historyForClaude = Messages.Count > 1 ? SliceHistory() : new List<ChatMessage>();
-                // General companions receive SystemTools so the model can directly inspect and
-                // control Windows media sessions. This is intentionally separate from Jamendo:
-                // the model controls whatever Windows reports as the current media session.
                 var reply = await App.AI.SendWithToolsAsync(
                     Companion.SystemPrompt,
                     historyForClaude,
