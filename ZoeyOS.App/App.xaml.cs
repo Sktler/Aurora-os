@@ -18,6 +18,8 @@ namespace ZoeyOS.App
         public static WebSearchClient WebSearch { get; private set; } = null!;
         public static SpotifyClient Spotify { get; private set; } = null!;
         public static JamendoClient Jamendo { get; private set; } = null!;
+        public static CameraService Camera { get; private set; } = null!;
+        public static McpService Mcp { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -27,7 +29,6 @@ namespace ZoeyOS.App
             if (!ActiveProviderIsConfigured())
                 new Views.SetupWindow().ShowDialog();
 
-            // Jamendo is optional, but first launch now offers a dedicated setup screen.
             if (string.IsNullOrWhiteSpace(Settings.JamendoClientId))
                 new Views.JamendoSetupWindow().ShowDialog();
 
@@ -43,21 +44,16 @@ namespace ZoeyOS.App
             WebSearch = new WebSearchClient();
             Spotify = BuildSpotifyClient();
             Jamendo = BuildJamendoClient();
+            Camera = new CameraService();
+            Mcp = new McpService();
 
-            // Wake-word recognition is local/offline and starts automatically when a microphone
-            // is available. If speech recognition is unavailable, Aurora simply remains usable
-            // through the normal UI/microphone button.
             WakeWord.Start();
         }
 
         private static SpotifyClient BuildSpotifyClient()
         {
             var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken);
-            client.RefreshTokenRotated += newToken =>
-            {
-                Settings.SpotifyRefreshToken = newToken;
-                Settings.Save();
-            };
+            client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); };
             return client;
         }
 
@@ -100,13 +96,14 @@ namespace ZoeyOS.App
             Memory?.Dispose();
             Voice?.Dispose();
             WakeWord?.Dispose();
+            Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult();
             Jamendo?.Dispose();
             AppSettings.ResetAll();
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
             {
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); }
-                catch { }
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); } catch { }
             }
             Environment.Exit(0);
         }
@@ -116,6 +113,8 @@ namespace ZoeyOS.App
             Memory?.Dispose();
             Voice?.Dispose();
             WakeWord?.Dispose();
+            Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult();
             Jamendo?.Dispose();
             base.OnExit(e);
         }
