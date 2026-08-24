@@ -1,40 +1,18 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Shell;
-using Forms = System.Windows.Forms;
 
 namespace ZoeyOS.App.Views
 {
     public partial class MainWindow : Window
     {
-        private readonly Forms.NotifyIcon _trayIcon;
-        private readonly Forms.ContextMenuStrip _trayMenu;
         private bool _allowClose;
 
         public MainWindow()
         {
             InitializeComponent();
-
-            _trayMenu = new Forms.ContextMenuStrip();
-            _trayMenu.Items.Add("Show Aurora", null, (_, _) => RestoreFromTray());
-            _trayMenu.Items.Add("Exit Aurora", null, (_, _) => ExitFromTray());
-
-            _trayIcon = new Forms.NotifyIcon
-            {
-                Icon = CreateAuroraPersonIcon(),
-                Text = "Aurora",
-                Visible = true,
-                ContextMenuStrip = _trayMenu
-            };
-            _trayIcon.DoubleClick += (_, _) => RestoreFromTray();
-
-            Closed += (_, _) => DisposeTrayIcon();
         }
-
-        // --- Custom title bar (replaces the native one removed via WindowStyle="None") ---
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -49,9 +27,10 @@ namespace ZoeyOS.App.Views
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            // Minimize into the notification area instead of leaving an empty taskbar button.
+            // Collapse Aurora into its own small floating companion, not the Windows notification area.
+            WindowState = WindowState.Minimized;
             Hide();
-            _trayIcon.ShowBalloonTip(1200, "Aurora", "Aurora is still running. Double-click the person icon to restore it.", Forms.ToolTipIcon.Info);
+            ShowMiniCompanion();
         }
 
         private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
@@ -71,57 +50,30 @@ namespace ZoeyOS.App.Views
             MaximizeRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
         }
 
-        private void RestoreFromTray()
+        private void ShowMiniCompanion()
         {
-            Show();
-            if (WindowState == WindowState.Minimized)
+            // Keep the minimized companion as a separate WPF window so it remains visible on the desktop.
+            var mini = new MiniCompanionWindow { Owner = this };
+            mini.RestoreRequested += (_, _) =>
+            {
+                mini.Close();
+                Show();
                 WindowState = WindowState.Normal;
-            Activate();
-            Topmost = true;
-            Topmost = false;
-            Focus();
-        }
-
-        private void ExitFromTray()
-        {
-            _allowClose = true;
-            Close();
+                Activate();
+                Focus();
+            };
+            mini.ExitRequested += (_, _) =>
+            {
+                mini.Close();
+                ExitApplication();
+            };
+            mini.Show();
         }
 
         private void ExitApplication()
         {
             _allowClose = true;
             Close();
-        }
-
-        private void DisposeTrayIcon()
-        {
-            _trayIcon.Visible = false;
-            _trayIcon.Dispose();
-            _trayMenu.Dispose();
-        }
-
-        /// <summary>
-        /// Creates a small, high-contrast Aurora person/avatar for the notification area.
-        /// It is generated at runtime so the tray icon stays independent of the app's globe artwork.
-        /// </summary>
-        private static Icon CreateAuroraPersonIcon()
-        {
-            using var bitmap = new Bitmap(32, 32, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-            using (var graphics = Graphics.FromImage(bitmap))
-            using (var brush = new SolidBrush(Color.FromArgb(79, 216, 232)))
-            using (var outline = new Pen(Color.White, 1.5f))
-            {
-                graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                graphics.Clear(Color.Transparent);
-                graphics.FillEllipse(brush, 10, 4, 12, 12);
-                graphics.FillEllipse(brush, 5, 16, 22, 13);
-                graphics.DrawEllipse(outline, 10, 4, 12, 12);
-                graphics.DrawArc(outline, 5, 16, 22, 13, 180, 180);
-            }
-
-            var handle = bitmap.GetHicon();
-            return Icon.FromHandle(handle);
         }
 
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e)
