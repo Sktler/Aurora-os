@@ -7,6 +7,7 @@ namespace ZoeyOS.App.Views
 {
     public partial class MainWindow : Window
     {
+        private MiniCompanionWindow? _miniCompanion;
         private bool _allowClose;
 
         public MainWindow()
@@ -27,8 +28,10 @@ namespace ZoeyOS.App.Views
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            // Collapse Aurora into its own small floating companion, not the Windows notification area.
-            WindowState = WindowState.Minimized;
+            // Keep the main window hidden and replace it with an independent floating companion.
+            // Do not use WindowState=Minimized: the companion is a separate desktop window and
+            // should not inherit WPF's minimized/owned-window behavior.
+            WindowState = WindowState.Normal;
             Hide();
             ShowMiniCompanion();
         }
@@ -52,27 +55,44 @@ namespace ZoeyOS.App.Views
 
         private void ShowMiniCompanion()
         {
-            // Keep the minimized companion as a separate WPF window so it remains visible on the desktop.
-            var mini = new MiniCompanionWindow { Owner = this };
-            mini.RestoreRequested += (_, _) =>
+            if (_miniCompanion != null)
             {
-                mini.Close();
-                Show();
-                WindowState = WindowState.Normal;
-                Activate();
-                Focus();
-            };
-            mini.ExitRequested += (_, _) =>
-            {
-                mini.Close();
-                ExitApplication();
-            };
-            mini.Show();
+                _miniCompanion.Activate();
+                return;
+            }
+
+            // Intentionally do NOT assign Owner. An owned WPF window is hidden automatically
+            // when its owner is hidden, which is exactly the bug this companion is meant to avoid.
+            _miniCompanion = new MiniCompanionWindow();
+            _miniCompanion.RestoreRequested += MiniCompanion_RestoreRequested;
+            _miniCompanion.ExitRequested += MiniCompanion_ExitRequested;
+            _miniCompanion.Closed += (_, _) => _miniCompanion = null;
+            _miniCompanion.Show();
+            _miniCompanion.Activate();
+        }
+
+        private void MiniCompanion_RestoreRequested(object? sender, System.EventArgs e)
+        {
+            _miniCompanion?.Close();
+            _miniCompanion = null;
+            Show();
+            WindowState = WindowState.Normal;
+            Activate();
+            Focus();
+        }
+
+        private void MiniCompanion_ExitRequested(object? sender, System.EventArgs e)
+        {
+            _miniCompanion?.Close();
+            _miniCompanion = null;
+            ExitApplication();
         }
 
         private void ExitApplication()
         {
             _allowClose = true;
+            _miniCompanion?.Close();
+            _miniCompanion = null;
             Close();
         }
 
