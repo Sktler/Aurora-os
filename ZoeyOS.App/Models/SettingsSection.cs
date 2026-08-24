@@ -1,8 +1,6 @@
 namespace ZoeyOS.App.Models
 {
-    /// <summary>Which page the Settings window is currently showing. Hub is the landing
-    /// page (a grid of large tile buttons); every other value is a dedicated page reached
-    /// by tapping a tile, with a "back to Settings" button to return to Hub.</summary>
+    /// <summary>Dedicated Settings pages exposed by the Aurora settings hub.</summary>
     public enum SettingsSection
     {
         Hub,
@@ -16,6 +14,10 @@ namespace ZoeyOS.App.Models
         SmartHome,
         Google,
         Developer,
-        Memory
+        Memory,
+        ImageGeneration,
+        Mcp,
+        Camera,
+        Permissions
     }
 }
