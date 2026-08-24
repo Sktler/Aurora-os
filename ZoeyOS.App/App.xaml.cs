@@ -13,6 +13,7 @@ namespace ZoeyOS.App
         public static SmartThingsClient SmartThings { get; private set; } = null!;
         public static HomeAssistantClient HomeAssistant { get; private set; } = null!;
         public static VoiceService Voice { get; private set; } = null!;
+        public static WakeWordService WakeWord { get; private set; } = null!;
         public static WeatherClient Weather { get; private set; } = null!;
         public static WebSearchClient WebSearch { get; private set; } = null!;
         public static SpotifyClient Spotify { get; private set; } = null!;
@@ -37,10 +38,16 @@ namespace ZoeyOS.App
             SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
             HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
             Voice = new VoiceService(Settings.VoiceName);
+            WakeWord = new WakeWordService();
             Weather = new WeatherClient();
             WebSearch = new WebSearchClient();
             Spotify = BuildSpotifyClient();
             Jamendo = BuildJamendoClient();
+
+            // Wake-word recognition is local/offline and starts automatically when a microphone
+            // is available. If speech recognition is unavailable, Aurora simply remains usable
+            // through the normal UI/microphone button.
+            WakeWord.Start();
         }
 
         private static SpotifyClient BuildSpotifyClient()
@@ -92,6 +99,7 @@ namespace ZoeyOS.App
         {
             Memory?.Dispose();
             Voice?.Dispose();
+            WakeWord?.Dispose();
             Jamendo?.Dispose();
             AppSettings.ResetAll();
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
@@ -107,6 +115,7 @@ namespace ZoeyOS.App
         {
             Memory?.Dispose();
             Voice?.Dispose();
+            WakeWord?.Dispose();
             Jamendo?.Dispose();
             base.OnExit(e);
         }
