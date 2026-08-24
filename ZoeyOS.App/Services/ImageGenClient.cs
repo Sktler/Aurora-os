@@ -9,10 +9,8 @@ namespace ZoeyOS.App.Services
 {
     /// <summary>
     /// Calls out to an image generation provider alongside the chat engine.
-    /// Default wiring is Google's free Gemini image model ("Nano Banana") -
-    /// it shares the same Gemini API key as GeminiClient, so image generation
-    /// comes for free with no separate provider key. Set Provider to "openai"
-    /// (and supply an OpenAI key) to use a different provider instead.
+    /// Google Gemini image generation uses the current Nano Banana image model
+    /// and shares the Gemini API key with the chat engine.
     /// </summary>
     public class ImageGenClient
     {
@@ -21,7 +19,9 @@ namespace ZoeyOS.App.Services
         private readonly string _apiKey;
         private readonly bool _configured;
 
-        private const string GeminiImageModel = "gemini-2.5-flash-image";
+        // Google retired the older Imagen image models on August 17, 2026.
+        // Use the current Gemini image-generation model instead.
+        private const string GeminiImageModel = "gemini-3.1-flash-image";
         private const string GeminiEndpointBase = "https://generativelanguage.googleapis.com/v1beta/models/";
 
         public ImageGenClient(string apiKey, string provider)
@@ -37,15 +37,10 @@ namespace ZoeyOS.App.Services
 
         public bool IsConfigured => _configured;
 
-        /// <summary>
-        /// Generates an image from a text prompt. Returns a "data:image/...;base64,..."
-        /// URI (Gemini) or a hosted URL (OpenAI) that can be used directly as an image
-        /// source, or a "[...]" bracketed message on failure/misconfiguration.
-        /// </summary>
         public async Task<string> GenerateImageAsync(string prompt)
         {
             if (!_configured)
-                return "[No image generation API key set. Add your Gemini key in Settings to enable this - it's included free, no separate key needed.]";
+                return "[No image generation API key set. Add your Gemini key in Settings to enable Google image generation.]";
 
             return _provider switch
             {
@@ -74,11 +69,11 @@ namespace ZoeyOS.App.Services
                 var text = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Image gen error {(int)response.StatusCode}: {text}]";
+                    return $"[Google image generation error {(int)response.StatusCode}: {text}]";
 
                 using var doc = JsonDocument.Parse(text);
                 if (!doc.RootElement.TryGetProperty("candidates", out var candidates))
-                    return "[Gemini returned no image.]";
+                    return "[Google returned no image.]";
 
                 foreach (var candidate in candidates.EnumerateArray())
                 {
@@ -96,11 +91,11 @@ namespace ZoeyOS.App.Services
                     }
                 }
 
-                return "[Gemini returned no image data.]";
+                return "[Google returned no image data.]";
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching Gemini image generation: {ex.Message}]";
+                return $"[Connection error reaching Google image generation: {ex.Message}]";
             }
         }
 
