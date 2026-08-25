@@ -35,51 +35,32 @@ namespace ZoeyOS.App
             Voice = new VoiceService(Settings.VoiceName); WakeWord = new WakeWordService();
             Weather = new WeatherClient(); WebSearch = new WebSearchClient();
             Spotify = BuildSpotifyClient(); Jamendo = BuildJamendoClient();
-            Camera = new CameraService(); Mcp = new McpService(); Windows = new WindowsAutomationService();
+            Camera = new CameraService(); Mcp = new McpService(); Windows = CreateWindowsService();
             WakeWord.Start();
         }
 
-        private static SpotifyClient BuildSpotifyClient()
+        private static WindowsAutomationService CreateWindowsService()
         {
-            var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken);
-            client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); };
-            return client;
+            return new WindowsAutomationService
+            {
+                FilesEnabled = Settings.WindowsFilesEnabled,
+                ScreenEnabled = Settings.WindowsScreenEnabled,
+                ClipboardEnabled = Settings.WindowsClipboardEnabled,
+                ApplicationsEnabled = Settings.WindowsApplicationsEnabled,
+                TerminalEnabled = Settings.WindowsTerminalEnabled,
+                UiAutomationEnabled = Settings.WindowsUiAutomationEnabled,
+                NetworkEnabled = Settings.WindowsNetworkEnabled,
+                PowerEnabled = Settings.WindowsPowerEnabled
+            };
         }
+        public static void RefreshWindowsPermissions() { Windows = CreateWindowsService(); }
+        private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static JamendoClient BuildJamendoClient() => new(Settings.JamendoClientId);
-        private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch
-        {
-            "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey),
-            "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey),
-            "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey),
-            _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey)
-        };
-        private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch
-        {
-            "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel),
-            "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel),
-            "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel),
-            _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel)
-        };
-        private static ImageGenClient BuildImageGenClient()
-        {
-            var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey;
-            return new ImageGenClient(key, Settings.ImageProvider);
-        }
-        public static void RefreshIntegrationClients()
-        {
-            SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
-            ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); Jamendo = BuildJamendoClient(); AI = BuildChatEngine();
-        }
-        public static void ResetEverythingAndRestart()
-        {
-            Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Jamendo?.Dispose(); AppSettings.ResetAll();
-            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-            if (!string.IsNullOrEmpty(exePath)) { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); } catch { } }
-            Environment.Exit(0);
-        }
-        protected override void OnExit(ExitEventArgs e)
-        {
-            Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Jamendo?.Dispose(); base.OnExit(e);
-        }
+        private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
+        private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
+        private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
+        public static void RefreshIntegrationClients() { SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); Jamendo = BuildJamendoClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
+        public static void ResetEverythingAndRestart() { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Jamendo?.Dispose(); AppSettings.ResetAll(); var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName; if (!string.IsNullOrEmpty(exePath)) { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); } catch { } } Environment.Exit(0); }
+        protected override void OnExit(ExitEventArgs e) { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Jamendo?.Dispose(); base.OnExit(e); }
     }
 }
