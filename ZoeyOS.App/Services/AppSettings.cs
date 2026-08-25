@@ -26,16 +26,12 @@ namespace ZoeyOS.App.Services
         public string GoogleRefreshToken { get; set; } = "";
         public bool GoogleConnected { get; set; } = false;
         public string GoogleAccountEmail { get; set; } = "";
-
-        // Kept for backward compatibility with existing Aurora settings. New music uses Jamendo.
         public string SpotifyClientId { get; set; } = "";
         public string SpotifyRefreshToken { get; set; } = "";
         public bool SpotifyConnected { get; set; } = false;
         public string SpotifyAccountName { get; set; } = "";
-
         public string JamendoClientId { get; set; } = "";
         public bool JamendoConnected { get; set; } = false;
-
         public string DatabasePath { get; set; } = "";
         public string VoiceName { get; set; } = "";
         public string TtsProvider { get; set; } = "openai";
@@ -52,6 +48,19 @@ namespace ZoeyOS.App.Services
         public string DeveloperOverrideCode { get; set; } = "";
         public string TrustedFolderPath { get; set; } = "";
 
+        // Permissioned Windows capabilities; disabled by default.
+        public bool WindowsFilesEnabled { get; set; } = false;
+        public bool WindowsScreenEnabled { get; set; } = false;
+        public bool WindowsClipboardEnabled { get; set; } = false;
+        public bool WindowsApplicationsEnabled { get; set; } = false;
+        public bool WindowsTerminalEnabled { get; set; } = false;
+        public bool WindowsUiAutomationEnabled { get; set; } = false;
+        public bool WindowsNetworkEnabled { get; set; } = false;
+        public bool WindowsPowerEnabled { get; set; } = false;
+        public bool WindowsCameraEnabled { get; set; } = false;
+        public bool WindowsMicrophoneEnabled { get; set; } = false;
+        public bool WindowsMcpEnabled { get; set; } = false;
+
         public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
 
@@ -65,41 +74,26 @@ namespace ZoeyOS.App.Services
                 loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
             else loaded = new AppSettings();
-
-            if (string.IsNullOrWhiteSpace(loaded.DatabasePath))
-                loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
-
-            if (string.IsNullOrWhiteSpace(loaded.JamendoClientId))
-                loaded.JamendoClientId = Environment.GetEnvironmentVariable("JAMENDO_CLIENT_ID") ?? "";
-
-            if (loaded.JamendoClientId.Length > 0)
-                loaded.JamendoConnected = true;
-
+            if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
+            if (string.IsNullOrWhiteSpace(loaded.JamendoClientId)) loaded.JamendoClientId = Environment.GetEnvironmentVariable("JAMENDO_CLIENT_ID") ?? "";
+            if (loaded.JamendoClientId.Length > 0) loaded.JamendoConnected = true;
             var originalModel = loaded.GeminiModel;
             if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
             loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
             if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath)) loaded.Save();
             return loaded;
         }
-
         private static string StripModelsPrefix(string? model)
         {
             var trimmed = model?.Trim() ?? "";
-            return trimmed.StartsWith("models/", StringComparison.OrdinalIgnoreCase)
-                ? trimmed.Substring("models/".Length)
-                : trimmed;
+            return trimmed.StartsWith("models/", StringComparison.OrdinalIgnoreCase) ? trimmed.Substring("models/".Length) : trimmed;
         }
-
         public void Save()
         {
             Directory.CreateDirectory(ConfigDir);
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigPath, json);
         }
-
-        public static void ResetAll()
-        {
-            if (Directory.Exists(ConfigDir)) Directory.Delete(ConfigDir, recursive: true);
-        }
+        public static void ResetAll() { if (Directory.Exists(ConfigDir)) Directory.Delete(ConfigDir, recursive: true); }
     }
 }
