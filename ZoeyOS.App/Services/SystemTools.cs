@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -8,7 +9,6 @@ namespace ZoeyOS.App.Services
     public static class SystemTools
     {
         private static readonly MediaControlService Media = new();
-
         public static List<object> Definitions => new()
         {
             new { name = "get_weather", description = "Gets current real-time weather conditions for a place.", input_schema = new { type = "object", properties = new { location = new { type = "string" } }, required = new[] { "location" } } },
@@ -28,20 +28,20 @@ namespace ZoeyOS.App.Services
             new { name = "jamendo_skip_previous", description = "Skips Jamendo backward.", input_schema = new { type = "object", properties = new { } } },
             new { name = "set_system_volume", description = "Sets Windows master volume from 0 to 100.", input_schema = new { type = "object", properties = new { percent = new { type = "number" } }, required = new[] { "percent" } } },
             new { name = "toggle_system_mute", description = "Mutes or unmutes Windows system audio.", input_schema = new { type = "object", properties = new { mute = new { type = "boolean" } }, required = new[] { "mute" } } },
-            new { name = "windows_list_applications", description = "Lists running Windows applications and their windows. Requires application permission.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_list_applications", description = "Lists running Windows applications. Requires application permission.", input_schema = new { type = "object", properties = new { } } },
             new { name = "windows_launch_application", description = "Launches a Windows application or URI. Requires application permission.", input_schema = new { type = "object", properties = new { target = new { type = "string" } }, required = new[] { "target" } } },
             new { name = "windows_open_path", description = "Opens a Windows file or folder. Requires file permission.", input_schema = new { type = "object", properties = new { path = new { type = "string" } }, required = new[] { "path" } } },
             new { name = "windows_read_file", description = "Reads a text file. Requires file permission.", input_schema = new { type = "object", properties = new { path = new { type = "string" } }, required = new[] { "path" } } },
             new { name = "windows_write_file", description = "Writes a text file. Requires file permission.", input_schema = new { type = "object", properties = new { path = new { type = "string" }, content = new { type = "string" } }, required = new[] { "path", "content" } } },
-            new { name = "windows_get_clipboard", description = "Reads text from the Windows clipboard. Requires clipboard permission.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "windows_set_clipboard", description = "Writes text to the Windows clipboard. Requires clipboard permission.", input_schema = new { type = "object", properties = new { text = new { type = "string" } }, required = new[] { "text" } } },
+            new { name = "windows_get_clipboard", description = "Reads Windows clipboard text. Requires clipboard permission.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_set_clipboard", description = "Writes Windows clipboard text. Requires clipboard permission.", input_schema = new { type = "object", properties = new { text = new { type = "string" } }, required = new[] { "text" } } },
             new { name = "windows_run_command", description = "Runs an approved Windows command. Requires terminal permission.", input_schema = new { type = "object", properties = new { command = new { type = "string" }, arguments = new { type = "string" } }, required = new[] { "command" } } },
-            new { name = "windows_capture_screen", description = "Captures the primary Windows display and saves it for Aurora. Requires screen permission.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "camera_list_devices", description = "Lists available Windows cameras. Requires camera permission.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "camera_capture_photo", description = "Captures a photo with the selected Windows camera. Requires camera permission.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_capture_screen", description = "Captures the primary Windows display. Requires screen permission.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_list_devices", description = "Lists Windows cameras. Requires camera permission.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_capture_photo", description = "Captures a photo with the Windows camera. Requires camera permission.", input_schema = new { type = "object", properties = new { } } },
             new { name = "mcp_list_servers", description = "Lists connected MCP servers.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "mcp_list_tools", description = "Lists tools exposed by a connected MCP server. Requires MCP permission.", input_schema = new { type = "object", properties = new { server = new { type = "string" } }, required = new[] { "server" } } },
-            new { name = "mcp_call_tool", description = "Calls a tool on a connected MCP server using a JSON object of arguments. Requires MCP permission.", input_schema = new { type = "object", properties = new { server = new { type = "string" }, tool = new { type = "string" }, arguments = new { type = "object" } }, required = new[] { "server", "tool" } } }
+            new { name = "mcp_list_tools", description = "Lists tools exposed by a connected MCP server.", input_schema = new { type = "object", properties = new { server = new { type = "string" } }, required = new[] { "server" } } },
+            new { name = "mcp_call_tool", description = "Calls a tool on a connected MCP server.", input_schema = new { type = "object", properties = new { server = new { type = "string" }, tool = new { type = "string" }, arguments = new { type = "object" } }, required = new[] { "server", "tool" } } }
         };
 
         public static async Task<string> ExecuteAsync(string toolName, JsonElement input)
@@ -73,22 +73,20 @@ namespace ZoeyOS.App.Services
                 case "windows_get_clipboard": return App.Windows.GetClipboardText();
                 case "windows_set_clipboard": App.Windows.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
                 case "windows_run_command": { var exit = await App.Windows.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
-                case "windows_capture_screen": return await SaveScreenAsync();
+                case "windows_capture_screen": return SaveScreen();
                 case "camera_list_devices": { if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings."; var devices = await App.Camera.RefreshDevicesAsync(); return devices.Count == 0 ? "No cameras found." : string.Join("\n", devices.Select(d => $"{d.Name} ({d.Id})")); }
                 case "camera_capture_photo": { if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings."; if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync(); var file = await App.Camera.CapturePhotoAsync(); return $"Photo captured: {file.Path}"; }
                 case "mcp_list_servers": return App.Settings.WindowsMcpEnabled ? (App.Mcp.Servers.Count == 0 ? "No MCP servers connected." : string.Join("\n", App.Mcp.Servers.Select(s => $"{s.Name} — {s.Command}"))) : "MCP permission is disabled in Aurora Settings.";
                 case "mcp_list_tools": return await ListMcpToolsAsync(input.GetProperty("server").GetString() ?? "");
-                case "mcp_call_tool": return await CallMcpToolAsync(input);
+                case "mcp_call_tool": return await App.Mcp.CallToolAsync(input.GetProperty("server").GetString() ?? "", input.GetProperty("tool").GetString() ?? "", input.TryGetProperty("arguments", out var args) ? args : default);
                 default: return $"Unknown tool: {toolName}";
             }
         }
-
         private static string? GetApp(JsonElement input) => input.TryGetProperty("app", out var a) ? a.GetString() : null;
         private static string FormatProcesses(IReadOnlyList<ProcessInfo> xs) => xs.Count == 0 ? "No running applications found." : string.Join("\n", xs.Select(x => $"{x.Name} (PID {x.Id}) — {x.WindowTitle}"));
-        private static async Task<string> SaveScreenAsync()
+        private static string SaveScreen()
         {
-            var image = App.Windows.CaptureScreen();
-            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"aurora-screen-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            var image = App.Windows.CaptureScreen(); var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"aurora-screen-{DateTime.Now:yyyyMMdd-HHmmss}.png");
             using var stream = System.IO.File.Create(path); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image)); encoder.Save(stream); return $"Screenshot saved: {path}";
         }
         private static async Task<string> ListMcpToolsAsync(string serverName)
@@ -97,12 +95,6 @@ namespace ZoeyOS.App.Services
             var server = App.Mcp.Servers.FirstOrDefault(s => string.Equals(s.Name, serverName, StringComparison.OrdinalIgnoreCase));
             if (server == null) return $"MCP server '{serverName}' is not connected.";
             var tools = await App.Mcp.DiscoverToolsAsync(server); return tools.Count == 0 ? "No tools exposed by that server." : string.Join("\n", tools.Select(t => $"{t.Name}: {t.Description}"));
-        }
-        private static async Task<string> CallMcpToolAsync(JsonElement input)
-        {
-            if (!App.Settings.WindowsMcpEnabled) return "MCP permission is disabled in Aurora Settings.";
-            var server = input.GetProperty("server").GetString() ?? ""; var tool = input.GetProperty("tool").GetString() ?? "";
-            var args = input.TryGetProperty("arguments", out var a) ? a : default; return await App.Mcp.CallToolAsync(server, tool, args);
         }
     }
 }
