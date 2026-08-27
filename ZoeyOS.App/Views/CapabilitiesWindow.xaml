@@ -1,73 +1,11 @@
-<Window x:Class="ZoeyOS.App.Views.CapabilitiesWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Aurora — Windows Capabilities" Width="760" Height="720" MinWidth="640" MinHeight="600"
-        Background="{StaticResource BgDeepTranslucentBrush}" WindowStartupLocation="CenterOwner">
-    <Grid>
-        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="Windows capabilities" FontSize="24" FontWeight="Bold" Margin="0,0,0,4"/>
-                <TextBlock Text="Every capability is visible here. Turn permissions on explicitly, then use the matching controls." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,18"/>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="Hardware &amp; privacy" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12"/>
-                        <CheckBox x:Name="CameraPermission" Content="Camera access" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="MicrophonePermission" Content="Microphone access" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="ScreenPermission" Content="Screen capture" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="ClipboardPermission" Content="Clipboard access" Margin="0,0,0,8"/>
-                        <Button Content="Save permissions" Click="SavePermissions_Click" Padding="14,8" HorizontalAlignment="Left"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="Camera" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBlock Text="Select a detected Windows camera, check permission, initialize it, or capture a photo." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/>
-                        <ComboBox x:Name="CameraPicker" MinWidth="360"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Button Content="Refresh cameras" Click="RefreshCameras_Click" Padding="14,8"/>
-                            <Button Content="Check permission" Click="CheckCamera_Click" Padding="14,8" Margin="8,0,0,0"/>
-                            <Button Content="Initialize" Click="InitializeCamera_Click" Padding="14,8" Margin="8,0,0,0"/>
-                            <Button Content="Capture photo" Click="CapturePhoto_Click" Padding="14,8" Margin="8,0,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="MCP &amp; tools" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBlock Text="Connect a stdio MCP server and discover the tools it exposes." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/>
-                        <TextBlock Text="Server name" FontSize="11"/>
-                        <TextBox x:Name="ServerName" Text="filesystem"/>
-                        <TextBlock Text="Command" FontSize="11" Margin="0,8,0,0"/>
-                        <TextBox x:Name="ServerCommand" Text="npx"/>
-                        <TextBlock Text="Arguments" FontSize="11" Margin="0,8,0,0"/>
-                        <TextBox x:Name="ServerArgs" Text="-y @modelcontextprotocol/server-filesystem C:\\Projects"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Button Content="Connect &amp; discover" Click="ConnectMcp_Click" Padding="14,8"/>
-                            <Button Content="Disconnect" Click="DisconnectMcp_Click" Padding="14,8" Margin="8,0,0,0"/>
-                        </StackPanel>
-                        <TextBlock Text="Discovered tools" FontWeight="SemiBold" Margin="0,14,0,4"/>
-                        <ListBox x:Name="McpTools" MinHeight="100"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="Image generation" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="ImageProviderText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/>
-                        <Button Content="Refresh integration clients" Click="RefreshIntegrations_Click" Padding="14,8" HorizontalAlignment="Left"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="Status" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="StatusText" Text="Ready." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
-</Window>
+<Window x:Class="ZoeyOS.App.Views.CapabilitiesWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Aurora — Windows Capabilities" Width="760" Height="720" MinWidth="640" MinHeight="600" Background="{StaticResource BgDeepTranslucentBrush}" WindowStartupLocation="CenterOwner">
+<Grid><ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"><StackPanel>
+<TextBlock Text="Windows capabilities" FontSize="24" FontWeight="Bold" Margin="0,0,0,4"/><TextBlock Text="Every capability is visible here. Turn permissions on explicitly, then use the matching controls." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,18"/>
+<Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14"><StackPanel><TextBlock Text="Permissions" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12"/>
+<CheckBox x:Name="FilesPermission" Content="Files &amp; folders" Margin="0,0,0,8"/><CheckBox x:Name="ScreenPermission" Content="Screen capture" Margin="0,0,0,8"/><CheckBox x:Name="ClipboardPermission" Content="Clipboard" Margin="0,0,0,8"/><CheckBox x:Name="ApplicationsPermission" Content="Application launch &amp; process access" Margin="0,0,0,8"/><CheckBox x:Name="TerminalPermission" Content="Approved terminal commands" Margin="0,0,0,8"/><CheckBox x:Name="UiAutomationPermission" Content="UI automation" Margin="0,0,0,8"/><CheckBox x:Name="NetworkPermission" Content="Network access" Margin="0,0,0,8"/><CheckBox x:Name="PowerPermission" Content="Power controls" Margin="0,0,0,8"/><CheckBox x:Name="CameraPermission" Content="Camera access" Margin="0,0,0,8"/><CheckBox x:Name="MicrophonePermission" Content="Microphone access" Margin="0,0,0,8"/><CheckBox x:Name="McpPermission" Content="MCP servers &amp; tools" Margin="0,0,0,8"/>
+<Button Content="Save permissions" Click="SavePermissions_Click" Padding="14,8" HorizontalAlignment="Left"/></StackPanel></Border>
+<Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14"><StackPanel><TextBlock Text="Camera" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Select a detected Windows camera, check permission, initialize it, or capture a photo." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/><ComboBox x:Name="CameraPicker" MinWidth="360"/><StackPanel Orientation="Horizontal" Margin="0,10,0,0"><Button Content="Refresh cameras" Click="RefreshCameras_Click" Padding="14,8"/><Button Content="Check permission" Click="CheckCamera_Click" Padding="14,8" Margin="8,0,0,0"/><Button Content="Initialize" Click="InitializeCamera_Click" Padding="14,8" Margin="8,0,0,0"/><Button Content="Capture photo" Click="CapturePhoto_Click" Padding="14,8" Margin="8,0,0,0"/></StackPanel></StackPanel></Border>
+<Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14"><StackPanel><TextBlock Text="MCP &amp; tools" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Connect a stdio MCP server and discover the tools it exposes." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/><TextBlock Text="Server name" FontSize="11"/><TextBox x:Name="ServerName" Text="filesystem"/><TextBlock Text="Command" FontSize="11" Margin="0,8,0,0"/><TextBox x:Name="ServerCommand" Text="npx"/><TextBlock Text="Arguments" FontSize="11" Margin="0,8,0,0"/><TextBox x:Name="ServerArgs" Text="-y @modelcontextprotocol/server-filesystem C:\\Projects"/><StackPanel Orientation="Horizontal" Margin="0,10,0,0"><Button Content="Connect &amp; discover" Click="ConnectMcp_Click" Padding="14,8"/><Button Content="Disconnect" Click="DisconnectMcp_Click" Padding="14,8" Margin="8,0,0,0"/></StackPanel><TextBlock Text="Discovered tools" FontWeight="SemiBold" Margin="0,14,0,4"/><ListBox x:Name="McpTools" MinHeight="100"/></StackPanel></Border>
+<Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14"><StackPanel><TextBlock Text="Image generation" FontSize="16" FontWeight="SemiBold"/><TextBlock x:Name="ImageProviderText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,10"/><Button Content="Refresh integration clients" Click="RefreshIntegrations_Click" Padding="14,8" HorizontalAlignment="Left"/></StackPanel></Border>
+<Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18"><StackPanel><TextBlock Text="Status" FontSize="16" FontWeight="SemiBold"/><TextBlock x:Name="StatusText" Text="Ready." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel></Border>
+</StackPanel></ScrollViewer></Grid></Window>
