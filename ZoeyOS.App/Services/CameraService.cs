@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +9,6 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 using Windows.Storage;
-using Windows.Graphics.Imaging;
-using Windows.Foundation;
 
 namespace ZoeyOS.App.Services
 {
@@ -29,17 +27,17 @@ namespace ZoeyOS.App.Services
         {
             var devices = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
             Devices = devices.Select(d => new CameraDeviceInfo(d.Id, d.Name)).ToArray();
-            if (SelectedDeviceId == null) SelectedDeviceId = Devices.FirstOrDefault()?.Id;
+            if (SelectedDeviceId == null || !Devices.Any(d => d.Id == SelectedDeviceId))
+                SelectedDeviceId = Devices.FirstOrDefault()?.Id;
             return Devices;
         }
 
-        public async Task<bool> CheckPermissionAsync()
+        public Task<bool> CheckPermissionAsync()
         {
-            try
-            {
-                return AppCapability.Create("Webcam").CheckAccess() == AppCapabilityAccessStatus.Allowed;
-            }
-            catch { return false; }
+            // MediaCapture is the authoritative permission check for unpackaged WPF apps.
+            // Windows can deny webcam access at the OS privacy layer even when the Aurora
+            // setting is enabled, so initialization below remains the final authority.
+            return Task.FromResult(true);
         }
 
         public async Task InitializeAsync(string? deviceId = null)
@@ -47,34 +45,48 @@ namespace ZoeyOS.App.Services
             await _gate.WaitAsync();
             try
             {
-                if (!await CheckPermissionAsync())
-                    throw new UnauthorizedAccessException("Camera access is blocked in Windows Privacy & Security settings.");
-
                 if (Devices.Count == 0) await RefreshDevicesAsync();
                 SelectedDeviceId = deviceId ?? SelectedDeviceId ?? Devices.FirstOrDefault()?.Id;
                 if (string.IsNullOrWhiteSpace(SelectedDeviceId)) throw new InvalidOperationException("No camera devices were found.");
 
                 await StopAsync();
-                _capture = new MediaCapture();
-                await _capture.InitializeAsync(new MediaCaptureInitializationSettings
+                var capture = new MediaCapture();
+                try
                 {
-                    VideoDeviceId = SelectedDeviceId,
-                    StreamingCaptureMode = StreamingCaptureMode.Video,
-                    SharingMode = MediaCaptureSharingMode.SharedReadOnly,
-                    MemoryPreference = MediaCaptureMemoryPreference.Auto
-                });
+                    await capture.InitializeAsync(new MediaCaptureInitializationSettings
+                    {
+                        VideoDeviceId = SelectedDeviceId,
+                        StreamingCaptureMode = StreamingCaptureMode.Video,
+                        SharingMode = MediaCaptureSharingMode.SharedReadOnly,
+                        MemoryPreference = MediaCaptureMemoryPreference.Auto
+                    });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    capture.Dispose();
+                    throw new UnauthorizedAccessException("Windows denied camera access. Turn on Camera access and 'Let desktop apps access your camera' in Windows Settings > Privacy & security > Camera.");
+                }
+
+                _capture = capture;
                 _capture.Failed += OnCaptureFailed;
                 _frameSource = _capture.FrameSources.Values.FirstOrDefault(s => s.Info.SourceKind == MediaFrameSourceKind.Color);
             }
             finally { _gate.Release(); }
         }
 
+        public void OpenWindowsCameraApp()
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "microsoft.windows.camera:",
+                UseShellExecute = true
+            });
+        }
+
         public async Task<StorageFile> CapturePhotoAsync(string? destinationFolder = null)
         {
             if (_capture == null) throw new InvalidOperationException("Camera is not initialized.");
-            var folder = destinationFolder == null
-                ? ApplicationData.Current.LocalFolder
-                : await StorageFolder.GetFolderFromPathAsync(destinationFolder);
+            var folder = destinationFolder == null ? ApplicationData.Current.LocalFolder : await StorageFolder.GetFolderFromPathAsync(destinationFolder);
             var file = await folder.CreateFileAsync($"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg", CreationCollisionOption.GenerateUniqueName);
             await _capture.CapturePhotoToStorageFileAsync(ImageEncodingProperties.CreateJpeg(), file);
             return file;
