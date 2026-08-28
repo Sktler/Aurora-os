@@ -4,222 +4,23 @@
              StartupUri="Views/MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <Color x:Key="BgDeepColor">#0B0E14</Color>
-            <Color x:Key="BgPanelColor">#12161F</Color>
-            <Color x:Key="BgCardColor">#171C28</Color>
-            <Color x:Key="TextPrimaryColor">#EAEEF5</Color>
-            <Color x:Key="TextMutedColor">#A3ABBD</Color>
-            <Color x:Key="AccentCyanColor">#4FD8E8</Color>
-            <Color x:Key="AccentVioletColor">#8C6FF0</Color>
-            <Color x:Key="AccentAmberColor">#F0B65C</Color>
-            <Color x:Key="AccentGreenColor">#5BE0A0</Color>
-            <Color x:Key="IdleGlowColor">#3A4356</Color>
-            <SolidColorBrush x:Key="BgDeepBrush" Color="{StaticResource BgDeepColor}"/>
-            <SolidColorBrush x:Key="BgDeepTranslucentBrush" Color="#E60B0E14"/>
-            <SolidColorBrush x:Key="BgPanelBrush" Color="{StaticResource BgPanelColor}"/>
-            <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/>
-            <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
-            <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
-            <SolidColorBrush x:Key="AccentCyanBrush" Color="{StaticResource AccentCyanColor}"/>
-            <SolidColorBrush x:Key="AccentVioletBrush" Color="{StaticResource AccentVioletColor}"/>
-            <SolidColorBrush x:Key="AccentAmberBrush" Color="{StaticResource AccentAmberColor}"/>
-            <SolidColorBrush x:Key="AccentGreenBrush" Color="{StaticResource AccentGreenColor}"/>
-            <SolidColorBrush x:Key="IdleGlowBrush" Color="{StaticResource IdleGlowColor}"/>
-
-            <Style TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                <Setter Property="FontFamily" Value="Segoe UI"/>
-            </Style>
-            <Style x:Key="MutedText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-                <Setter Property="FontSize" Value="12"/>
-            </Style>
-            <Style TargetType="ScrollBar">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Width" Value="8"/>
-            </Style>
-
-            <!-- Global dropdown item styling: dark popup, green readable text, strong selection. -->
+            <Color x:Key="BgDeepColor">#0B0E14</Color><Color x:Key="BgPanelColor">#12161F</Color><Color x:Key="BgCardColor">#171C28</Color>
+            <Color x:Key="TextPrimaryColor">#FFFFFF</Color><Color x:Key="TextMutedColor">#D0D7E2</Color><Color x:Key="AccentCyanColor">#4FD8E8</Color><Color x:Key="AccentVioletColor">#8C6FF0</Color><Color x:Key="AccentAmberColor">#F0B65C</Color><Color x:Key="AccentGreenColor">#5BE0A0</Color><Color x:Key="IdleGlowColor">#3A4356</Color>
+            <SolidColorBrush x:Key="BgDeepBrush" Color="{StaticResource BgDeepColor}"/><SolidColorBrush x:Key="BgDeepTranslucentBrush" Color="#E60B0E14"/><SolidColorBrush x:Key="BgPanelBrush" Color="{StaticResource BgPanelColor}"/><SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/><SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/><SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/><SolidColorBrush x:Key="AccentCyanBrush" Color="{StaticResource AccentCyanColor}"/><SolidColorBrush x:Key="AccentVioletBrush" Color="{StaticResource AccentVioletColor}"/><SolidColorBrush x:Key="AccentAmberBrush" Color="{StaticResource AccentAmberColor}"/><SolidColorBrush x:Key="AccentGreenBrush" Color="{StaticResource AccentGreenColor}"/><SolidColorBrush x:Key="IdleGlowBrush" Color="{StaticResource IdleGlowColor}"/>
+            <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="FontFamily" Value="Segoe UI"/></Style>
+            <Style x:Key="MutedText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="FontSize" Value="12"/></Style>
+            <Style TargetType="ScrollBar"><Setter Property="Background" Value="Transparent"/><Setter Property="Width" Value="10"/></Style>
             <Style x:Key="ComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
-                <Setter Property="Background" Value="#080B0E"/>
-                <Setter Property="Foreground" Value="#5BE0A0"/>
-                <Setter Property="Padding" Value="12,9"/>
-                <Setter Property="MinHeight" Value="42"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                            <Border x:Name="ItemBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="1"
-                                    Padding="{TemplateBinding Padding}"
-                                    CornerRadius="4">
-                                <ContentPresenter
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    TextElement.Foreground="{TemplateBinding Foreground}"
-                                    TextElement.FontWeight="SemiBold"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <!-- Keyboard/mouse highlight: green background with black text. -->
-                                <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="ItemBorder" Property="Background" Value="#5BE0A0"/>
-                                    <Setter Property="Foreground" Value="#000000"/>
-                                </Trigger>
-                                <!-- Selected item: black background with green text and green outline. -->
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="ItemBorder" Property="Background" Value="#000000"/>
-                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#5BE0A0"/>
-                                    <Setter Property="Foreground" Value="#5BE0A0"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.45"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#5BE0A0"/><Setter Property="Padding" Value="14,11"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBoxItem}"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" Padding="{TemplateBinding Padding}" CornerRadius="4"><ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontWeight="SemiBold"/></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#5BE0A0"/><Setter Property="Foreground" Value="#000000"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#000000"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
             </Style>
-
-            <!-- Global ComboBox: highly visible dark control and dark popup. -->
             <Style TargetType="{x:Type ComboBox}">
-                <Setter Property="Background" Value="#000000"/>
-                <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource AccentGreenBrush}"/>
-                <Setter Property="BorderThickness" Value="1.5"/>
-                <Setter Property="Padding" Value="10,8"/>
-                <Setter Property="MinHeight" Value="44"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="ItemContainerStyle" Value="{StaticResource ComboBoxItemStyle}"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="38"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Border x:Name="MainBorder"
-                                        Grid.ColumnSpan="2"
-                                        Background="#000000"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="7"/>
-
-                                <TextBox x:Name="PART_EditableTextBox"
-                                         Grid.Column="0"
-                                         Margin="{TemplateBinding Padding}"
-                                         Background="#000000"
-                                         Foreground="{StaticResource AccentGreenBrush}"
-                                         CaretBrush="{StaticResource AccentGreenBrush}"
-                                         BorderThickness="0"
-                                         VerticalContentAlignment="Center"
-                                         FontWeight="SemiBold"
-                                         Visibility="Hidden"/>
-
-                                <ContentPresenter x:Name="ContentSite"
-                                                  Grid.Column="0"
-                                                  Margin="{TemplateBinding Padding}"
-                                                  Content="{TemplateBinding SelectionBoxItem}"
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                  VerticalAlignment="Center"
-                                                  IsHitTestVisible="False"
-                                                  TextElement.Foreground="{StaticResource AccentGreenBrush}"
-                                                  TextElement.FontWeight="SemiBold"/>
-
-                                <ToggleButton Grid.Column="1"
-                                              Focusable="False"
-                                              ClickMode="Press"
-                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                              Background="Transparent"
-                                              BorderThickness="0">
-                                    <ToggleButton.Template>
-                                        <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                            <Border Background="Transparent">
-                                                <Path Data="M0,0 L7,7 L14,0 Z"
-                                                      Fill="{StaticResource AccentGreenBrush}"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </ToggleButton.Template>
-                                </ToggleButton>
-
-                                <Popup x:Name="PART_Popup"
-                                       Placement="Bottom"
-                                       IsOpen="{TemplateBinding IsDropDownOpen}"
-                                       AllowsTransparency="True"
-                                       Focusable="False"
-                                       PopupAnimation="Slide">
-                                    <Border Background="#000000"
-                                            BorderBrush="{StaticResource AccentGreenBrush}"
-                                            BorderThickness="2"
-                                            CornerRadius="7"
-                                            MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                            MaxHeight="320"
-                                            Margin="0,3,0,0">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.5"/>
-                                        </Border.Effect>
-                                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="2">
-                                            <ItemsPresenter/>
-                                        </ScrollViewer>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsEditable" Value="True">
-                                    <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
-                                    <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/>
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                    <Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/>
-                                    <Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/>
-                                </Trigger>
-                                <Trigger Property="IsDropDownOpen" Value="True">
-                                    <Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/>
-                                    <Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="MainBorder" Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="BorderBrush" Value="{StaticResource AccentGreenBrush}"/><Setter Property="BorderThickness" Value="2"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="ItemContainerStyle" Value="{StaticResource ComboBoxItemStyle}"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBox}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions><Border x:Name="MainBorder" Grid.ColumnSpan="2" Background="#000000" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"/><TextBox x:Name="PART_EditableTextBox" Grid.Column="0" Margin="{TemplateBinding Padding}" Background="#000000" Foreground="#FFFFFF" CaretBrush="#5BE0A0" BorderThickness="0" VerticalContentAlignment="Center" FontWeight="SemiBold" Visibility="Hidden"/><ContentPresenter x:Name="ContentSite" Grid.Column="0" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" VerticalAlignment="Center" IsHitTestVisible="False" TextElement.Foreground="#FFFFFF" TextElement.FontWeight="SemiBold"/><ToggleButton Grid.Column="1" Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Background="Transparent" BorderThickness="0"><ToggleButton.Template><ControlTemplate TargetType="{x:Type ToggleButton}"><Border Background="Transparent"><Path Data="M0,0 L7,7 L14,0 Z" Fill="#5BE0A0" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></ToggleButton.Template></ToggleButton><Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide"><Border Background="#000000" BorderBrush="#5BE0A0" BorderThickness="2" CornerRadius="7" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="360" Margin="0,3,0,0"><Border.Effect><DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.55"/></Border.Effect><ScrollViewer VerticalScrollBarVisibility="Auto" Margin="2"><ItemsPresenter/></ScrollViewer></Border></Popup></Grid><ControlTemplate.Triggers><Trigger Property="IsEditable" Value="True"><Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/><Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/></Trigger><Trigger Property="IsDropDownOpen" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="MainBorder" Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
             </Style>
-
-            <Style TargetType="{x:Type TextBox}">
-                <Setter Property="Background" Value="{StaticResource BgCardBrush}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                <Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="12,9"/>
-                <Setter Property="MinHeight" Value="42"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
-            <Style TargetType="{x:Type PasswordBox}">
-                <Setter Property="Background" Value="{StaticResource BgCardBrush}"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                <Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="12,9"/>
-                <Setter Property="MinHeight" Value="42"/>
-                <Setter Property="FontSize" Value="13"/>
-            </Style>
-            <Style TargetType="{x:Type CheckBox}">
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                <Setter Property="FontSize" Value="13"/>
-            </Style>
+            <Style TargetType="{x:Type TextBox}"><Setter Property="Background" Value="{StaticResource BgCardBrush}"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="42"/><Setter Property="FontSize" Value="13"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
+            <Style TargetType="{x:Type PasswordBox}"><Setter Property="Background" Value="{StaticResource BgCardBrush}"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="42"/><Setter Property="FontSize" Value="13"/></Style>
+            <Style TargetType="{x:Type CheckBox}"><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="FontSize" Value="13"/></Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
