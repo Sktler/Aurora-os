@@ -39,6 +39,10 @@ namespace ZoeyOS.App.Services
             new { name = "windows_capture_screen", description = "Captures the primary Windows display.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_open_windows_app", description = "Opens the native Windows Camera app.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_list_devices", description = "Lists Windows cameras.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_check_permission", description = "Checks whether Windows currently allows Aurora to access a webcam.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_status", description = "Reports the current Aurora camera status.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_start_preview", description = "Initializes and starts the Windows webcam capture stream.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
+            new { name = "camera_stop_preview", description = "Stops the active Windows webcam preview stream.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_capture_photo", description = "Captures a photo with the Windows camera.", input_schema = new { type = "object", properties = new { } } },
             new { name = "mcp_list_servers", description = "Lists connected MCP servers.", input_schema = new { type = "object", properties = new { } } },
             new { name = "mcp_list_tools", description = "Lists tools exposed by a connected MCP server.", input_schema = new { type = "object", properties = new { server = new { type = "string" } }, required = new[] { "server" } } },
@@ -75,14 +79,27 @@ namespace ZoeyOS.App.Services
                 case "windows_set_clipboard": App.Windows.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
                 case "windows_run_command": { var exit = await App.Windows.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
                 case "windows_capture_screen": return SaveScreen();
-                case "camera_open_windows_app": { if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings."; try { App.Camera.OpenWindowsCameraApp(); return "Windows Camera opened."; } catch (Exception ex) { return $"Could not open Windows Camera: {ex.Message}"; } }
-                case "camera_list_devices": { if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings."; var devices = await App.Camera.RefreshDevicesAsync(); return devices.Count == 0 ? "No cameras found." : string.Join("\n", devices.Select(d => $"{d.Name} ({d.Id})")); }
-                case "camera_capture_photo": { if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings."; if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync(); var file = await App.Camera.CapturePhotoAsync(); return $"Photo captured: {file.Path}"; }
+                case "camera_open_windows_app": return await CameraGuardAsync(() => { App.Camera.OpenWindowsCameraApp(); return Task.FromResult("Windows Camera opened."); });
+                case "camera_list_devices": return await CameraGuardAsync(async () => { var devices = await App.Camera.RefreshDevicesAsync(); return devices.Count == 0 ? "No cameras found." : string.Join("\n", devices.Select(d => $"{d.Name} ({d.Id})")); });
+                case "camera_check_permission": return await CameraGuardAsync(async () => (await App.Camera.CheckPermissionAsync()) switch { CameraPermissionResult.Allowed => "Camera access allowed.", CameraPermissionResult.Denied => "Camera access denied by Windows. Enable Camera access and 'Let desktop apps access your camera' in Windows Settings > Privacy & security > Camera.", CameraPermissionResult.NoCamera => "No camera devices were found.", _ => "Camera permission check failed." });
+                case "camera_status": return await CameraGuardAsync(() => Task.FromResult(App.Camera.GetStatus()));
+                case "camera_start_preview": return await CameraGuardAsync(async () => { await App.Camera.InitializeAsync(input.TryGetProperty("device_id", out var d) ? d.GetString() : null); await App.Camera.StartPreviewAsync(); return App.Camera.GetStatus(); });
+                case "camera_stop_preview": return await CameraGuardAsync(async () => { await App.Camera.StopPreviewAsync(); return "Camera preview stopped."; });
+                case "camera_capture_photo": return await CameraGuardAsync(async () => { if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync(); var file = await App.Camera.CapturePhotoAsync(); return $"Photo captured: {file.Path}"; });
                 case "mcp_list_servers": return App.Settings.WindowsMcpEnabled ? (App.Mcp.Servers.Count == 0 ? "No MCP servers connected." : string.Join("\n", App.Mcp.Servers.Select(s => $"{s.Name} — {s.Command}"))) : "MCP permission is disabled in Aurora Settings.";
                 case "mcp_list_tools": return await ListMcpToolsAsync(input.GetProperty("server").GetString() ?? "");
                 case "mcp_call_tool": return await App.Mcp.CallToolAsync(input.GetProperty("server").GetString() ?? "", input.GetProperty("tool").GetString() ?? "", input.TryGetProperty("arguments", out var args) ? args : default);
                 default: return $"Unknown tool: {toolName}";
             }
+        }
+
+        private static async Task<string> CameraGuardAsync(Func<Task<string>> action)
+        {
+            if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings.";
+            try { return await action(); }
+            catch (UnauthorizedAccessException ex) { return ex.Message; }
+            catch (InvalidOperationException ex) { return ex.Message; }
+            catch (Exception ex) { return $"Camera error: {ex.Message}"; }
         }
         private static string? GetApp(JsonElement input) => input.TryGetProperty("app", out var a) ? a.GetString() : null;
         private static string FormatProcesses(IReadOnlyList<ProcessInfo> xs) => xs.Count == 0 ? "No running applications found." : string.Join("\n", xs.Select(x => $"{x.Name} (PID {x.Id}) — {x.WindowTitle}"));
