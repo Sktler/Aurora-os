@@ -25,6 +25,14 @@ namespace ZoeyOS.App.Services
             new { name = "camera_open_windows_app", description = "Opens the native Windows Camera application.", input_schema = new { type = "object", properties = new { } } }
         };
 
+        public static bool IsCameraTool(string name) => name switch
+        {
+            "camera" or "camera_open" or "camera_close" or "camera_list" or "camera_permission" or
+            "camera_status" or "camera_start_preview" or "camera_stop_preview" or
+            "camera_capture_photo" or "camera_open_windows_app" => true,
+            _ => false
+        };
+
         public static Task<string> ExecuteAsync(string name, JsonElement input)
         {
             return name switch
