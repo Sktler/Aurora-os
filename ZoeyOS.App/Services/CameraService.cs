@@ -1,60 +1,73 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Devices.Enumeration;
-using Windows.Media.Capture;
-using Windows.Media.Capture.Frames;
-using Windows.Media.MediaProperties;
-using Windows.Storage;
+using System.Windows.Media.Imaging;
+using OpenCvSharp;
+using OpenCvSharp.WpfExtensions;
 
 namespace ZoeyOS.App.Services
 {
     public sealed class CameraService : IAsyncDisposable
     {
-        private MediaCapture? _capture;
-        private MediaFrameSource? _frameSource;
         private readonly SemaphoreSlim _gate = new(1, 1);
+        private VideoCapture? _capture;
+        private CancellationTokenSource? _previewCts;
+        private Task? _previewTask;
+        private Mat? _latestFrame;
+        private int _selectedIndex;
 
-        public bool IsInitialized => _capture != null;
-        public bool IsActive => _capture != null && _frameSource != null;
+        public bool IsInitialized => _capture?.IsOpened() == true;
+        public bool IsActive => IsInitialized && _previewTask is { IsCompleted: false };
         public IReadOnlyList<CameraDeviceInfo> Devices { get; private set; } = Array.Empty<CameraDeviceInfo>();
-        public string? SelectedDeviceId { get; private set; }
+        public string? SelectedDeviceId => _selectedIndex.ToString();
+        public BitmapSource? LatestFrame { get; private set; }
 
-        public async Task<IReadOnlyList<CameraDeviceInfo>> RefreshDevicesAsync()
+        public event EventHandler<BitmapSource>? FrameReady;
+
+        public Task<IReadOnlyList<CameraDeviceInfo>> RefreshDevicesAsync()
         {
-            var devices = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
-            Devices = devices.Select(d => new CameraDeviceInfo(d.Id, d.Name)).ToArray();
-            if (SelectedDeviceId == null || !Devices.Any(d => d.Id == SelectedDeviceId))
-                SelectedDeviceId = Devices.FirstOrDefault()?.Id;
-            return Devices;
+            var devices = new List<CameraDeviceInfo>();
+            for (var index = 0; index < 10; index++)
+            {
+                try
+                {
+                    using var probe = new VideoCapture(index, VideoCaptureAPIs.DSHOW);
+                    if (!probe.IsOpened())
+                        continue;
+                    probe.Set(VideoCaptureProperties.FrameWidth, 320);
+                    probe.Set(VideoCaptureProperties.FrameHeight, 240);
+                    devices.Add(new CameraDeviceInfo(index.ToString(), $"Camera {index + 1}"));
+                }
+                catch
+                {
+                    // Some indices/drivers throw while probing. Keep scanning the remaining devices.
+                }
+            }
+
+            Devices = devices;
+            if (!Devices.Any(d => d.Id == _selectedIndex.ToString()))
+                _selectedIndex = devices.Count == 0 ? 0 : int.Parse(devices[0].Id);
+            return Task.FromResult<IReadOnlyList<CameraDeviceInfo>>(Devices);
         }
 
         public async Task<CameraPermissionResult> CheckPermissionAsync()
         {
             try
             {
-                if (Devices.Count == 0) await RefreshDevicesAsync();
-                if (Devices.Count == 0) return CameraPermissionResult.NoCamera;
-                var capture = new MediaCapture();
-                try
-                {
-                    await capture.InitializeAsync(new MediaCaptureInitializationSettings
-                    {
-                        VideoDeviceId = SelectedDeviceId ?? Devices[0].Id,
-                        StreamingCaptureMode = StreamingCaptureMode.Video,
-                        SharingMode = MediaCaptureSharingMode.SharedReadOnly,
-                        MemoryPreference = MediaCaptureMemoryPreference.Auto
-                    });
-                    return CameraPermissionResult.Allowed;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return CameraPermissionResult.Denied;
-                }
-                finally { capture.Dispose(); }
+                if (Devices.Count == 0)
+                    await RefreshDevicesAsync();
+                if (Devices.Count == 0)
+                    return CameraPermissionResult.NoCamera;
+
+                using var probe = new VideoCapture(_selectedIndex, VideoCaptureAPIs.DSHOW);
+                return probe.IsOpened() ? CameraPermissionResult.Allowed : CameraPermissionResult.Denied;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return CameraPermissionResult.Denied;
             }
             catch
             {
@@ -67,87 +80,139 @@ namespace ZoeyOS.App.Services
             await _gate.WaitAsync();
             try
             {
-                if (Devices.Count == 0) await RefreshDevicesAsync();
-                SelectedDeviceId = deviceId ?? SelectedDeviceId ?? Devices.FirstOrDefault()?.Id;
-                if (string.IsNullOrWhiteSpace(SelectedDeviceId)) throw new InvalidOperationException("No camera devices were found.");
+                if (Devices.Count == 0)
+                    await RefreshDevicesAsync();
+
+                if (!string.IsNullOrWhiteSpace(deviceId) && int.TryParse(deviceId, out var requested))
+                    _selectedIndex = requested;
+
+                if (Devices.Count == 0)
+                    throw new InvalidOperationException("No camera devices were found.");
+                if (!Devices.Any(d => d.Id == _selectedIndex.ToString()))
+                    throw new InvalidOperationException($"Camera {_selectedIndex + 1} is not available.");
 
                 await StopAsync();
-                var capture = new MediaCapture();
-                try
-                {
-                    await capture.InitializeAsync(new MediaCaptureInitializationSettings
-                    {
-                        VideoDeviceId = SelectedDeviceId,
-                        StreamingCaptureMode = StreamingCaptureMode.Video,
-                        SharingMode = MediaCaptureSharingMode.SharedReadOnly,
-                        MemoryPreference = MediaCaptureMemoryPreference.Auto
-                    });
-                }
-                catch (UnauthorizedAccessException)
+
+                var capture = new VideoCapture(_selectedIndex, VideoCaptureAPIs.DSHOW);
+                if (!capture.IsOpened())
                 {
                     capture.Dispose();
-                    throw new UnauthorizedAccessException("Windows denied camera access. Turn on Camera access and 'Let desktop apps access your camera' in Windows Settings > Privacy & security > Camera.");
+                    throw new UnauthorizedAccessException("Windows or the camera driver would not allow Aurora to open the webcam. Check Windows Settings > Privacy & security > Camera and enable camera access for desktop apps.");
                 }
 
+                capture.Set(VideoCaptureProperties.FrameWidth, 1280);
+                capture.Set(VideoCaptureProperties.FrameHeight, 720);
+                capture.Set(VideoCaptureProperties.Fps, 30);
                 _capture = capture;
-                _capture.Failed += OnCaptureFailed;
-                _frameSource = _capture.FrameSources.Values.FirstOrDefault(s => s.Info.SourceKind == MediaFrameSourceKind.Color);
             }
-            finally { _gate.Release(); }
+            finally
+            {
+                _gate.Release();
+            }
         }
 
         public async Task StartPreviewAsync()
         {
-            if (_capture == null) await InitializeAsync();
-            await _capture!.StartPreviewAsync();
+            if (!IsInitialized)
+                await InitializeAsync();
+            if (IsActive)
+                return;
+
+            _previewCts = new CancellationTokenSource();
+            var token = _previewCts.Token;
+            _previewTask = Task.Run(() => PreviewLoop(token), token);
         }
 
         public async Task StopPreviewAsync()
         {
-            if (_capture == null) return;
-            try { await _capture.StopPreviewAsync(); } catch { }
+            _previewCts?.Cancel();
+            if (_previewTask != null)
+            {
+                try { await _previewTask; } catch (OperationCanceledException) { }
+            }
+            _previewTask = null;
+            _previewCts?.Dispose();
+            _previewCts = null;
         }
 
         public string GetStatus()
         {
-            if (Devices.Count == 0) return "No camera devices found.";
-            if (_capture == null) return $"Camera ready: {Devices.FirstOrDefault(d => d.Id == SelectedDeviceId)?.Name ?? "default camera"}.";
-            return IsActive ? "Camera active." : "Camera initialized.";
+            if (Devices.Count == 0)
+                return "No camera devices found.";
+            var name = Devices.FirstOrDefault(d => d.Id == _selectedIndex.ToString())?.Name ?? "selected camera";
+            if (!IsInitialized)
+                return $"Camera ready: {name}.";
+            return IsActive ? $"Camera active: {name}." : $"Camera initialized: {name}.";
         }
 
         public void OpenWindowsCameraApp()
         {
-            Process.Start(new ProcessStartInfo
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "microsoft.windows.camera:",
                 UseShellExecute = true
             });
         }
 
-        public async Task<StorageFile> CapturePhotoAsync(string? destinationFolder = null)
+        public async Task<StorageFileResult> CapturePhotoAsync(string? destinationFolder = null)
         {
-            if (_capture == null) throw new InvalidOperationException("Camera is not initialized.");
-            var folder = destinationFolder == null ? ApplicationData.Current.LocalFolder : await StorageFolder.GetFolderFromPathAsync(destinationFolder);
-            var file = await folder.CreateFileAsync($"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg", CreationCollisionOption.GenerateUniqueName);
-            await _capture.CapturePhotoToStorageFileAsync(ImageEncodingProperties.CreateJpeg(), file);
-            return file;
+            if (!IsInitialized)
+                await InitializeAsync();
+
+            using var frame = new Mat();
+            if (!_capture!.Read(frame) || frame.Empty())
+                throw new InvalidOperationException("The webcam did not return a frame.");
+
+            var folder = destinationFolder;
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera");
+            }
+            Directory.CreateDirectory(folder);
+
+            var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg");
+            Cv2.ImWrite(path, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
+            return new StorageFileResult(path);
         }
 
         public async Task StopAsync()
         {
+            await StopPreviewAsync();
             if (_capture != null)
             {
-                try { await _capture.StopPreviewAsync(); } catch { }
-                _capture.Failed -= OnCaptureFailed;
+                _capture.Release();
                 _capture.Dispose();
                 _capture = null;
             }
-            _frameSource = null;
+
+            _latestFrame?.Dispose();
+            _latestFrame = null;
+            LatestFrame = null;
         }
 
-        private async void OnCaptureFailed(MediaCapture sender, MediaCaptureFailedEventArgs errorEventArgs)
+        private void PreviewLoop(CancellationToken token)
         {
-            await StopAsync();
+            using var frame = new Mat();
+            while (!token.IsCancellationRequested && _capture?.IsOpened() == true)
+            {
+                try
+                {
+                    if (!_capture.Read(frame) || frame.Empty())
+                    {
+                        Thread.Sleep(30);
+                        continue;
+                    }
+
+                    var bitmap = BitmapSourceConverter.ToBitmapSource(frame);
+                    bitmap.Freeze();
+                    LatestFrame = bitmap;
+                    FrameReady?.Invoke(this, bitmap);
+                }
+                catch
+                {
+                    Thread.Sleep(100);
+                }
+            }
         }
 
         public async ValueTask DisposeAsync()
@@ -166,4 +231,5 @@ namespace ZoeyOS.App.Services
     }
 
     public sealed record CameraDeviceInfo(string Id, string Name);
+    public sealed record StorageFileResult(string Path);
 }
