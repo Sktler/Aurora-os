@@ -32,12 +32,34 @@ namespace ZoeyOS.App.Services
             return Devices;
         }
 
-        public Task<bool> CheckPermissionAsync()
+        public async Task<CameraPermissionResult> CheckPermissionAsync()
         {
-            // MediaCapture is the authoritative permission check for unpackaged WPF apps.
-            // Windows can deny webcam access at the OS privacy layer even when the Aurora
-            // setting is enabled, so initialization below remains the final authority.
-            return Task.FromResult(true);
+            try
+            {
+                if (Devices.Count == 0) await RefreshDevicesAsync();
+                if (Devices.Count == 0) return CameraPermissionResult.NoCamera;
+                var capture = new MediaCapture();
+                try
+                {
+                    await capture.InitializeAsync(new MediaCaptureInitializationSettings
+                    {
+                        VideoDeviceId = SelectedDeviceId ?? Devices[0].Id,
+                        StreamingCaptureMode = StreamingCaptureMode.Video,
+                        SharingMode = MediaCaptureSharingMode.SharedReadOnly,
+                        MemoryPreference = MediaCaptureMemoryPreference.Auto
+                    });
+                    return CameraPermissionResult.Allowed;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return CameraPermissionResult.Denied;
+                }
+                finally { capture.Dispose(); }
+            }
+            catch
+            {
+                return CameraPermissionResult.Error;
+            }
         }
 
         public async Task InitializeAsync(string? deviceId = null)
@@ -72,6 +94,25 @@ namespace ZoeyOS.App.Services
                 _frameSource = _capture.FrameSources.Values.FirstOrDefault(s => s.Info.SourceKind == MediaFrameSourceKind.Color);
             }
             finally { _gate.Release(); }
+        }
+
+        public async Task StartPreviewAsync()
+        {
+            if (_capture == null) await InitializeAsync();
+            await _capture!.StartPreviewAsync();
+        }
+
+        public async Task StopPreviewAsync()
+        {
+            if (_capture == null) return;
+            try { await _capture.StopPreviewAsync(); } catch { }
+        }
+
+        public string GetStatus()
+        {
+            if (Devices.Count == 0) return "No camera devices found.";
+            if (_capture == null) return $"Camera ready: {Devices.FirstOrDefault(d => d.Id == SelectedDeviceId)?.Name ?? "default camera"}.";
+            return IsActive ? "Camera active." : "Camera initialized.";
         }
 
         public void OpenWindowsCameraApp()
@@ -114,6 +155,14 @@ namespace ZoeyOS.App.Services
             await StopAsync();
             _gate.Dispose();
         }
+    }
+
+    public enum CameraPermissionResult
+    {
+        Allowed,
+        Denied,
+        NoCamera,
+        Error
     }
 
     public sealed record CameraDeviceInfo(string Id, string Name);
