@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -44,8 +45,6 @@ namespace ZoeyOS.App.ViewModels
                 return;
             }
 
-            // The wake-word listener and manual dictation both need exclusive access to the
-            // default microphone. Temporarily hand the device to the manual recognizer.
             App.WakeWord?.Stop();
             var started = App.Voice.StartContinuousListening(
                 onUtteranceRecognized: heard => System.Windows.Application.Current?.Dispatcher.Invoke(() => EnqueueHeardUtterance(heard)),
@@ -59,7 +58,6 @@ namespace ZoeyOS.App.ViewModels
             IsListening = started;
         }
 
-        /// <summary>Entry point used by the global Hey Aurora wake-word pipeline.</summary>
         public void SubmitVoiceUtterance(string heard)
         {
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => EnqueueHeardUtterance(heard));
@@ -119,12 +117,19 @@ namespace ZoeyOS.App.ViewModels
             try
             {
                 var historyForClaude = Messages.Count > 1 ? SliceHistory() : new List<ChatMessage>();
+                var toolDefinitions = SystemTools.Definitions
+                    .Concat(CameraTools.Definitions)
+                    .GroupBy(x => x.GetType().GetProperty("name")?.GetValue(x)?.ToString() ?? "")
+                    .Where(g => !string.IsNullOrWhiteSpace(g.Key))
+                    .Select(g => g.First())
+                    .ToList();
+
                 var reply = await App.AI.SendWithToolsAsync(
                     Companion.SystemPrompt,
                     historyForClaude,
                     userText,
-                    SystemTools.Definitions,
-                    SystemTools.ExecuteAsync);
+                    toolDefinitions,
+                    ExecuteToolAsync);
 
                 var assistantMsg = new ChatMessage { CompanionId = Companion.Id, Role = "assistant", Content = reply };
                 Messages.Add(assistantMsg);
@@ -147,6 +152,11 @@ namespace ZoeyOS.App.ViewModels
             }
             finally { IsBusy = false; }
         }
+
+        private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input)
+            => CameraTools.IsCameraTool(toolName)
+                ? CameraTools.ExecuteAsync(toolName, input)
+                : SystemTools.ExecuteAsync(toolName, input);
 
         private List<ChatMessage> SliceHistory() { var list = new List<ChatMessage>(Messages); list.RemoveAt(list.Count - 1); return list; }
         private static string Truncate(string s, int len) => s.Length <= len ? s : s.Substring(0, len) + "…";
