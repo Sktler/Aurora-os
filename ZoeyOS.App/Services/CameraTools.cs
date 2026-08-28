@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,6 +13,7 @@ namespace ZoeyOS.App.Services
     {
         public static readonly object[] Definitions =
         {
+            new { name = "camera", description = "Primary Aurora webcam tool. Reports camera availability and status.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_open", description = "Opens an Aurora webcam by device id.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
             new { name = "camera_close", description = "Closes the active Aurora webcam.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_list", description = "Lists webcams available to Aurora.", input_schema = new { type = "object", properties = new { } } },
@@ -27,11 +29,12 @@ namespace ZoeyOS.App.Services
         {
             return name switch
             {
+                "camera" => StatusAsync(),
                 "camera_open" => OpenAsync(input),
                 "camera_close" => CloseAsync(),
                 "camera_list" => ListAsync(),
                 "camera_permission" => PermissionAsync(),
-                "camera_status" => Task.FromResult(App.Camera.GetStatus()),
+                "camera_status" => StatusAsync(),
                 "camera_start_preview" => StartPreviewAsync(input),
                 "camera_stop_preview" => StopPreviewAsync(),
                 "camera_capture_photo" => CaptureAsync(input),
@@ -39,6 +42,8 @@ namespace ZoeyOS.App.Services
                 _ => Task.FromResult($"Unknown camera tool: {name}")
             };
         }
+
+        private static Task<string> StatusAsync() => Task.FromResult(App.Camera.GetStatus());
 
         private static async Task<string> OpenAsync(JsonElement input)
         {
