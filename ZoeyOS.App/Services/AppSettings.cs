@@ -30,8 +30,6 @@ namespace ZoeyOS.App.Services
         public string SpotifyRefreshToken { get; set; } = "";
         public bool SpotifyConnected { get; set; } = false;
         public string SpotifyAccountName { get; set; } = "";
-        public string JamendoClientId { get; set; } = "";
-        public bool JamendoConnected { get; set; } = false;
         public string DatabasePath { get; set; } = "";
         public string VoiceName { get; set; } = "";
         public string TtsProvider { get; set; } = "openai";
@@ -75,8 +73,6 @@ namespace ZoeyOS.App.Services
             }
             else loaded = new AppSettings();
             if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
-            if (string.IsNullOrWhiteSpace(loaded.JamendoClientId)) loaded.JamendoClientId = Environment.GetEnvironmentVariable("JAMENDO_CLIENT_ID") ?? "";
-            if (loaded.JamendoClientId.Length > 0) loaded.JamendoConnected = true;
             var originalModel = loaded.GeminiModel;
             if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
             loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
