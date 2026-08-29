@@ -20,12 +20,6 @@ namespace ZoeyOS.App.Services
             new { name = "media_toggle_play_pause", description = "Toggles Windows media playback.", input_schema = new { type = "object", properties = new { app = new { type = "string" } } } },
             new { name = "media_next", description = "Skips Windows media forward.", input_schema = new { type = "object", properties = new { app = new { type = "string" } } } },
             new { name = "media_previous", description = "Goes to the previous Windows media track.", input_schema = new { type = "object", properties = new { app = new { type = "string" } } } },
-            new { name = "jamendo_now_playing", description = "Gets Aurora Jamendo playback.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "jamendo_play", description = "Searches and plays Jamendo music.", input_schema = new { type = "object", properties = new { query = new { type = "string" } }, required = new[] { "query" } } },
-            new { name = "jamendo_pause", description = "Pauses Jamendo.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "jamendo_resume", description = "Resumes Jamendo.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "jamendo_skip_next", description = "Skips Jamendo forward.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "jamendo_skip_previous", description = "Skips Jamendo backward.", input_schema = new { type = "object", properties = new { } } },
             new { name = "set_system_volume", description = "Sets Windows master volume from 0 to 100.", input_schema = new { type = "object", properties = new { percent = new { type = "number" } }, required = new[] { "percent" } } },
             new { name = "toggle_system_mute", description = "Mutes or unmutes Windows system audio.", input_schema = new { type = "object", properties = new { mute = new { type = "boolean" } }, required = new[] { "mute" } } },
             new { name = "windows_list_applications", description = "Lists running Windows applications.", input_schema = new { type = "object", properties = new { } } },
@@ -68,12 +62,6 @@ namespace ZoeyOS.App.Services
                 case "media_toggle_play_pause": return (await Media.ControlAsync("toggle", GetApp(input))).Message;
                 case "media_next": return (await Media.ControlAsync("next", GetApp(input))).Message;
                 case "media_previous": return (await Media.ControlAsync("previous", GetApp(input))).Message;
-                case "jamendo_now_playing": return App.Jamendo.GetCurrentlyPlaying();
-                case "jamendo_play": return await App.Jamendo.SearchAndPlayAsync(input.GetProperty("query").GetString() ?? "");
-                case "jamendo_pause": return App.Jamendo.Pause();
-                case "jamendo_resume": return App.Jamendo.Resume();
-                case "jamendo_skip_next": return await App.Jamendo.PlayNextAsync();
-                case "jamendo_skip_previous": return await App.Jamendo.PlayPreviousAsync();
                 case "set_system_volume": { var p = input.GetProperty("percent").GetDouble(); if (p < 0 || p > 100) return "Volume must be between 0 and 100."; SystemVolumeControl.SetVolume((float)(p / 100)); return $"System volume set to {p:0}%."; }
                 case "toggle_system_mute": { var m = input.GetProperty("mute").GetBoolean(); SystemVolumeControl.SetMute(m); return m ? "System audio muted." : "System audio unmuted."; }
                 case "windows_list_applications": return FormatProcesses(App.WindowsAutomation.GetProcesses());
@@ -99,14 +87,6 @@ namespace ZoeyOS.App.Services
             }
         }
 
-        private static async Task<string> CameraGuardAsync(Func<Task<string>> action)
-        {
-            if (!App.Settings.WindowsCameraEnabled) return "Camera permission is disabled in Aurora Settings.";
-            try { return await action(); }
-            catch (UnauthorizedAccessException ex) { return ex.Message; }
-            catch (InvalidOperationException ex) { return ex.Message; }
-            catch (Exception ex) { return $"Camera error: {ex.Message}"; }
-        }
         private static string? GetApp(JsonElement input) => input.TryGetProperty("app", out var a) ? a.GetString() : null;
         private static string FormatProcesses(IReadOnlyList<ProcessInfo> xs) => xs.Count == 0 ? "No running applications found." : string.Join("\n", xs.Select(x => $"{x.Name} (PID {x.Id}) — {x.WindowTitle}"));
         private static string SaveScreen()
