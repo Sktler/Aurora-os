@@ -6,5 +6,6 @@ namespace ZoeyOS.App.Models
         public string Source { get; set; } = "";   // "SmartThings" | "Home Assistant"
         public string Name { get; set; } = "";
         public string Detail { get; set; } = "";    // type or current state
+        public string Id { get; set; } = "";
     }
 }

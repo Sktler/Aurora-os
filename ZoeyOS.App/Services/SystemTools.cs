@@ -76,14 +76,14 @@ namespace ZoeyOS.App.Services
                 case "jamendo_skip_previous": return await App.Jamendo.PlayPreviousAsync();
                 case "set_system_volume": { var p = input.GetProperty("percent").GetDouble(); if (p < 0 || p > 100) return "Volume must be between 0 and 100."; SystemVolumeControl.SetVolume((float)(p / 100)); return $"System volume set to {p:0}%."; }
                 case "toggle_system_mute": { var m = input.GetProperty("mute").GetBoolean(); SystemVolumeControl.SetMute(m); return m ? "System audio muted." : "System audio unmuted."; }
-                case "windows_list_applications": return FormatProcesses(App.Windows.GetProcesses());
-                case "windows_launch_application": App.Windows.Launch(input.GetProperty("target").GetString() ?? ""); return "Application launched.";
-                case "windows_open_path": App.Windows.OpenPath(input.GetProperty("path").GetString() ?? ""); return "Opened.";
-                case "windows_read_file": return App.Windows.ReadText(input.GetProperty("path").GetString() ?? "");
-                case "windows_write_file": App.Windows.WriteText(input.GetProperty("path").GetString() ?? "", input.GetProperty("content").GetString() ?? ""); return "File written.";
-                case "windows_get_clipboard": return App.Windows.GetClipboardText();
-                case "windows_set_clipboard": App.Windows.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
-                case "windows_run_command": { var exit = await App.Windows.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
+                case "windows_list_applications": return FormatProcesses(App.WindowsAutomation.GetProcesses());
+                case "windows_launch_application": App.WindowsAutomation.Launch(input.GetProperty("target").GetString() ?? ""); return "Application launched.";
+                case "windows_open_path": App.WindowsAutomation.OpenPath(input.GetProperty("path").GetString() ?? ""); return "Opened.";
+                case "windows_read_file": return App.WindowsAutomation.ReadText(input.GetProperty("path").GetString() ?? "");
+                case "windows_write_file": App.WindowsAutomation.WriteText(input.GetProperty("path").GetString() ?? "", input.GetProperty("content").GetString() ?? ""); return "File written.";
+                case "windows_get_clipboard": return App.WindowsAutomation.GetClipboardText();
+                case "windows_set_clipboard": App.WindowsAutomation.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
+                case "windows_run_command": { var exit = await App.WindowsAutomation.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
                 case "windows_capture_screen": return SaveScreen();
                 case "camera_open_windows_app": return await CameraTools.ExecuteAsync(toolName, input);
                 case "camera_list_devices": return await CameraTools.ExecuteAsync("camera_list", input);
@@ -111,7 +111,7 @@ namespace ZoeyOS.App.Services
         private static string FormatProcesses(IReadOnlyList<ProcessInfo> xs) => xs.Count == 0 ? "No running applications found." : string.Join("\n", xs.Select(x => $"{x.Name} (PID {x.Id}) — {x.WindowTitle}"));
         private static string SaveScreen()
         {
-            var image = App.Windows.CaptureScreen(); var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"aurora-screen-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            var image = App.WindowsAutomation.CaptureScreen(); var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"aurora-screen-{DateTime.Now:yyyyMMdd-HHmmss}.png");
             using var stream = System.IO.File.Create(path); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image)); encoder.Save(stream); return $"Screenshot saved: {path}";
         }
         private static async Task<string> ListMcpToolsAsync(string serverName)

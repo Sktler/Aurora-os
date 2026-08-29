@@ -20,7 +20,7 @@ namespace ZoeyOS.App
         public static JamendoClient Jamendo { get; private set; } = null!;
         public static CameraService Camera { get; private set; } = null!;
         public static McpService Mcp { get; private set; } = null!;
-        public static WindowsAutomationService Windows { get; private set; } = null!;
+        public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -35,7 +35,7 @@ namespace ZoeyOS.App
             Voice = new VoiceService(Settings.VoiceName); WakeWord = new WakeWordService();
             Weather = new WeatherClient(); WebSearch = new WebSearchClient();
             Spotify = BuildSpotifyClient(); Jamendo = BuildJamendoClient();
-            Camera = new CameraService(); Mcp = new McpService(); Windows = CreateWindowsService();
+            Camera = new CameraService(); Mcp = new McpService(); WindowsAutomation = CreateWindowsService();
             WakeWord.Start();
         }
 
@@ -53,7 +53,7 @@ namespace ZoeyOS.App
                 PowerEnabled = Settings.WindowsPowerEnabled
             };
         }
-        public static void RefreshWindowsPermissions() { Windows = CreateWindowsService(); }
+        public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static JamendoClient BuildJamendoClient() => new(Settings.JamendoClientId);
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };

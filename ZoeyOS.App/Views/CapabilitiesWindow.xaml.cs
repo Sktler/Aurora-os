@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Windows;
+using ZoeyOS.App.Models;
 using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App.Views
@@ -60,7 +61,7 @@ namespace ZoeyOS.App.Views
         private async void RefreshCameras_Click(object sender, RoutedEventArgs e) => await RefreshCamerasAsync();
         private async void CheckCamera_Click(object sender, RoutedEventArgs e)
         {
-            try { StatusText.Text = await App.Camera.CheckPermissionAsync() ? "Windows camera permission is allowed." : "Camera permission is blocked. Enable it in Windows Settings > Privacy & security > Camera."; }
+            try { StatusText.Text = await App.Camera.CheckPermissionAsync() == CameraPermissionResult.Allowed ? "Windows camera permission is allowed." : "Camera permission is blocked. Enable it in Windows Settings > Privacy & security > Camera."; }
             catch (Exception ex) { StatusText.Text = $"Permission check failed: {ex.Message}"; }
         }
         private async void InitializeCamera_Click(object sender, RoutedEventArgs e)
