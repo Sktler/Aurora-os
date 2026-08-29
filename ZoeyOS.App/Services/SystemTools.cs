@@ -37,6 +37,7 @@ namespace ZoeyOS.App.Services
             new { name = "windows_set_clipboard", description = "Writes Windows clipboard text.", input_schema = new { type = "object", properties = new { text = new { type = "string" } }, required = new[] { "text" } } },
             new { name = "windows_run_command", description = "Runs an approved Windows command.", input_schema = new { type = "object", properties = new { command = new { type = "string" }, arguments = new { type = "string" } }, required = new[] { "command" } } },
             new { name = "windows_capture_screen", description = "Captures the primary Windows display.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera", description = "Primary Aurora webcam tool. Reports camera availability and status.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_open_windows_app", description = "Opens the native Windows Camera app.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_list_devices", description = "Lists Windows cameras.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_check_permission", description = "Checks whether Windows currently allows Aurora to access a webcam.", input_schema = new { type = "object", properties = new { } } },
@@ -53,6 +54,11 @@ namespace ZoeyOS.App.Services
         {
             switch (toolName)
             {
+                case "camera": return await CameraTools.ExecuteAsync("camera", input);
+                case "camera_open": return await CameraTools.ExecuteAsync("camera_open", input);
+                case "camera_close": return await CameraTools.ExecuteAsync("camera_close", input);
+                case "camera_list": return await CameraTools.ExecuteAsync("camera_list", input);
+                case "camera_permission": return await CameraTools.ExecuteAsync("camera_permission", input);
                 case "get_weather": return await App.Weather.GetCurrentWeatherAsync(input.GetProperty("location").GetString() ?? "");
                 case "web_search": { var q = input.GetProperty("query").GetString() ?? ""; return await App.WebSearch.TryInstantAnswerAsync(q) ?? App.WebSearch.OpenSearchInBrowser(q); }
                 case "get_now_playing": { var x = await Media.GetNowPlayingAsync(); return x == null ? "Nothing is currently playing." : $"App: {x.AppName}\nTitle: {x.Title}\nArtist: {x.Artist}\nPlayback: {x.PlaybackStatus}"; }
@@ -79,13 +85,13 @@ namespace ZoeyOS.App.Services
                 case "windows_set_clipboard": App.Windows.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
                 case "windows_run_command": { var exit = await App.Windows.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
                 case "windows_capture_screen": return SaveScreen();
-                case "camera_open_windows_app": return await CameraGuardAsync(() => { App.Camera.OpenWindowsCameraApp(); return Task.FromResult("Windows Camera opened."); });
-                case "camera_list_devices": return await CameraGuardAsync(async () => { var devices = await App.Camera.RefreshDevicesAsync(); return devices.Count == 0 ? "No cameras found." : string.Join("\n", devices.Select(d => $"{d.Name} ({d.Id})")); });
-                case "camera_check_permission": return await CameraGuardAsync(async () => (await App.Camera.CheckPermissionAsync()) switch { CameraPermissionResult.Allowed => "Camera access allowed.", CameraPermissionResult.Denied => "Camera access denied by Windows. Enable Camera access and 'Let desktop apps access your camera' in Windows Settings > Privacy & security > Camera.", CameraPermissionResult.NoCamera => "No camera devices were found.", _ => "Camera permission check failed." });
-                case "camera_status": return await CameraGuardAsync(() => Task.FromResult(App.Camera.GetStatus()));
-                case "camera_start_preview": return await CameraGuardAsync(async () => { await App.Camera.InitializeAsync(input.TryGetProperty("device_id", out var d) ? d.GetString() : null); await App.Camera.StartPreviewAsync(); return App.Camera.GetStatus(); });
-                case "camera_stop_preview": return await CameraGuardAsync(async () => { await App.Camera.StopPreviewAsync(); return "Camera preview stopped."; });
-                case "camera_capture_photo": return await CameraGuardAsync(async () => { if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync(); var file = await App.Camera.CapturePhotoAsync(); return $"Photo captured: {file.Path}"; });
+                case "camera_open_windows_app": return await CameraTools.ExecuteAsync(toolName, input);
+                case "camera_list_devices": return await CameraTools.ExecuteAsync("camera_list", input);
+                case "camera_check_permission": return await CameraTools.ExecuteAsync("camera_permission", input);
+                case "camera_status": return await CameraTools.ExecuteAsync("camera_status", input);
+                case "camera_start_preview": return await CameraTools.ExecuteAsync("camera_start_preview", input);
+                case "camera_stop_preview": return await CameraTools.ExecuteAsync("camera_stop_preview", input);
+                case "camera_capture_photo": return await CameraTools.ExecuteAsync("camera_capture_photo", input);
                 case "mcp_list_servers": return App.Settings.WindowsMcpEnabled ? (App.Mcp.Servers.Count == 0 ? "No MCP servers connected." : string.Join("\n", App.Mcp.Servers.Select(s => $"{s.Name} — {s.Command}"))) : "MCP permission is disabled in Aurora Settings.";
                 case "mcp_list_tools": return await ListMcpToolsAsync(input.GetProperty("server").GetString() ?? "");
                 case "mcp_call_tool": return await App.Mcp.CallToolAsync(input.GetProperty("server").GetString() ?? "", input.GetProperty("tool").GetString() ?? "", input.TryGetProperty("arguments", out var args) ? args : default);
