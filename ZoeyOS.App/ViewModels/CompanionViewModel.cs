@@ -124,8 +124,25 @@ namespace ZoeyOS.App.ViewModels
                     .Select(g => g.First())
                     .ToList();
 
+                // The model cannot inspect the repository directly. Give it the exact
+                // tool inventory that is being sent to the API so it cannot hallucinate
+                // an old/partial 17-tool list. This is generated from the same objects
+                // that are passed as Claude's `tools` payload.
+                var toolNames = toolDefinitions
+                    .Select(x => x.GetType().GetProperty("name")?.GetValue(x)?.ToString())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                var authoritativeToolContext =
+                    "AUTHORITATIVE AURORA TOOL INVENTORY FOR THIS REQUEST: " +
+                    string.Join(", ", toolNames) +
+                    ". Never claim to have inspected the source code or an internal registry. " +
+                    "If asked which tools are available, use this inventory; do not invent or omit tools. " +
+                    "The camera tool is available when `camera` appears in this inventory.";
+                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext;
+
                 var reply = await App.AI.SendWithToolsAsync(
-                    Companion.SystemPrompt,
+                    effectiveSystemPrompt,
                     historyForClaude,
                     userText,
                     toolDefinitions,
