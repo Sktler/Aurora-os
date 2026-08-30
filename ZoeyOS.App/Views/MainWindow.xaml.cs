@@ -86,23 +86,20 @@ namespace ZoeyOS.App.Views
             var target = (sender as Button)?.Tag?.ToString()?.ToLowerInvariant();
             switch (target)
             {
+                case "home":
+                    Activate();
+                    break;
                 case "chat":
                     Chat_Click(sender, e);
                     break;
                 case "memory":
-                    ComposerTextBox.Text = "Show me my saved memories.";
-                    ComposerTextBox.Focus();
-                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    SetPrompt("Show me my saved memories.");
                     break;
                 case "tasks":
-                    ComposerTextBox.Text = "Show me my tasks.";
-                    ComposerTextBox.Focus();
-                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    SetPrompt("Show me my tasks.");
                     break;
                 case "schedule":
-                    ComposerTextBox.Text = "Show me my schedule.";
-                    ComposerTextBox.Focus();
-                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    SetPrompt("Show me my schedule.");
                     break;
                 case "music":
                     PlayMusic_Click(sender, e);
@@ -120,18 +117,20 @@ namespace ZoeyOS.App.Views
             }
         }
 
+        private void SetPrompt(string prompt)
+        {
+            ComposerTextBox.Text = prompt;
+            ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+            ComposerTextBox.Focus();
+        }
+
         private void Chat_Click(object sender, RoutedEventArgs e)
         {
             ComposerTextBox.Focus();
             ComposerTextBox.SelectAll();
         }
 
-        private void StartTask_Click(object sender, RoutedEventArgs e)
-        {
-            ComposerTextBox.Text = "Help me start a task: ";
-            ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
-            ComposerTextBox.Focus();
-        }
+        private void StartTask_Click(object sender, RoutedEventArgs e) => SetPrompt("Help me start a task: ");
 
         private async void PlayMusic_Click(object sender, RoutedEventArgs e)
         {
@@ -143,11 +142,7 @@ namespace ZoeyOS.App.Views
         {
             try
             {
-                if (!App.Settings.WindowsCameraEnabled)
-                {
-                    new CapabilitiesWindow { Owner = this }.ShowDialog();
-                    return;
-                }
+                if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
                 if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 var file = await App.Camera.CapturePhotoAsync();
                 MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -159,11 +154,7 @@ namespace ZoeyOS.App.Views
         {
             try
             {
-                if (!App.Settings.WindowsCameraEnabled)
-                {
-                    new CapabilitiesWindow { Owner = this }.ShowDialog();
-                    return;
-                }
+                if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
                 if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 if (App.Camera.IsRecording)
                 {
@@ -180,27 +171,18 @@ namespace ZoeyOS.App.Views
         }
 
         private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenIntegrations_Click(sender, e);
-
-        private void AddReminder_Click(object sender, RoutedEventArgs e)
-        {
-            ComposerTextBox.Text = "Create a reminder: ";
-            ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
-            ComposerTextBox.Focus();
-        }
+        private void AddReminder_Click(object sender, RoutedEventArgs e) => SetPrompt("Create a reminder: ");
 
         private async void Send_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
-            var source = sender as Button;
-            var text = source == null || source == FindName("SendButton") as Button
-                ? ComposerTextBox.Text.Trim()
-                : (source == null ? ComposerTextBox.Text.Trim() : QuickPromptTextBox.Text.Trim());
-            if (source != null && source.Name == "QuickPromptSendButton") text = QuickPromptTextBox.Text.Trim();
+            var buttonText = (sender as Button)?.Content?.ToString();
+            var text = buttonText == "➜" ? QuickPromptTextBox.Text.Trim() : ComposerTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(text)) return;
             dvm.SelectedCompanion.DraftMessage = text;
             await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
-            ComposerTextBox.Clear();
             QuickPromptTextBox.Clear();
+            ComposerTextBox.Clear();
         }
 
         private void Attach_Click(object sender, RoutedEventArgs e)
