@@ -4,12 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
 using OpenCvSharp;
-using OpenCvSharp.WpfExtensions;
 
 namespace ZoeyOS.App.Services
 {
+    /// <summary>
+    /// Windows webcam service backed directly by OpenCvSharp.
+    /// The camera remains open and continuously captures frames until explicitly stopped.
+    /// No WPF/OpenCvSharp.WpfExtensions types are used here; consumers receive encoded JPEG frames.
+    /// </summary>
     public sealed class CameraService : IAsyncDisposable
     {
         private readonly SemaphoreSlim _gate = new(1, 1);
@@ -18,15 +21,19 @@ namespace ZoeyOS.App.Services
         private CancellationTokenSource? _previewCts;
         private Task? _previewTask;
         private Mat? _latestFrame;
+        private VideoWriter? _videoWriter;
         private int _selectedIndex;
 
         public bool IsInitialized => _capture?.IsOpened() == true;
         public bool IsActive => IsInitialized && _previewTask is { IsCompleted: false };
+        public bool IsRecording => _videoWriter?.IsOpened() == true;
         public IReadOnlyList<CameraDeviceInfo> Devices { get; private set; } = Array.Empty<CameraDeviceInfo>();
         public string? SelectedDeviceId => _selectedIndex.ToString();
-        public BitmapSource? LatestFrame { get; private set; }
 
-        public event EventHandler<BitmapSource>? FrameReady;
+        /// <summary>Latest JPEG-encoded frame. This is UI-framework neutral.</summary>
+        public byte[]? LatestFrameJpeg { get; private set; }
+
+        public event EventHandler<CameraFrameEventArgs>? FrameReady;
 
         public Task<IReadOnlyList<CameraDeviceInfo>> RefreshDevicesAsync()
         {
@@ -38,19 +45,19 @@ namespace ZoeyOS.App.Services
                     using var probe = new VideoCapture(index, VideoCaptureAPIs.DSHOW);
                     if (!probe.IsOpened())
                         continue;
-                    probe.Set(VideoCaptureProperties.FrameWidth, 320);
-                    probe.Set(VideoCaptureProperties.FrameHeight, 240);
+
                     devices.Add(new CameraDeviceInfo(index.ToString(), $"Camera {index + 1}"));
                 }
                 catch
                 {
-                    // Some indices/drivers throw while probing. Keep scanning remaining devices.
+                    // Some camera drivers throw while probing. Continue scanning.
                 }
             }
 
             Devices = devices;
             if (!Devices.Any(d => d.Id == _selectedIndex.ToString()))
                 _selectedIndex = devices.Count == 0 ? 0 : int.Parse(devices[0].Id);
+
             return Task.FromResult<IReadOnlyList<CameraDeviceInfo>>(Devices);
         }
 
@@ -112,7 +119,7 @@ namespace ZoeyOS.App.Services
             }
         }
 
-        /// <summary>Starts one persistent capture loop and leaves it running until explicitly stopped.</summary>
+        /// <summary>Starts the persistent webcam capture loop. Calling it again is harmless.</summary>
         public async Task StartPreviewAsync()
         {
             if (!IsInitialized)
@@ -131,8 +138,10 @@ namespace ZoeyOS.App.Services
             _previewCts?.Cancel();
             if (_previewTask != null)
             {
-                try { await _previewTask; } catch (OperationCanceledException) { }
+                try { await _previewTask; }
+                catch (OperationCanceledException) { }
             }
+
             _previewTask = null;
             _previewCts?.Dispose();
             _previewCts = null;
@@ -142,10 +151,15 @@ namespace ZoeyOS.App.Services
         {
             if (Devices.Count == 0)
                 return "No camera devices found.";
+
             var name = Devices.FirstOrDefault(d => d.Id == _selectedIndex.ToString())?.Name ?? "selected camera";
             if (!IsInitialized)
                 return $"Camera ready: {name}.";
-            return IsActive ? $"Camera live: {name}. Continuous stream is running." : $"Camera initialized: {name}.";
+            if (IsRecording)
+                return $"Camera live: {name}. Continuous stream is running and video recording is active.";
+            return IsActive
+                ? $"Camera live: {name}. Continuous stream is running."
+                : $"Camera initialized: {name}.";
         }
 
         public void OpenWindowsCameraApp()
@@ -157,39 +171,85 @@ namespace ZoeyOS.App.Services
             });
         }
 
-        /// <summary>Captures the most recent streamed frame when available, without interrupting the stream.</summary>
         public async Task<StorageFileResult> CapturePhotoAsync(string? destinationFolder = null)
         {
             if (!IsInitialized)
                 await InitializeAsync();
+            if (!IsActive)
+                await StartPreviewAsync();
 
             Mat frame;
             lock (_captureSync)
             {
                 frame = _latestFrame?.Clone() ?? new Mat();
-                if (frame.Empty())
-                {
-                    frame.Dispose();
-                    frame = new Mat();
-                    if (!_capture!.Read(frame) || frame.Empty())
-                    {
-                        frame.Dispose();
-                        throw new InvalidOperationException("The webcam did not return a frame.");
-                    }
-                }
+            }
+
+            if (frame.Empty())
+            {
+                frame.Dispose();
+                throw new InvalidOperationException("The webcam did not return a frame.");
             }
 
             using (frame)
             {
-                var folder = destinationFolder;
-                if (string.IsNullOrWhiteSpace(folder))
-                    folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera");
-                Directory.CreateDirectory(folder);
+                var folder = string.IsNullOrWhiteSpace(destinationFolder)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera")
+                    : destinationFolder;
 
-                var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg");
+                Directory.CreateDirectory(folder);
+                var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.jpg");
                 Cv2.ImWrite(path, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
                 return new StorageFileResult(path);
             }
+        }
+
+        /// <summary>Starts recording the same continuous capture stream to an MP4 file.</summary>
+        public async Task<StorageFileResult> StartRecordingAsync(string? destinationFolder = null)
+        {
+            if (!IsInitialized)
+                await InitializeAsync();
+            if (!IsActive)
+                await StartPreviewAsync();
+            if (IsRecording)
+                throw new InvalidOperationException("Camera video recording is already active.");
+
+            var folder = string.IsNullOrWhiteSpace(destinationFolder)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Aurora Camera")
+                : destinationFolder;
+            Directory.CreateDirectory(folder);
+
+            var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.mp4");
+            var writer = new VideoWriter(
+                path,
+                FourCC.MP4V,
+                30,
+                new OpenCvSharp.Size(1280, 720));
+
+            if (!writer.IsOpened())
+            {
+                writer.Dispose();
+                throw new InvalidOperationException("Aurora could not initialize MP4 video recording on this system.");
+            }
+
+            lock (_captureSync)
+                _videoWriter = writer;
+
+            return new StorageFileResult(path);
+        }
+
+        public Task<StorageFileResult?> StopRecordingAsync()
+        {
+            lock (_captureSync)
+            {
+                if (_videoWriter == null)
+                    return Task.FromResult<StorageFileResult?>(null);
+
+                _videoWriter.Release();
+                _videoWriter.Dispose();
+                _videoWriter = null;
+            }
+
+            return Task.FromResult<StorageFileResult?>(null);
         }
 
         public async Task StopAsync()
@@ -197,6 +257,13 @@ namespace ZoeyOS.App.Services
             await StopPreviewAsync();
             lock (_captureSync)
             {
+                if (_videoWriter != null)
+                {
+                    _videoWriter.Release();
+                    _videoWriter.Dispose();
+                    _videoWriter = null;
+                }
+
                 if (_capture != null)
                 {
                     _capture.Release();
@@ -206,7 +273,7 @@ namespace ZoeyOS.App.Services
 
                 _latestFrame?.Dispose();
                 _latestFrame = null;
-                LatestFrame = null;
+                LatestFrameJpeg = null;
             }
         }
 
@@ -224,17 +291,24 @@ namespace ZoeyOS.App.Services
 
                         if (!_capture.Read(frame) || frame.Empty())
                         {
-                            // A temporary read failure does not stop the enabled stream.
+                            // Keep the stream alive through transient driver read failures.
                         }
                         else
                         {
                             _latestFrame?.Dispose();
                             _latestFrame = frame.Clone();
 
-                            var bitmap = BitmapSourceConverter.ToBitmapSource(frame);
-                            bitmap.Freeze();
-                            LatestFrame = bitmap;
-                            FrameReady?.Invoke(this, bitmap);
+                            Cv2.ImEncode(".jpg", frame, out var encoded, new ImageEncodingParam(ImwriteFlags.JpegQuality, 85));
+                            LatestFrameJpeg = encoded.ToArray();
+
+                            if (_videoWriter?.IsOpened() == true)
+                                _videoWriter.Write(frame);
+
+                            FrameReady?.Invoke(this, new CameraFrameEventArgs(
+                                LatestFrameJpeg,
+                                frame.Width,
+                                frame.Height,
+                                DateTimeOffset.UtcNow));
                         }
                     }
 
@@ -246,7 +320,6 @@ namespace ZoeyOS.App.Services
                 }
                 catch
                 {
-                    // Keep the continuous stream alive through transient frame/driver errors.
                     Thread.Sleep(100);
                 }
             }
@@ -257,6 +330,22 @@ namespace ZoeyOS.App.Services
             await StopAsync();
             _gate.Dispose();
         }
+    }
+
+    public sealed class CameraFrameEventArgs : EventArgs
+    {
+        public CameraFrameEventArgs(byte[] jpeg, int width, int height, DateTimeOffset timestamp)
+        {
+            Jpeg = jpeg;
+            Width = width;
+            Height = height;
+            Timestamp = timestamp;
+        }
+
+        public byte[] Jpeg { get; }
+        public int Width { get; }
+        public int Height { get; }
+        public DateTimeOffset Timestamp { get; }
     }
 
     public enum CameraPermissionResult
