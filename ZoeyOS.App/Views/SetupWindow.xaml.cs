@@ -8,7 +8,6 @@ namespace ZoeyOS.App.Views
 {
     public partial class SetupWindow : Window
     {
-        /// <summary>True if the user actually saved a key; false if they skipped.</summary>
         public bool KeySaved { get; private set; }
 
         public SetupWindow()
@@ -16,21 +15,21 @@ namespace ZoeyOS.App.Views
             InitializeComponent();
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
-
-            // Reflect whatever's already configured - relevant both on first run (nothing
-            // set, defaults to Gemini) and when reopened later to change the key/provider.
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
-            ProviderCombo.SelectedItem = current; // fires Provider_Changed
+            ProviderCombo.SelectedItem = current;
+
+            // The setup footer is identical for every provider and every setup state.
+            // Always show Cancel + Save and Continue; never let provider-specific state
+            // change the presence or label of either action.
+            SkipButton.Content = "Cancel";
+            SaveContinueButton.Content = "Save and Continue";
 
             var alreadyConfigured = !string.IsNullOrWhiteSpace(App.Settings.GeminiApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.GroqApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.OpenAIApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.ClaudeApiKey);
             if (alreadyConfigured)
-            {
                 HeaderText.Text = "Aurora Setup";
-                SkipButton.Content = "Cancel";
-            }
         }
 
         private AIProviderInfo SelectedProvider => (AIProviderInfo)ProviderCombo.SelectedItem;
@@ -53,12 +52,9 @@ namespace ZoeyOS.App.Views
 
         private void Provider_Changed(object sender, RoutedEventArgs e)
         {
-            // These named elements may not exist yet the very first time SelectedItem is set
-            // in the constructor - guard against that.
             if (KeyLabel == null || ProviderCombo.SelectedItem == null) return;
 
             var p = SelectedProvider;
-
             ErrorText.Visibility = Visibility.Collapsed;
             ClipboardHint.Visibility = Visibility.Collapsed;
 
@@ -79,21 +75,23 @@ namespace ZoeyOS.App.Views
             RateLimitsLink.NavigateUri = new Uri(p.RateLimitsUrl);
             ModelsLink.NavigateUri = new Uri(p.ModelsUrl);
             PricingLink.NavigateUri = new Uri(p.PricingUrl);
+
+            // Reassert the shared footer state whenever the provider changes.
+            SkipButton.Content = "Cancel";
+            SaveContinueButton.Content = "Save and Continue";
+            SaveContinueButton.IsEnabled = true;
+            SkipButton.IsEnabled = true;
         }
 
-        /// <summary>Opens a URL in the system's default browser.</summary>
         private void OpenUrl(string url)
         {
             try
             {
-                // UseShellExecute is required here - without it, .NET tries to run the URL
-                // as an executable instead of handing it to the default browser.
                 Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                ErrorText.Text = $"Couldn't open the browser automatically ({ex.Message}). " +
-                                  $"Go to {url} manually.";
+                ErrorText.Text = $"Couldn't open the browser automatically ({ex.Message}). Go to {url} manually.";
                 ErrorText.Visibility = Visibility.Visible;
             }
         }
@@ -106,15 +104,12 @@ namespace ZoeyOS.App.Views
 
         private void Window_Activated(object sender, EventArgs e)
         {
-            // Don't stomp on something the user already typed or already auto-pasted.
             if (!string.IsNullOrWhiteSpace(ApiKeyBox.Password)) return;
             if (ProviderCombo.SelectedItem == null) return;
 
             string? clip;
             try
             {
-                // Clipboard access can throw if another app briefly holds the clipboard lock -
-                // harmless to just skip auto-paste that one time.
                 clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : null;
             }
             catch
@@ -138,18 +133,11 @@ namespace ZoeyOS.App.Views
 
         private bool _checkingKey;
 
-        /// <summary>Once a key is typed in, tries to replace the static example model list
-        /// with the live catalog from the provider's own API - same principle as the Models
-        /// page in Settings, just reached earlier, before the key is even saved. Shows a
-        /// "checking your key..." state while the request is in flight (it can take a
-        /// second or two), and falls back to the static example list on any failure, since
-        /// an incomplete or not-yet-valid key while typing is completely expected here, not
-        /// an error worth alarming over - just said plainly rather than left unexplained.</summary>
         private async void ApiKeyBox_LostFocus(object sender, RoutedEventArgs e)
         {
             var key = ApiKeyBox.Password.Trim();
             if (string.IsNullOrWhiteSpace(key) || ProviderCombo.SelectedItem == null) return;
-            if (_checkingKey) return; // already checking a key from a previous blur - let it finish first
+            if (_checkingKey) return;
 
             var p = SelectedProvider;
             _checkingKey = true;
@@ -177,8 +165,6 @@ namespace ZoeyOS.App.Views
             }
             catch
             {
-                // Key not valid yet (still typing, or a typo) - revert to the static example
-                // list rather than leave the "Checking..." text stuck on screen.
                 ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
             }
             finally
@@ -195,15 +181,12 @@ namespace ZoeyOS.App.Views
 
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                ErrorText.Text = $"A {p.DisplayName} API key is required to bring your companions online. " +
-                                  "Use \"Skip for now\" if you'd rather add it later.";
+                ErrorText.Text = $"A {p.DisplayName} API key is required to bring your companions online. Use \"Cancel\" if you'd rather add it later.";
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }
 
             var model = string.IsNullOrWhiteSpace(ModelBox.Text) ? p.DefaultModel : ModelBox.Text.Trim();
-            // Google's API responses sometimes echo model names back with a "models/" prefix -
-            // strip it defensively here too, same as AppSettings does on load.
             if (model.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
                 model = model["models/".Length..];
 
@@ -224,12 +207,9 @@ namespace ZoeyOS.App.Views
                 default:
                     App.Settings.GeminiApiKey = apiKey;
                     App.Settings.GeminiModel = model;
-                    App.Settings.ImageProvider = "gemini"; // one key covers chat + images
+                    App.Settings.ImageProvider = "gemini";
                     break;
             }
-            // Deliberately leave ImageProvider untouched for non-Gemini picks - if a Gemini
-            // key is already on file, images can keep working through it even while chat
-            // runs on a different provider.
 
             App.Settings.ChatProvider = p.Key;
             App.Settings.Save();
@@ -237,7 +217,6 @@ namespace ZoeyOS.App.Views
             RestartApp();
         }
 
-        /// <summary>Relaunches Aurora as a fresh process and exits this one immediately.</summary>
         private static void RestartApp()
         {
             var exePath = Process.GetCurrentProcess().MainModule?.FileName;
@@ -249,8 +228,6 @@ namespace ZoeyOS.App.Views
                 }
                 catch
                 {
-                    // If relaunch fails for some reason, falling through to Exit still lets the
-                    // user just start Aurora again manually - better than a stuck window.
                 }
             }
             Environment.Exit(0);
