@@ -4,29 +4,137 @@
         xmlns:vm="clr-namespace:ZoeyOS.App.ViewModels"
         xmlns:local="clr-namespace:ZoeyOS.App.Views"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="Aurora" Height="800" Width="1280" MinHeight="600" MinWidth="960" Background="{StaticResource BgDeepBrush}" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" StateChanged="Window_StateChanged">
-    <shell:WindowChrome.WindowChrome><shell:WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/></shell:WindowChrome.WindowChrome>
+        Title="Aurora" Height="900" Width="1440" MinHeight="700" MinWidth="1100"
+        Background="{StaticResource BgDeepBrush}" WindowStartupLocation="CenterScreen"
+        WindowStyle="None" ResizeMode="CanResize" StateChanged="Window_StateChanged">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
     <Window.DataContext><vm:DashboardViewModel/></Window.DataContext>
     <Window.Resources>
-        <Style x:Key="CaptionButtonStyle" TargetType="Button"><Setter Property="Width" Value="46"/><Setter Property="Height" Value="34"/><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/><Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/></Style>
-        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}"/>
-        <Style x:Key="MiniButtonStyle" TargetType="Button"><Setter Property="Width" Value="46"/><Setter Property="Height" Value="34"/><Setter Property="Background" Value="#16242D"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="FontSize" Value="15"/><Setter Property="Cursor" Value="Hand"/><Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/></Style>
-        <Style x:Key="ComposerButtonStyle" TargetType="Button"><Setter Property="Width" Value="42"/><Setter Property="Height" Value="42"/><Setter Property="Margin" Value="6,0,0,0"/><Setter Property="Background" Value="{StaticResource BgCardBrush}"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="16"/></Style>
+        <Style x:Key="CaptionButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/><Setter Property="Height" Value="34"/><Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+        </Style>
+        <Style x:Key="MiniButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+            <Setter Property="Background" Value="#101722"/><Setter Property="Foreground" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="48"/><Setter Property="Margin" Value="0,3"/><Setter Property="Padding" Value="14,0"/><Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#24142F"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/></Trigger></Style.Triggers>
+        </Style>
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="58"/><Setter Property="Padding" Value="16,10"/><Setter Property="Margin" Value="6"/><Setter Property="Background" Value="#101620"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="#273244"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{StaticResource AccentVioletBrush}"/><Setter Property="Background" Value="#171526"/></Trigger></Style.Triggers>
+        </Style>
+        <Style x:Key="ComposerButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="44"/><Setter Property="Height" Value="44"/><Setter Property="Margin" Value="6,0,0,0"/><Setter Property="Background" Value="#101620"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="#2C3446"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="16"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Grid Grid.Row="0" Background="{StaticResource BgPanelBrush}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="AURORA" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="14,0,0,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="False"/><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="◉" Style="{StaticResource MiniButtonStyle}" Click="MiniMode_Click" ToolTip="Mini Aurora"/><Button Content="—" Style="{StaticResource CaptionButtonStyle}" Click="Minimize_Click" ToolTip="Minimize"/><Button x:Name="MaximizeRestoreButton" Content="🗖" Style="{StaticResource CaptionButtonStyle}" Click="MaximizeRestore_Click" ToolTip="Maximize"/><Button Content="✕" Style="{StaticResource CloseButtonStyle}" Click="Close_Click" ToolTip="Close"/></StackPanel></Grid>
-        <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="{StaticResource BgPanelBrush}" Padding="20"><DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,24"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="AURORA" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/><Button Grid.Column="1" Content="⚙" FontSize="16" Padding="6,2" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextMutedBrush}" Cursor="Hand" Click="OpenIntegrations_Click" ToolTip="Settings"/></Grid><TextBlock Text="Your companions" Style="{StaticResource MutedText}" Margin="0,2,0,0"/></StackPanel>
-                <Border DockPanel.Dock="Bottom" Background="{StaticResource BgCardBrush}" CornerRadius="12" Padding="14" Margin="0,14,0,0"><StackPanel DataContext="{Binding MusicPlayer}"><StackPanel Orientation="Horizontal"><TextBlock Text="🎵" FontSize="13" Margin="0,0,6,0"/><TextBlock Text="Now playing" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/></StackPanel><TextBlock Text="{Binding StatusText}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}"/></StackPanel></Border>
-                <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding Companions}"><ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type vm:CompanionViewModel}"><Button Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch" Margin="0,0,0,12"><Border Padding="14" CornerRadius="14" Background="{StaticResource BgCardBrush}" Cursor="Hand"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><local:Globe3D Grid.Column="0" Width="40" Height="40" Margin="0,0,12,0" AccentColor="{Binding Companion.AccentHex}"/><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding Companion.Name}" FontWeight="SemiBold" FontSize="14"/><TextBlock Text="{Binding Companion.Role}" Style="{StaticResource MutedText}"/><TextBlock Text="{Binding Companion.LastActivitySummary}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0" FontSize="11"/></StackPanel></Grid></Border></Button></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
-            </DockPanel></Border>
-            <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                <Border Grid.Row="0" Padding="24,20" Background="{StaticResource BgPanelBrush}"><StackPanel Orientation="Horizontal"><local:Globe3D Width="18" Height="18" Margin="0,0,10,0" VerticalAlignment="Center" AccentColor="{Binding SelectedCompanion.Companion.AccentHex}"/><StackPanel><TextBlock Text="{Binding SelectedCompanion.Companion.Name}" FontSize="18" FontWeight="Bold"/><TextBlock Text="{Binding SelectedCompanion.Companion.Role}" Style="{StaticResource MutedText}"/></StackPanel></StackPanel></Border>
-                <Grid Grid.Row="1"><ScrollViewer Padding="24,16" VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding SelectedCompanion.Messages}"><ItemsControl.ItemTemplate><DataTemplate><Border Margin="0,0,0,14" MaxWidth="640" Padding="14,10" CornerRadius="12" Background="{Binding Role, Converter={x:Static local:RoleToBrushConverter.Instance}}"><TextBlock Text="{Binding Content}" TextWrapping="Wrap"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></Grid>
-                <Border Grid.Row="2" Padding="18,14" Background="{StaticResource BgPanelBrush}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox Grid.Column="0" Text="{Binding SelectedCompanion.DraftMessage, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MaxHeight="110" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="12" FontSize="14" Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="1"/><Button Grid.Column="1" Content="📎" Style="{StaticResource ComposerButtonStyle}" Click="Attach_Click" ToolTip="Attach a file"/><Button Grid.Column="2" Content="🎤" Style="{StaticResource ComposerButtonStyle}" Command="{Binding SelectedCompanion.ListenCommand}" ToolTip="Start or stop dictation"/><Button Grid.Column="3" Content="🔊" Style="{StaticResource ComposerButtonStyle}" Command="{Binding SelectedCompanion.ToggleSpeakRepliesCommand}" ToolTip="Toggle spoken replies"/><Button Grid.Column="4" Content="➤" Style="{StaticResource ComposerButtonStyle}" Command="{Binding SelectedCompanion.SendCommand}" ToolTip="Send" IsDefault="True"/></Grid></Border>
+        <Grid Grid.Row="0" Background="#090C12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBlock Text="Aurora" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="16,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="False"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="◉" Style="{StaticResource MiniButtonStyle}" Click="MiniMode_Click" ToolTip="Mini Aurora"/>
+                <Button Content="—" Style="{StaticResource CaptionButtonStyle}" Click="Minimize_Click" ToolTip="Minimize"/>
+                <Button x:Name="MaximizeRestoreButton" Content="🗖" Style="{StaticResource CaptionButtonStyle}" Click="MaximizeRestore_Click" ToolTip="Maximize"/>
+                <Button Content="✕" Style="{StaticResource CaptionButtonStyle}" Click="Close_Click" ToolTip="Close"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition Width="*"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Margin="6,12,0,26">
+                            <Border Width="48" Height="48" CornerRadius="24" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="2" Background="#101722">
+                                <Border.Effect><DropShadowEffect Color="#4FD8E8" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/></Border.Effect>
+                                <TextBlock Text="✦" FontSize="25" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource NavButtonStyle}" Background="#251431"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Home" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="17"/><TextBlock Text="Chat" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="◇" Width="32" FontSize="19"/><TextBlock Text="Memory" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="✓" Width="32" FontSize="19"/><TextBlock Text="Tasks" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="□" Width="32" FontSize="19"/><TextBlock Text="Schedule" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="♫" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Music" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20"/><TextBlock Text="Smart Home" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="⚒" Width="32" FontSize="18"/><TextBlock Text="Tools" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="18" Foreground="{StaticResource AccentCyanBrush}"/><TextBlock Text="Camera" VerticalAlignment="Center"/></StackPanel></Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Click="OpenIntegrations_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Width="32" FontSize="18"/><TextBlock Text="Settings" VerticalAlignment="Center"/></StackPanel></Button>
+                    </StackPanel>
+                    <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="A" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock Text="Adam" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
+                            <TextBlock Grid.Column="2" Text="⌄" FontSize="18" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1" Background="#080B11">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,22,0,0">
+                    <TextBlock Text="Aurora" FontSize="48" FontWeight="Light" HorizontalAlignment="Center" Foreground="{StaticResource AccentCyanBrush}">
+                        <TextBlock.Effect><DropShadowEffect Color="#4FD8E8" BlurRadius="22" ShadowDepth="0" Opacity="0.45"/></TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                </StackPanel>
+                <Grid Grid.Row="1">
+                    <local:Globe3D Width="430" Height="430" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0" AccentColor="{Binding SelectedCompanion.Companion.AccentHex}"/>
+                    <StackPanel VerticalAlignment="Bottom" Margin="34,0,34,18">
+                        <Border Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="18,8">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="How can I help you today?" FontSize="15" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/><Button Grid.Column="1" Content="➜" Width="36" Height="36" Background="#6425A8" Foreground="White" BorderThickness="0" FontSize="18"/></Grid>
+                        </Border>
+                        <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}" Content="▣  Chat with Aurora"/>
+                            <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="☑  Start a Task"/>
+                            <Button Grid.Column="2" Style="{StaticResource ActionButtonStyle}" Content="♫  Play Music"/>
+                        </Grid>
+                        <Border Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="12" Margin="0,8,0,0">
+                            <StackPanel><TextBlock Text="Quick Actions" FontSize="16" FontWeight="SemiBold" Margin="4,0,0,4"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}" Content="▣&#x0A;Take a Photo"/>
+                                    <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="▣&#x0A;Record Video"/>
+                                    <Button Grid.Column="2" Style="{StaticResource ActionButtonStyle}" Content="⌂&#x0A;Smart Home"/>
+                                    <Button Grid.Column="3" Style="{StaticResource ActionButtonStyle}" Content="♧&#x0A;Add Reminder"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+                <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions><Border Width="38" Height="38" CornerRadius="19" Background="#171D29"><TextBlock Text="♩" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBox Grid.Column="1" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Text="Ask Aurora anything..." VerticalContentAlignment="Center" FontSize="14" Padding="12,0"/><Button Grid.Column="2" Width="40" Height="40" Background="#4B16A0" Foreground="White" BorderThickness="0" Content="≋" FontSize="19"/></Grid>
+                </Border>
             </Grid>
+
+            <Border Grid.Column="2" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="1,0,0,0" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,26,0,10">
+                            <StackPanel><TextBlock Text="Aurora Status" FontSize="17" FontWeight="SemiBold"/><StackPanel Orientation="Horizontal" Margin="0,14,0,0"><Ellipse Width="10" Height="10" Fill="{StaticResource AccentGreenBrush}"/><TextBlock Text="Online" Foreground="{StaticResource AccentGreenBrush}" Margin="8,0,0,0" FontSize="14"/></StackPanel><TextBlock Text="Ready to assist you" Style="{StaticResource MutedText}" Margin="0,8,0,0"/><TextBlock Text="▂▃▅▆▃▅▇▅▃▂▅▆▃" FontSize="22" Foreground="{StaticResource AccentVioletBrush}" Margin="0,14,0,0" HorizontalAlignment="Center"/></StackPanel>
+                        </Border>
+                        <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,0,0,10">
+                            <StackPanel><TextBlock Text="Today's Overview" FontSize="17" FontWeight="SemiBold"/><StackPanel Orientation="Horizontal" Margin="0,18,0,0"><TextBlock Text="☼" FontSize="28" Foreground="{StaticResource AccentAmberBrush}"/><StackPanel Margin="12,0,0,0"><TextBlock Text="—" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="Weather" Style="{StaticResource MutedText}"/></StackPanel></StackPanel><TextBlock Text="2 Events Today" Margin="0,16,0,0" FontSize="14"/><TextBlock Text="5 Tasks" Margin="0,8,0,0" FontSize="14"/><TextBlock Text="No new messages" Style="{StaticResource MutedText}" Margin="0,8,0,0"/></StackPanel>
+                        </Border>
+                        <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,0,0,10">
+                            <StackPanel DataContext="{Binding MusicPlayer}"><StackPanel Orientation="Horizontal"><TextBlock Text="♫" FontSize="25" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Now Playing" FontSize="17" FontWeight="SemiBold" Margin="12,2,0,0"/></StackPanel><TextBlock Text="{Binding StatusText}" FontSize="14" Margin="0,16,0,0" TextWrapping="Wrap"/><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0"><TextBlock Text="◀◀" FontSize="16" Margin="8"/><TextBlock Text="▶" FontSize="18" Margin="12"/><TextBlock Text="▶▶" FontSize="16" Margin="8"/></StackPanel><ProgressBar Height="4" Margin="0,10,0,0" Value="55"/></StackPanel>
+                        </Border>
+                        <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,0,0,10">
+                            <StackPanel><TextBlock Text="System" FontSize="17" FontWeight="SemiBold"/><Grid Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel Grid.Column="0"><Ellipse Width="58" Height="58" Stroke="{StaticResource AccentVioletBrush}" StrokeThickness="5"/><TextBlock Text="CPU" HorizontalAlignment="Center" Margin="0,-38,0,0"/><TextBlock Text="—" HorizontalAlignment="Center" Margin="0,20,0,0" Style="{StaticResource MutedText}"/></StackPanel><StackPanel Grid.Column="1"><Ellipse Width="58" Height="58" Stroke="{StaticResource AccentVioletBrush}" StrokeThickness="5"/><TextBlock Text="RAM" HorizontalAlignment="Center" Margin="0,-38,0,0"/><TextBlock Text="—" HorizontalAlignment="Center" Margin="0,20,0,0" Style="{StaticResource MutedText}"/></StackPanel><StackPanel Grid.Column="2"><Ellipse Width="58" Height="58" Stroke="{StaticResource AccentCyanBrush}" StrokeThickness="5"/><TextBlock Text="Disk" HorizontalAlignment="Center" Margin="0,-38,0,0"/><TextBlock Text="—" HorizontalAlignment="Center" Margin="0,20,0,0" Style="{StaticResource MutedText}"/></StackPanel></Grid></StackPanel>
+                        </Border>
+                        <TextBlock Text="{Binding SelectedCompanion.Companion.Name}" FontSize="13" Foreground="{StaticResource TextMutedBrush}" Margin="4,4,0,0"/>
+                        <TextBlock Text="{Binding SelectedCompanion.Companion.Role}" Style="{StaticResource MutedText}" Margin="4,2,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
         </Grid>
     </Grid>
 </Window>
