@@ -6,22 +6,22 @@ using System.Threading.Tasks;
 namespace ZoeyOS.App.Services
 {
     /// <summary>
-    /// First-class Aurora camera tool facade. Keeps AI/tool invocation separate
-    /// from the OpenCvSharp device implementation in CameraService.
+    /// First-class Aurora camera tool facade. The primary camera command turns on
+    /// the continuous webcam stream; photo capture remains available while streaming.
     /// </summary>
     public static class CameraTools
     {
         public static readonly object[] Definitions =
         {
-            new { name = "camera", description = "Primary Aurora webcam tool. Reports camera availability and status.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "camera_open", description = "Opens an Aurora webcam by device id.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
-            new { name = "camera_close", description = "Closes the active Aurora webcam.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera", description = "Turns on the primary Aurora webcam and keeps a continuous live stream running until stopped.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
+            new { name = "camera_open", description = "Opens a webcam and starts its continuous live stream.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
+            new { name = "camera_close", description = "Closes the active Aurora webcam and stops its live stream.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_list", description = "Lists webcams available to Aurora.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_permission", description = "Checks webcam access and device availability.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_status", description = "Gets the current webcam status.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "camera_start_preview", description = "Starts the live webcam preview.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
-            new { name = "camera_stop_preview", description = "Stops the live webcam preview.", input_schema = new { type = "object", properties = new { } } },
-            new { name = "camera_capture_photo", description = "Captures a JPEG photo from the active webcam.", input_schema = new { type = "object", properties = new { destination_folder = new { type = "string" } } } },
+            new { name = "camera_start_preview", description = "Starts and maintains the continuous live webcam preview until explicitly stopped.", input_schema = new { type = "object", properties = new { device_id = new { type = "string" } } } },
+            new { name = "camera_stop_preview", description = "Stops the live webcam preview without closing the camera device.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "camera_capture_photo", description = "Captures a JPEG photo from the active webcam without stopping the live stream.", input_schema = new { type = "object", properties = new { destination_folder = new { type = "string" } } } },
             new { name = "camera_open_windows_app", description = "Opens the native Windows Camera application.", input_schema = new { type = "object", properties = new { } } }
         };
 
@@ -37,7 +37,7 @@ namespace ZoeyOS.App.Services
         {
             return name switch
             {
-                "camera" => StatusAsync(),
+                "camera" => StartPreviewAsync(input),
                 "camera_open" => OpenAsync(input),
                 "camera_close" => CloseAsync(),
                 "camera_list" => ListAsync(),
@@ -51,18 +51,21 @@ namespace ZoeyOS.App.Services
             };
         }
 
-        private static Task<string> StatusAsync() => Task.FromResult(App.Camera.GetStatus());
+        private static async Task<string> StatusAsync() => App.Camera.GetStatus();
 
         private static async Task<string> OpenAsync(JsonElement input)
         {
-            await App.Camera.InitializeAsync(input.TryGetProperty("device_id", out var id) ? id.GetString() : null);
+            var deviceId = input.TryGetProperty("device_id", out var id) ? id.GetString() : null;
+            if (!App.Camera.IsInitialized)
+                await App.Camera.InitializeAsync(deviceId);
+            await App.Camera.StartPreviewAsync();
             return App.Camera.GetStatus();
         }
 
         private static async Task<string> CloseAsync()
         {
             await App.Camera.StopAsync();
-            return "Camera closed.";
+            return "Camera closed and live stream stopped.";
         }
 
         private static async Task<string> ListAsync()
@@ -76,7 +79,7 @@ namespace ZoeyOS.App.Services
             return (await App.Camera.CheckPermissionAsync()) switch
             {
                 CameraPermissionResult.Allowed => "Camera access allowed.",
-                CameraPermissionResult.Denied => "Camera access denied. Enable Camera access and desktop-app camera access in Windows Privacy & security settings.",
+                CameraPermissionResult.Denied => "Camera access denied. Enable Camera access and desktop-app camera access in Windows Privacy & security > Camera.",
                 CameraPermissionResult.NoCamera => "No camera devices found.",
                 _ => "Camera permission check failed."
             };
@@ -84,7 +87,9 @@ namespace ZoeyOS.App.Services
 
         private static async Task<string> StartPreviewAsync(JsonElement input)
         {
-            await App.Camera.InitializeAsync(input.TryGetProperty("device_id", out var id) ? id.GetString() : null);
+            var deviceId = input.TryGetProperty("device_id", out var id) ? id.GetString() : null;
+            if (!App.Camera.IsInitialized)
+                await App.Camera.InitializeAsync(deviceId);
             await App.Camera.StartPreviewAsync();
             return App.Camera.GetStatus();
         }
@@ -92,7 +97,7 @@ namespace ZoeyOS.App.Services
         private static async Task<string> StopPreviewAsync()
         {
             await App.Camera.StopPreviewAsync();
-            return "Camera preview stopped.";
+            return "Camera live stream stopped.";
         }
 
         private static async Task<string> CaptureAsync(JsonElement input)
@@ -101,7 +106,7 @@ namespace ZoeyOS.App.Services
                 await App.Camera.InitializeAsync();
             var folder = input.TryGetProperty("destination_folder", out var value) ? value.GetString() : null;
             var result = await App.Camera.CapturePhotoAsync(folder);
-            return $"Photo captured: {result.Path}";
+            return $"Photo captured without stopping the live stream: {result.Path}";
         }
 
         private static Task<string> OpenWindowsAppAsync()
