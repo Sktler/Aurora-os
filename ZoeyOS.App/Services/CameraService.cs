@@ -13,6 +13,7 @@ namespace ZoeyOS.App.Services
     public sealed class CameraService : IAsyncDisposable
     {
         private readonly SemaphoreSlim _gate = new(1, 1);
+        private readonly object _captureSync = new();
         private VideoCapture? _capture;
         private CancellationTokenSource? _previewCts;
         private Task? _previewTask;
@@ -43,7 +44,7 @@ namespace ZoeyOS.App.Services
                 }
                 catch
                 {
-                    // Some indices/drivers throw while probing. Keep scanning the remaining devices.
+                    // Some indices/drivers throw while probing. Keep scanning remaining devices.
                 }
             }
 
@@ -111,6 +112,7 @@ namespace ZoeyOS.App.Services
             }
         }
 
+        /// <summary>Starts one persistent capture loop and leaves it running until explicitly stopped.</summary>
         public async Task StartPreviewAsync()
         {
             if (!IsInitialized)
@@ -118,6 +120,7 @@ namespace ZoeyOS.App.Services
             if (IsActive)
                 return;
 
+            _previewCts?.Dispose();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
             _previewTask = Task.Run(() => PreviewLoop(token), token);
@@ -142,7 +145,7 @@ namespace ZoeyOS.App.Services
             var name = Devices.FirstOrDefault(d => d.Id == _selectedIndex.ToString())?.Name ?? "selected camera";
             if (!IsInitialized)
                 return $"Camera ready: {name}.";
-            return IsActive ? $"Camera active: {name}." : $"Camera initialized: {name}.";
+            return IsActive ? $"Camera live: {name}. Continuous stream is running." : $"Camera initialized: {name}.";
         }
 
         public void OpenWindowsCameraApp()
@@ -154,62 +157,96 @@ namespace ZoeyOS.App.Services
             });
         }
 
+        /// <summary>Captures the most recent streamed frame when available, without interrupting the stream.</summary>
         public async Task<StorageFileResult> CapturePhotoAsync(string? destinationFolder = null)
         {
             if (!IsInitialized)
                 await InitializeAsync();
 
-            using var frame = new Mat();
-            if (!_capture!.Read(frame) || frame.Empty())
-                throw new InvalidOperationException("The webcam did not return a frame.");
-
-            var folder = destinationFolder;
-            if (string.IsNullOrWhiteSpace(folder))
+            Mat frame;
+            lock (_captureSync)
             {
-                folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera");
+                frame = _latestFrame?.Clone() ?? new Mat();
+                if (frame.Empty())
+                {
+                    frame.Dispose();
+                    frame = new Mat();
+                    if (!_capture!.Read(frame) || frame.Empty())
+                    {
+                        frame.Dispose();
+                        throw new InvalidOperationException("The webcam did not return a frame.");
+                    }
+                }
             }
-            Directory.CreateDirectory(folder);
 
-            var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg");
-            Cv2.ImWrite(path, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
-            return new StorageFileResult(path);
+            using (frame)
+            {
+                var folder = destinationFolder;
+                if (string.IsNullOrWhiteSpace(folder))
+                    folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera");
+                Directory.CreateDirectory(folder);
+
+                var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss}.jpg");
+                Cv2.ImWrite(path, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
+                return new StorageFileResult(path);
+            }
         }
 
         public async Task StopAsync()
         {
             await StopPreviewAsync();
-            if (_capture != null)
+            lock (_captureSync)
             {
-                _capture.Release();
-                _capture.Dispose();
-                _capture = null;
-            }
+                if (_capture != null)
+                {
+                    _capture.Release();
+                    _capture.Dispose();
+                    _capture = null;
+                }
 
-            _latestFrame?.Dispose();
-            _latestFrame = null;
-            LatestFrame = null;
+                _latestFrame?.Dispose();
+                _latestFrame = null;
+                LatestFrame = null;
+            }
         }
 
         private void PreviewLoop(CancellationToken token)
         {
             using var frame = new Mat();
-            while (!token.IsCancellationRequested && _capture?.IsOpened() == true)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    if (!_capture.Read(frame) || frame.Empty())
+                    lock (_captureSync)
                     {
-                        Thread.Sleep(30);
-                        continue;
+                        if (_capture?.IsOpened() != true)
+                            break;
+
+                        if (!_capture.Read(frame) || frame.Empty())
+                        {
+                            // A temporary read failure does not stop the enabled stream.
+                        }
+                        else
+                        {
+                            _latestFrame?.Dispose();
+                            _latestFrame = frame.Clone();
+
+                            var bitmap = BitmapSourceConverter.ToBitmapSource(frame);
+                            bitmap.Freeze();
+                            LatestFrame = bitmap;
+                            FrameReady?.Invoke(this, bitmap);
+                        }
                     }
 
-                    var bitmap = BitmapSourceConverter.ToBitmapSource(frame);
-                    bitmap.Freeze();
-                    LatestFrame = bitmap;
-                    FrameReady?.Invoke(this, bitmap);
+                    Thread.Sleep(15);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch
                 {
+                    // Keep the continuous stream alive through transient frame/driver errors.
                     Thread.Sleep(100);
                 }
             }
