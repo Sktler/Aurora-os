@@ -81,6 +81,45 @@ namespace ZoeyOS.App.Views
         private void OpenCapabilities_Click(object sender, RoutedEventArgs e)
             => new CapabilitiesWindow { Owner = this }.ShowDialog();
 
+        private void Navigation_Click(object sender, RoutedEventArgs e)
+        {
+            var target = (sender as Button)?.Tag?.ToString()?.ToLowerInvariant();
+            switch (target)
+            {
+                case "chat":
+                    Chat_Click(sender, e);
+                    break;
+                case "memory":
+                    ComposerTextBox.Text = "Show me my saved memories.";
+                    ComposerTextBox.Focus();
+                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    break;
+                case "tasks":
+                    ComposerTextBox.Text = "Show me my tasks.";
+                    ComposerTextBox.Focus();
+                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    break;
+                case "schedule":
+                    ComposerTextBox.Text = "Show me my schedule.";
+                    ComposerTextBox.Focus();
+                    ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
+                    break;
+                case "music":
+                    PlayMusic_Click(sender, e);
+                    break;
+                case "smarthome":
+                    SmartHome_Click(sender, e);
+                    break;
+                case "tools":
+                case "camera":
+                    OpenCapabilities_Click(sender, e);
+                    break;
+                case "settings":
+                    OpenIntegrations_Click(sender, e);
+                    break;
+            }
+        }
+
         private void Chat_Click(object sender, RoutedEventArgs e)
         {
             ComposerTextBox.Focus();
@@ -109,16 +148,11 @@ namespace ZoeyOS.App.Views
                     new CapabilitiesWindow { Owner = this }.ShowDialog();
                     return;
                 }
-
-                if (!App.Camera.IsInitialized)
-                    await App.Camera.InitializeAsync();
+                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 var file = await App.Camera.CapturePhotoAsync();
                 MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private async void RecordVideo_Click(object sender, RoutedEventArgs e)
@@ -130,10 +164,7 @@ namespace ZoeyOS.App.Views
                     new CapabilitiesWindow { Owner = this }.ShowDialog();
                     return;
                 }
-
-                if (!App.Camera.IsInitialized)
-                    await App.Camera.InitializeAsync();
-
+                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 if (App.Camera.IsRecording)
                 {
                     await App.Camera.StopRecordingAsync();
@@ -141,15 +172,11 @@ namespace ZoeyOS.App.Views
                     MessageBox.Show(this, "Video recording stopped.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-
                 var file = await App.Camera.StartRecordingAsync();
                 RecordVideoButton.Content = "■\nStop Recording";
                 MessageBox.Show(this, $"Recording started.\n\nFile:\n{file.Path}\n\nClick Record Video again to stop.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenIntegrations_Click(sender, e);
@@ -164,11 +191,16 @@ namespace ZoeyOS.App.Views
         private async void Send_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
-            var text = ComposerTextBox.Text.Trim();
+            var source = sender as Button;
+            var text = source == null || source == FindName("SendButton") as Button
+                ? ComposerTextBox.Text.Trim()
+                : (source == null ? ComposerTextBox.Text.Trim() : QuickPromptTextBox.Text.Trim());
+            if (source != null && source.Name == "QuickPromptSendButton") text = QuickPromptTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(text)) return;
             dvm.SelectedCompanion.DraftMessage = text;
             await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
             ComposerTextBox.Clear();
+            QuickPromptTextBox.Clear();
         }
 
         private void Attach_Click(object sender, RoutedEventArgs e)
