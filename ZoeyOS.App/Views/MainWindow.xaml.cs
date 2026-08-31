@@ -109,6 +109,19 @@ namespace ZoeyOS.App.Views
             if (dialog.ShowDialog(this) != true) return;
             if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null) dvm.SelectedCompanion.AttachFile(dialog.FileName);
         }
-        private void ProfileMenu_Click(object sender, RoutedEventArgs e) => OpenSettings();
+
+        private void ProfileMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button) return;
+            var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, StaysOpen = false };
+            var settings = new MenuItem { Header = "⚙  Settings" };
+            settings.Click += (_, _) => OpenSettings();
+            menu.Items.Add(settings);
+            menu.Items.Add(new Separator());
+            var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" };
+            capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
+            menu.Items.Add(capabilities);
+            menu.IsOpen = true;
+        }
     }
 }
