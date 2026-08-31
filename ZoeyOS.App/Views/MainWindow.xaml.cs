@@ -25,28 +25,10 @@ namespace ZoeyOS.App.Views
 
         private void Minimize_Click(object sender, RoutedEventArgs e) => EnterMiniMode();
         private void MiniMode_Click(object sender, RoutedEventArgs e) => EnterMiniMode();
-
-        private void EnterMiniMode()
-        {
-            WindowState = WindowState.Normal;
-            Hide();
-            ShowMiniCompanion();
-        }
-
-        private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
-        {
-            if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this);
-            else SystemCommands.MaximizeWindow(this);
-        }
-
+        private void EnterMiniMode() { WindowState = WindowState.Normal; Hide(); ShowMiniCompanion(); }
+        private void MaximizeRestore_Click(object sender, RoutedEventArgs e) { if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this); else SystemCommands.MaximizeWindow(this); }
         private void Close_Click(object sender, RoutedEventArgs e) => ExitApplication();
-
-        private void Window_StateChanged(object sender, EventArgs e)
-        {
-            var maximized = WindowState == WindowState.Maximized;
-            MaximizeRestoreButton.Content = maximized ? "🗗" : "🗖";
-            MaximizeRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
-        }
+        private void Window_StateChanged(object sender, EventArgs e) { var maximized = WindowState == WindowState.Maximized; MaximizeRestoreButton.Content = maximized ? "🗗" : "🗖"; MaximizeRestoreButton.ToolTip = maximized ? "Restore" : "Maximize"; }
 
         private void ShowMiniCompanion()
         {
@@ -55,97 +37,43 @@ namespace ZoeyOS.App.Views
             _miniCompanion.RestoreRequested += MiniCompanion_RestoreRequested;
             _miniCompanion.ExitRequested += MiniCompanion_ExitRequested;
             _miniCompanion.Closed += (_, _) => _miniCompanion = null;
-            _miniCompanion.Show();
-            _miniCompanion.Activate();
+            _miniCompanion.Show(); _miniCompanion.Activate();
         }
-
-        private void MiniCompanion_RestoreRequested(object? sender, EventArgs e)
-        {
-            _miniCompanion?.Close(); _miniCompanion = null;
-            Show(); WindowState = WindowState.Normal; Activate(); Focus();
-        }
-
-        private void MiniCompanion_ExitRequested(object? sender, EventArgs e)
-        {
-            _miniCompanion?.Close(); _miniCompanion = null; ExitApplication();
-        }
-
+        private void MiniCompanion_RestoreRequested(object? sender, EventArgs e) { _miniCompanion?.Close(); _miniCompanion = null; Show(); WindowState = WindowState.Normal; Activate(); Focus(); }
+        private void MiniCompanion_ExitRequested(object? sender, EventArgs e) { _miniCompanion?.Close(); _miniCompanion = null; ExitApplication(); }
         private void ExitApplication() { _allowClose = true; _miniCompanion?.Close(); _miniCompanion = null; Close(); }
 
-        private IEnumerable<Companion> GetCompanions()
-            => DataContext is DashboardViewModel dvm
-                ? dvm.Companions.Select(c => c.Companion)
-                : Enumerable.Empty<Companion>();
-
-        private void OpenSettings(SettingsSection section = SettingsSection.Hub)
-        {
-            var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this };
-            window.ShowDialog();
-        }
-
+        private IEnumerable<Companion> GetCompanions() => DataContext is DashboardViewModel dvm ? dvm.Companions.Select(c => c.Companion) : Enumerable.Empty<Companion>();
+        private void OpenSettings(SettingsSection section = SettingsSection.Hub) { var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this }; window.ShowDialog(); }
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
-
-        private void OpenCapabilities_Click(object sender, RoutedEventArgs e)
-            => new CapabilitiesWindow { Owner = this }.ShowDialog();
+        private void OpenCapabilities_Click(object sender, RoutedEventArgs e) => new CapabilitiesWindow { Owner = this }.ShowDialog();
 
         private void Navigation_Click(object sender, RoutedEventArgs e)
         {
             var target = (sender as Button)?.Tag?.ToString()?.ToLowerInvariant();
             switch (target)
             {
-                case "home":
-                    Activate();
-                    break;
-                case "chat":
-                    OpenChatWindow();
-                    break;
-                case "memory":
-                    new MemoryWindow { Owner = this }.ShowDialog();
-                    break;
-                case "music":
-                    OpenSettings(SettingsSection.Music);
-                    break;
-                case "smarthome":
-                    OpenSettings(SettingsSection.SmartHome);
-                    break;
+                case "home": Activate(); break;
+                case "chat": OpenChatWindow(); break;
+                case "memory": new MemoryWindow { Owner = this }.ShowDialog(); break;
+                case "music": OpenSettings(SettingsSection.Music); break;
+                case "smarthome": OpenSettings(SettingsSection.SmartHome); break;
                 case "tools":
-                case "camera":
-                    OpenCapabilities_Click(sender, e);
-                    break;
+                case "camera": OpenCapabilities_Click(sender, e); break;
             }
         }
 
-        private void OpenChatWindow()
-        {
-            if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null)
-                new ChatWindow(dvm.SelectedCompanion) { Owner = this }.Show();
-        }
-
-        private void SetPrompt(string prompt)
-        {
-            ComposerTextBox.Text = prompt;
-            ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
-            ComposerTextBox.Focus();
-        }
-
+        private void OpenChatWindow() { if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null) new ChatWindow(dvm.SelectedCompanion) { Owner = this }.Show(); }
+        private void SetPrompt(string prompt) { ComposerTextBox.Text = prompt; ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length; ComposerTextBox.Focus(); }
         private void Chat_Click(object sender, RoutedEventArgs e) => OpenChatWindow();
         private void StartTask_Click(object sender, RoutedEventArgs e) => SetPrompt("Help me start a task: ");
+        private void OpenTodayOverview_Click(object sender, RoutedEventArgs e) => SetPrompt("Show me today's schedule, tasks, and reminders.");
 
-        private async void PlayMusic_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is DashboardViewModel dvm)
-                await dvm.MusicPlayer.TogglePlayPauseCommand.ExecuteAsync(null);
-        }
+        private async void PlayMusic_Click(object sender, RoutedEventArgs e) { if (DataContext is DashboardViewModel dvm) await dvm.MusicPlayer.TogglePlayPauseCommand.ExecuteAsync(null); }
 
         private async void TakePhoto_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
-                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
-                var file = await App.Camera.CapturePhotoAsync();
-                MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            try { if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; } if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync(); var file = await App.Camera.CapturePhotoAsync(); MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information); }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
@@ -155,16 +83,8 @@ namespace ZoeyOS.App.Views
             {
                 if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
                 if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
-                if (App.Camera.IsRecording)
-                {
-                    await App.Camera.StopRecordingAsync();
-                    RecordVideoButton.Content = "▣\nRecord Video";
-                    MessageBox.Show(this, "Video recording stopped.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-                var file = await App.Camera.StartRecordingAsync();
-                RecordVideoButton.Content = "■\nStop Recording";
-                MessageBox.Show(this, $"Recording started.\n\nFile:\n{file.Path}\n\nClick Record Video again to stop.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (App.Camera.IsRecording) { await App.Camera.StopRecordingAsync(); RecordVideoButton.Content = "▣\nRecord Video"; MessageBox.Show(this, "Video recording stopped.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+                var file = await App.Camera.StartRecordingAsync(); RecordVideoButton.Content = "■\nStop Recording"; MessageBox.Show(this, $"Recording started.\n\nFile:\n{file.Path}\n\nClick Record Video again to stop.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
@@ -180,8 +100,7 @@ namespace ZoeyOS.App.Views
             if (string.IsNullOrWhiteSpace(text)) return;
             dvm.SelectedCompanion.DraftMessage = text;
             await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
-            QuickPromptTextBox.Clear();
-            ComposerTextBox.Clear();
+            QuickPromptTextBox.Clear(); ComposerTextBox.Clear();
         }
 
         private void Attach_Click(object sender, RoutedEventArgs e)
@@ -190,7 +109,6 @@ namespace ZoeyOS.App.Views
             if (dialog.ShowDialog(this) != true) return;
             if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null) dvm.SelectedCompanion.AttachFile(dialog.FileName);
         }
-
         private void ProfileMenu_Click(object sender, RoutedEventArgs e) => OpenSettings();
     }
 }
