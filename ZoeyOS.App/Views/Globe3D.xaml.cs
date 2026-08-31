@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace ZoeyOS.App.Views
 {
@@ -10,6 +11,17 @@ namespace ZoeyOS.App.Views
     /// </summary>
     public partial class Globe3D : UserControl
     {
+        // Kept as a compatibility property because existing dashboard XAML can provide
+        // an AccentColor binding. The reference artwork itself is never recolored.
+        public static readonly DependencyProperty AccentColorProperty =
+            DependencyProperty.Register(nameof(AccentColor), typeof(Brush), typeof(Globe3D), new PropertyMetadata(null));
+
+        public Brush? AccentColor
+        {
+            get => (Brush?)GetValue(AccentColorProperty);
+            set => SetValue(AccentColorProperty, value);
+        }
+
         public Globe3D()
         {
             InitializeComponent();
