@@ -44,6 +44,7 @@
         </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition Width="*"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
+
             <Border Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
@@ -54,26 +55,27 @@
                             </Border>
                             <TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
                         </StackPanel>
+
                         <Button Tag="home" Style="{StaticResource NavButtonStyle}" Background="#251431" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Home" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="chat" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="17"/><TextBlock Text="Chat" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="memory" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="◇" Width="32" FontSize="19"/><TextBlock Text="Memory" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="tasks" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="✓" Width="32" FontSize="19"/><TextBlock Text="Tasks" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="schedule" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="□" Width="32" FontSize="19"/><TextBlock Text="Schedule" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="music" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="♫" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Music" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="smarthome" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20"/><TextBlock Text="Smart Home" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="tools" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⚒" Width="32" FontSize="18"/><TextBlock Text="Tools" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="camera" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="18" Foreground="{StaticResource AccentCyanBrush}"/><TextBlock Text="Camera" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="settings" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Width="32" FontSize="18"/><TextBlock Text="Settings" VerticalAlignment="Center"/></StackPanel></Button>
                     </StackPanel>
+
                     <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
-                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="A" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock Text="Adam" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
-                            <TextBlock Grid.Column="2" Text="⌄" FontSize="18" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
+                            <Button Grid.Column="2" Content="⌄" Width="28" Height="32" Background="Transparent" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" FontSize="18" Click="ProfileMenu_Click" ToolTip="Settings"/>
                         </Grid>
                     </Border>
                 </DockPanel>
             </Border>
+
             <Grid Grid.Column="1" Background="#080B11">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,22,0,0">
@@ -81,11 +83,11 @@
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
                 </StackPanel>
                 <Grid Grid.Row="1">
-                    <!-- Orb is intentionally unchanged: this is the existing Globe3D control used by Aurora. -->
+                    <!-- DO NOT ALTER: this is the reference orb control. -->
                     <local:Globe3D Width="430" Height="430" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0" AccentColor="{Binding SelectedCompanion.Companion.AccentHex}"/>
                     <StackPanel VerticalAlignment="Bottom" Margin="34,0,34,18">
                         <Border Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="18,8">
-                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="QuickPromptTextBox" Text="" ToolTip="Type a request" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}" FontSize="15" VerticalContentAlignment="Center"/><Button Grid.Column="1" Content="➜" Width="36" Height="36" Background="#6425A8" Foreground="White" BorderThickness="0" FontSize="18" Click="Send_Click"/></Grid>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="QuickPromptTextBox" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}" FontSize="15" VerticalContentAlignment="Center" ToolTip="Type a request"/><Button Grid.Column="1" Content="➜" Width="36" Height="36" Background="#6425A8" Foreground="White" BorderThickness="0" FontSize="18" Click="Send_Click"/></Grid>
                         </Border>
                         <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}" Content="▣  Chat with Aurora" Click="Chat_Click"/>
@@ -113,6 +115,7 @@
                     </Grid>
                 </Border>
             </Grid>
+
             <Border Grid.Column="2" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="1,0,0,0" Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
