@@ -1,8 +1,10 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ZoeyOS.App.Models;
+using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App.ViewModels
 {
@@ -14,6 +16,19 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
         [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
         [ObservableProperty] private bool _wakeWordFlash;
+
+        // Today's Overview
+        [ObservableProperty] private string _weatherSummary = "Loading weather…";
+        [ObservableProperty] private string _weatherLocation = "Auburn, NY";
+        [ObservableProperty] private string _weatherTemperature = "—";
+        [ObservableProperty] private string _weatherCondition = "Weather";
+
+        // System card
+        [ObservableProperty] private string _cpuUsage = "—";
+        [ObservableProperty] private string _ramUsage = "—";
+        [ObservableProperty] private string _diskUsage = "—";
+        [ObservableProperty] private string _gpuUsage = "—";
+        [ObservableProperty] private bool _gpuAvailable;
 
         public bool WakeWordAvailable => App.WakeWord?.IsAvailable == true;
 
@@ -34,7 +49,63 @@ namespace ZoeyOS.App.ViewModels
                 App.WakeWord.CommandRecognized += OnWakeCommandRecognized;
                 App.WakeWord.StatusChanged += OnWakeStatusChanged;
             }
+
+            if (App.Metrics != null)
+                App.Metrics.Updated += OnMetricsUpdated;
+
+            _ = RefreshWeatherAsync();
         }
+
+        private async System.Threading.Tasks.Task RefreshWeatherAsync()
+        {
+            try
+            {
+                var result = await App.Weather.GetCurrentWeatherAsync(WeatherLocation);
+                WeatherSummary = result;
+                ParseWeatherSummary(result);
+            }
+            catch (Exception ex)
+            {
+                WeatherSummary = $"Weather unavailable: {ex.Message}";
+                WeatherTemperature = "—";
+                WeatherCondition = "Weather unavailable";
+            }
+        }
+
+        private void ParseWeatherSummary(string result)
+        {
+            // WeatherClient returns a human-readable string. Pull out the temperature and condition
+            // for the compact dashboard card while retaining the full result as the tooltip/detail.
+            var marker = result.IndexOf(": ", StringComparison.Ordinal);
+            var detail = marker >= 0 ? result[(marker + 2)..] : result;
+            var tempMarker = detail.IndexOf(", ", StringComparison.Ordinal);
+            if (tempMarker > 0)
+            {
+                WeatherCondition = detail[..tempMarker];
+                var tempPart = detail[(tempMarker + 2)..];
+                var end = tempPart.IndexOf("°F", StringComparison.Ordinal);
+                WeatherTemperature = end > 0 ? tempPart[..(end + 2)] : "—";
+            }
+            else
+            {
+                WeatherCondition = detail;
+                WeatherTemperature = "—";
+            }
+        }
+
+        private void OnMetricsUpdated(SystemMetrics metrics)
+        {
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                CpuUsage = FormatPercent(metrics.CpuPercent);
+                RamUsage = FormatPercent(metrics.RamPercent);
+                DiskUsage = FormatPercent(metrics.DiskPercent);
+                GpuAvailable = metrics.GpuPercent >= 0;
+                GpuUsage = GpuAvailable ? FormatPercent(metrics.GpuPercent) : "N/A";
+            });
+        }
+
+        private static string FormatPercent(double value) => value < 0 ? "N/A" : $"{value:0}%";
 
         private async void OnWakeWordDetected()
         {
