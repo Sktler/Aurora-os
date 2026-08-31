@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <None Include="Assets\app.ico" Condition="Exists('Assets\app.ico')" />
+    <Resource Include="Assets\AuroraOrb.png" />
   </ItemGroup>
 
 </Project>

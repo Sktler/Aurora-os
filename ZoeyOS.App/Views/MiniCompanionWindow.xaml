@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Width="96" Height="96" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="True">
-    <Border CornerRadius="48" Background="#101821" BorderBrush="#4FD8E8" BorderThickness="2" MouseLeftButtonDown="Avatar_MouseLeftButtonDown">
-        <Grid>
-            <Ellipse Width="28" Height="28" Fill="#4FD8E8" VerticalAlignment="Top" Margin="0,13,0,0"/>
-            <Ellipse Width="52" Height="31" Fill="#4FD8E8" VerticalAlignment="Bottom" Margin="0,0,0,13"/>
-            <Button Content="×" Width="22" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,5,0" Click="Close_Click" Background="#101821" Foreground="White" BorderBrush="#4FD8E8" BorderThickness="1" Padding="0" FontSize="12"/>
-        </Grid>
-    </Border>
+    <Grid Width="96" Height="96" Background="Transparent" MouseLeftButtonDown="Avatar_MouseLeftButtonDown">
+        <Ellipse Width="92" Height="92" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#4FD8E8" StrokeThickness="1" Fill="Transparent" IsHitTestVisible="False"/>
+        <Image Source="/ZoeyOS.App;component/Assets/AuroraOrb.png"
+               Width="92" Height="92" Stretch="Fill" IsHitTestVisible="False"
+               SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <Button Content="×" Width="22" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0" Click="Close_Click" Background="#101821" Foreground="White" BorderBrush="#4FD8E8" BorderThickness="1" Padding="0" FontSize="12" Panel.ZIndex="2"/>
+    </Grid>
 </Window>
