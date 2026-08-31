@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shell;
+using ZoeyOS.App.Models;
 using ZoeyOS.App.ViewModels;
 
 namespace ZoeyOS.App.Views
@@ -70,13 +71,18 @@ namespace ZoeyOS.App.Views
 
         private void ExitApplication() { _allowClose = true; _miniCompanion?.Close(); _miniCompanion = null; Close(); }
 
-        private void OpenIntegrations_Click(object sender, RoutedEventArgs e)
-        {
-            var companions = DataContext is DashboardViewModel dvm
+        private IEnumerable<Companion> GetCompanions()
+            => DataContext is DashboardViewModel dvm
                 ? dvm.Companions.Select(c => c.Companion)
-                : Enumerable.Empty<Models.Companion>();
-            new IntegrationsWindow(companions) { Owner = this }.ShowDialog();
+                : Enumerable.Empty<Companion>();
+
+        private void OpenSettings(SettingsSection section = SettingsSection.Hub)
+        {
+            var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this };
+            window.ShowDialog();
         }
+
+        private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
         private void OpenCapabilities_Click(object sender, RoutedEventArgs e)
             => new CapabilitiesWindow { Owner = this }.ShowDialog();
@@ -90,31 +96,28 @@ namespace ZoeyOS.App.Views
                     Activate();
                     break;
                 case "chat":
-                    Chat_Click(sender, e);
+                    OpenChatWindow();
                     break;
                 case "memory":
-                    SetPrompt("Show me my saved memories.");
-                    break;
-                case "tasks":
-                    SetPrompt("Show me my tasks.");
-                    break;
-                case "schedule":
-                    SetPrompt("Show me my schedule.");
+                    new MemoryWindow { Owner = this }.ShowDialog();
                     break;
                 case "music":
-                    PlayMusic_Click(sender, e);
+                    OpenSettings(SettingsSection.Music);
                     break;
                 case "smarthome":
-                    SmartHome_Click(sender, e);
+                    OpenSettings(SettingsSection.SmartHome);
                     break;
                 case "tools":
                 case "camera":
                     OpenCapabilities_Click(sender, e);
                     break;
-                case "settings":
-                    OpenIntegrations_Click(sender, e);
-                    break;
             }
+        }
+
+        private void OpenChatWindow()
+        {
+            if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null)
+                new ChatWindow(dvm.SelectedCompanion) { Owner = this }.Show();
         }
 
         private void SetPrompt(string prompt)
@@ -124,12 +127,7 @@ namespace ZoeyOS.App.Views
             ComposerTextBox.Focus();
         }
 
-        private void Chat_Click(object sender, RoutedEventArgs e)
-        {
-            ComposerTextBox.Focus();
-            ComposerTextBox.SelectAll();
-        }
-
+        private void Chat_Click(object sender, RoutedEventArgs e) => OpenChatWindow();
         private void StartTask_Click(object sender, RoutedEventArgs e) => SetPrompt("Help me start a task: ");
 
         private async void PlayMusic_Click(object sender, RoutedEventArgs e)
@@ -170,7 +168,7 @@ namespace ZoeyOS.App.Views
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
-        private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenIntegrations_Click(sender, e);
+        private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenSettings(SettingsSection.SmartHome);
         private void AddReminder_Click(object sender, RoutedEventArgs e) => SetPrompt("Create a reminder: ");
 
         private async void Send_Click(object sender, RoutedEventArgs e)
@@ -191,5 +189,7 @@ namespace ZoeyOS.App.Views
             if (dialog.ShowDialog(this) != true) return;
             if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null) dvm.SelectedCompanion.AttachFile(dialog.FileName);
         }
+
+        private void ProfileMenu_Click(object sender, RoutedEventArgs e) => OpenSettings();
     }
 }
