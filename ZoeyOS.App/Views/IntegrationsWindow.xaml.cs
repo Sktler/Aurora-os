@@ -13,15 +13,28 @@ namespace ZoeyOS.App.Views
 {
     public partial class IntegrationsWindow : Window
     {
+        private readonly SettingsSection _initialSection;
+
         public IntegrationsWindow(IEnumerable<Companion> companions)
+            : this(companions, SettingsSection.Hub)
+        {
+        }
+
+        public IntegrationsWindow(IEnumerable<Companion> companions, SettingsSection initialSection)
         {
             InitializeComponent();
+            _initialSection = initialSection;
             DataContext = new IntegrationsViewModel(companions);
 
             if (DataContext is IntegrationsViewModel vm && !string.IsNullOrEmpty(vm.GoogleClientSecret))
                 GoogleSecretBox.Password = vm.GoogleClientSecret;
 
-            Loaded += (_, _) => Dispatcher.BeginInvoke(new Action(AddCapabilityTiles), System.Windows.Threading.DispatcherPriority.Loaded);
+            Loaded += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(new Action(AddCapabilityTiles), System.Windows.Threading.DispatcherPriority.Loaded);
+                if (DataContext is IntegrationsViewModel targetVm && _initialSection != SettingsSection.Hub)
+                    Dispatcher.BeginInvoke(new Action(() => targetVm.GoToSectionCommand.Execute(_initialSection)), System.Windows.Threading.DispatcherPriority.Loaded);
+            };
         }
 
         protected override void OnSourceInitialized(EventArgs e)
