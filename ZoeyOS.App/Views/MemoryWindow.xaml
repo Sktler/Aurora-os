@@ -24,6 +24,7 @@
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                                         <TextBlock Text="Messages" FontSize="11" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right"/>
                                         <TextBlock Text="{Binding Messages.Count}" FontSize="18" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Right"/>
+                                        <Button Content="Clear chat" Command="{Binding ClearChatHistoryCommand}" Margin="0,6,0,0" Padding="10,5" Background="#101620" Foreground="#F0745C" BorderBrush="#293245" ToolTip="Delete only this companion's conversation"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
