@@ -30,6 +30,9 @@ namespace ZoeyOS.App.Services
         public string SpotifyRefreshToken { get; set; } = "";
         public bool SpotifyConnected { get; set; } = false;
         public string SpotifyAccountName { get; set; } = "";
+        // Legacy settings retained so older settings UI can deserialize safely.
+        public string JamendoClientId { get; set; } = "";
+        public bool JamendoConnected { get; set; } = false;
         public string DatabasePath { get; set; } = "";
         public string VoiceName { get; set; } = "";
         public string TtsProvider { get; set; } = "openai";

@@ -45,7 +45,7 @@ namespace ZoeyOS.App.Services
         {
             try
             {
-                using var category = new PerformanceCounterCategory("GPU Engine");
+                var category = new PerformanceCounterCategory("GPU Engine");
                 return category.GetInstanceNames()
                     .Where(n => n.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
                     .Select(n => TryCounter("GPU Engine", "Utilization Percentage", n))

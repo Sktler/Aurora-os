@@ -31,7 +31,7 @@
         <ContextMenu x:Key="ComposerMenu" x:Name="ComposerMenu">
             <MenuItem Header="📎  Add file" Click="Attach_Click"/>
             <MenuItem Header="📷  Take photo" Click="TakePhoto_Click"/>
-            <MenuItem Header="🎥  Record video" Click="RecordVideo_Click"/>
+            <MenuItem x:Name="RecordVideoButton" Header="🎥  Record video" Click="RecordVideo_Click"/>
             <Separator/>
             <MenuItem Header="🎙  Voice input" Command="{Binding SelectedCompanion.ListenCommand}"/>
             <MenuItem Header="♫  Music" Click="ComposerMusic_Click"/>
