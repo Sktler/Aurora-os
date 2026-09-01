@@ -31,6 +31,18 @@ namespace ZoeyOS.App.ViewModels
         [RelayCommand] private void CommitRename() { var trimmed = RenameDraft.Trim(); if (!string.IsNullOrWhiteSpace(trimmed)) { Companion.Name = trimmed; App.Memory.SaveCompanion(Companion); } IsRenaming = false; }
         [RelayCommand] private void CancelRename() => IsRenaming = false;
 
+        [RelayCommand]
+        private void ClearChatHistory()
+        {
+            if (IsBusy) return;
+            App.Memory.ClearHistory(Companion.Id);
+            Messages.Clear();
+            DraftMessage = "";
+            AttachStatus = "Chat history cleared.";
+            Companion.LastActivitySummary = "New conversation ready.";
+            Companion.Status = CompanionStatus.Idle;
+        }
+
         private readonly Queue<string> _pendingUtterances = new();
         private bool _isDrainingQueue;
 
@@ -53,15 +65,12 @@ namespace ZoeyOS.App.ViewModels
                     IsListening = false;
                     App.WakeWord?.Start();
                 }));
-            if (!started)
-                App.WakeWord?.Start();
+            if (!started) App.WakeWord?.Start();
             IsListening = started;
         }
 
-        public void SubmitVoiceUtterance(string heard)
-        {
+        public void SubmitVoiceUtterance(string heard) =>
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => EnqueueHeardUtterance(heard));
-        }
 
         private void EnqueueHeardUtterance(string heard)
         {
@@ -123,31 +132,19 @@ namespace ZoeyOS.App.ViewModels
                     .Where(g => !string.IsNullOrWhiteSpace(g.Key))
                     .Select(g => g.First())
                     .ToList();
-
-                // The model cannot inspect the repository directly. Give it the exact
-                // tool inventory that is being sent to the API so it cannot hallucinate
-                // an old/partial 17-tool list. This is generated from the same objects
-                // that are passed as Claude's `tools` payload.
                 var toolNames = toolDefinitions
                     .Select(x => x.GetType().GetProperty("name")?.GetValue(x)?.ToString())
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 var authoritativeToolContext =
-                    "AUTHORITATIVE AURORA TOOL INVENTORY FOR THIS REQUEST: " +
-                    string.Join(", ", toolNames) +
+                    "AUTHORITATIVE AURORA TOOL INVENTORY FOR THIS REQUEST: " + string.Join(", ", toolNames) +
                     ". Never claim to have inspected the source code or an internal registry. " +
                     "If asked which tools are available, use this inventory; do not invent or omit tools. " +
                     "The camera tool is available when `camera` appears in this inventory.";
                 var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext;
 
-                var reply = await App.AI.SendWithToolsAsync(
-                    effectiveSystemPrompt,
-                    historyForClaude,
-                    userText,
-                    toolDefinitions,
-                    ExecuteToolAsync);
-
+                var reply = await App.AI.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
                 var assistantMsg = new ChatMessage { CompanionId = Companion.Id, Role = "assistant", Content = reply };
                 Messages.Add(assistantMsg);
                 App.Memory.AppendMessage(assistantMsg);
@@ -170,10 +167,8 @@ namespace ZoeyOS.App.ViewModels
             finally { IsBusy = false; }
         }
 
-        private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input)
-            => CameraTools.IsCameraTool(toolName)
-                ? CameraTools.ExecuteAsync(toolName, input)
-                : SystemTools.ExecuteAsync(toolName, input);
+        private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input) =>
+            CameraTools.IsCameraTool(toolName) ? CameraTools.ExecuteAsync(toolName, input) : SystemTools.ExecuteAsync(toolName, input);
 
         private List<ChatMessage> SliceHistory() { var list = new List<ChatMessage>(Messages); list.RemoveAt(list.Count - 1); return list; }
         private static string Truncate(string s, int len) => s.Length <= len ? s : s.Substring(0, len) + "…";
