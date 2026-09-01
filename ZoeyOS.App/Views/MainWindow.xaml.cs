@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Shell;
 using ZoeyOS.App.Models;
 using ZoeyOS.App.ViewModels;
@@ -14,8 +15,88 @@ namespace ZoeyOS.App.Views
     {
         private MiniCompanionWindow? _miniCompanion;
         private bool _allowClose;
+        private bool _leftCollapsed;
+        private bool _rightCollapsed;
+        private Grid? _layoutGrid;
 
-        public MainWindow() { InitializeComponent(); }
+        public MainWindow()
+        {
+            InitializeComponent();
+            CollapseLegacyDashboardComposer();
+            InstallSidebarToggles();
+            ComposerTextBox.KeyDown += ComposerTextBox_KeyDown;
+        }
+
+        private void CollapseLegacyDashboardComposer()
+        {
+            QuickPromptTextBox.Visibility = Visibility.Collapsed;
+            if (QuickPromptTextBox.Parent is Panel parent) parent.Visibility = Visibility.Collapsed;
+
+            var root = Content as Grid;
+            var body = root?.Children.Count > 1 ? root.Children[1] as Grid : null;
+            if (body == null) return;
+            foreach (var child in body.Children.OfType<FrameworkElement>().ToList())
+                if (child is Border border && FindText(border, "Quick Actions")) border.Visibility = Visibility.Collapsed;
+        }
+
+        private static bool FindText(DependencyObject root, string text)
+        {
+            if (root is TextBlock tb && string.Equals(tb.Text, text, StringComparison.OrdinalIgnoreCase)) return true;
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+                if (FindText(VisualTreeHelper.GetChild(root, i), text)) return true;
+            return false;
+        }
+
+        private void InstallSidebarToggles()
+        {
+            var root = Content as Grid;
+            if (root == null || root.Children.Count < 2 || root.Children[0] is not Grid titleBar || root.Children[1] is not Grid body) return;
+            _layoutGrid = body;
+            var buttons = titleBar.Children.OfType<StackPanel>().FirstOrDefault();
+            if (buttons == null) return;
+            buttons.Children.Insert(0, CreateChromeButton("☰", "Toggle navigation", (_, _) => ToggleLeftSidebar()));
+            buttons.Children.Insert(1, CreateChromeButton("◫", "Toggle information panel", (_, _) => ToggleRightSidebar()));
+        }
+
+        private static Button CreateChromeButton(string content, string tooltip, RoutedEventHandler handler)
+        {
+            var b = new Button { Content = content, Width = 42, Height = 34, Background = Brushes.Transparent, Foreground = Brushes.White, BorderThickness = new Thickness(0), FontSize = 14, ToolTip = tooltip, Cursor = Cursors.Hand };
+            b.Click += handler;
+            return b;
+        }
+
+        private void ToggleLeftSidebar()
+        {
+            if (_layoutGrid == null) return;
+            _leftCollapsed = !_leftCollapsed;
+            _layoutGrid.ColumnDefinitions[0].Width = _leftCollapsed ? new GridLength(0) : new GridLength(230);
+        }
+
+        private void ToggleRightSidebar()
+        {
+            if (_layoutGrid == null) return;
+            _rightCollapsed = !_rightCollapsed;
+            _layoutGrid.ColumnDefinitions[2].Width = _rightCollapsed ? new GridLength(0) : new GridLength(350);
+        }
+
+        private void ComposerTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
+            {
+                e.Handled = true;
+                _ = SendComposerAsync();
+            }
+        }
+
+        private async System.Threading.Tasks.Task SendComposerAsync()
+        {
+            if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
+            var text = ComposerTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(text)) return;
+            dvm.SelectedCompanion.DraftMessage = text;
+            await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
+            ComposerTextBox.Clear();
+        }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -68,7 +149,6 @@ namespace ZoeyOS.App.Views
         private void Chat_Click(object sender, RoutedEventArgs e) => OpenChatWindow();
         private void StartTask_Click(object sender, RoutedEventArgs e) => SetPrompt("Help me start a task: ");
         private void OpenTodayOverview_Click(object sender, RoutedEventArgs e) => SetPrompt("Show me today's schedule, tasks, and reminders.");
-
         private async void PlayMusic_Click(object sender, RoutedEventArgs e) { if (DataContext is DashboardViewModel dvm) await dvm.MusicPlayer.TogglePlayPauseCommand.ExecuteAsync(null); }
 
         private async void TakePhoto_Click(object sender, RoutedEventArgs e)
@@ -83,25 +163,15 @@ namespace ZoeyOS.App.Views
             {
                 if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
                 if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
-                if (App.Camera.IsRecording) { await App.Camera.StopRecordingAsync(); RecordVideoButton.Content = "▣\nRecord Video"; MessageBox.Show(this, "Video recording stopped.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information); return; }
-                var file = await App.Camera.StartRecordingAsync(); RecordVideoButton.Content = "■\nStop Recording"; MessageBox.Show(this, $"Recording started.\n\nFile:\n{file.Path}\n\nClick Record Video again to stop.", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (App.Camera.IsRecording) { await App.Camera.StopRecordingAsync(); RecordVideoButton.Content = "▣\nRecord Video"; return; }
+                await App.Camera.StartRecordingAsync(); RecordVideoButton.Content = "■\nStop Recording";
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenSettings(SettingsSection.SmartHome);
         private void AddReminder_Click(object sender, RoutedEventArgs e) => SetPrompt("Create a reminder: ");
-
-        private async void Send_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
-            var buttonText = (sender as Button)?.Content?.ToString();
-            var text = buttonText == "➜" ? QuickPromptTextBox.Text.Trim() : ComposerTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(text)) return;
-            dvm.SelectedCompanion.DraftMessage = text;
-            await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
-            QuickPromptTextBox.Clear(); ComposerTextBox.Clear();
-        }
+        private async void Send_Click(object sender, RoutedEventArgs e) => await SendComposerAsync();
 
         private void Attach_Click(object sender, RoutedEventArgs e)
         {
@@ -114,13 +184,9 @@ namespace ZoeyOS.App.Views
         {
             if (sender is not Button button) return;
             var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, StaysOpen = false };
-            var settings = new MenuItem { Header = "⚙  Settings" };
-            settings.Click += (_, _) => OpenSettings();
-            menu.Items.Add(settings);
+            var settings = new MenuItem { Header = "⚙  Settings" }; settings.Click += (_, _) => OpenSettings(); menu.Items.Add(settings);
             menu.Items.Add(new Separator());
-            var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" };
-            capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
-            menu.Items.Add(capabilities);
+            var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" }; capabilities.Click += (_, _) => OpenCapabilities_Click(button, e); menu.Items.Add(capabilities);
             menu.IsOpen = true;
         }
     }
