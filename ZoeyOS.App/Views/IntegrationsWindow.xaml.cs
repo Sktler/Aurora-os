@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
-using System.Windows.Media;
 using ZoeyOS.App.Models;
 using ZoeyOS.App.Services;
 using ZoeyOS.App.ViewModels;
@@ -31,7 +30,6 @@ namespace ZoeyOS.App.Views
 
             Loaded += (_, _) =>
             {
-                Dispatcher.BeginInvoke(new Action(AddCapabilityTiles), System.Windows.Threading.DispatcherPriority.Loaded);
                 if (DataContext is IntegrationsViewModel targetVm && _initialSection != SettingsSection.Hub)
                     Dispatcher.BeginInvoke(new Action(() => targetVm.GoToSectionCommand.Execute(_initialSection)), System.Windows.Threading.DispatcherPriority.Loaded);
             };
@@ -69,42 +67,6 @@ namespace ZoeyOS.App.Views
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Choose a folder Sift can read files from", Multiselect = false };
             if (dialog.ShowDialog(this) == true && DataContext is IntegrationsViewModel vm) vm.SetTrustedFolder(dialog.FolderName);
-        }
-
-        private void AddCapabilityTiles()
-        {
-            if (Content is not Grid root) return;
-            var hub = FindDescendant<WrapPanel>(root, wp => FindDescendant<TextBlock>(wp, t => t.Text == "🧠 AI engine") != null);
-            if (hub == null || FindDescendant<TextBlock>(hub, t => t.Text == "📷 Camera & vision") != null) return;
-
-            hub.Children.Add(CreateCapabilityTile("📷 Camera & vision", "Windows camera permissions, devices, capture", "camera"));
-            hub.Children.Add(CreateCapabilityTile("🧩 MCP & tools", "Connect MCP servers and discover model tools", "mcp"));
-            hub.Children.Add(CreateCapabilityTile("🎨 Image generation", "Google/Gemini and OpenAI image providers", "image"));
-            hub.Children.Add(CreateCapabilityTile("🔐 Permissions", "Review hardware and tool access", "permissions"));
-        }
-
-        private Button CreateCapabilityTile(string title, string description, string kind)
-        {
-            var button = new Button
-            {
-                Width = 300, Height = 92, Margin = new Thickness(0, 0, 14, 14), Cursor = System.Windows.Input.Cursors.Hand,
-                HorizontalContentAlignment = HorizontalAlignment.Left,
-                Background = (Brush)FindResource("BgPanelBrush"), BorderThickness = new Thickness(0)
-            };
-            var panel = new StackPanel();
-            panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 14 });
-            panel.Children.Add(new TextBlock { Text = description, Foreground = (Brush)FindResource("TextMutedBrush"), Margin = new Thickness(0,4,0,0), TextWrapping = TextWrapping.Wrap });
-            button.Content = panel;
-            button.Click += (_, _) => new CapabilitiesWindow { Owner = this }.ShowDialog();
-            return button;
-        }
-
-        private static T? FindDescendant<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
-        {
-            if (root is T match && predicate(match)) return match;
-            var count = VisualTreeHelper.GetChildrenCount(root);
-            for (var i = 0; i < count; i++) { var result = FindDescendant<T>(VisualTreeHelper.GetChild(root, i), predicate); if (result != null) return result; }
-            return null;
         }
     }
 }
