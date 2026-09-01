@@ -35,28 +35,15 @@ namespace ZoeyOS.App.Views
             if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
             var text = ComposerTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(text) || dvm.SelectedCompanion.IsBusy) return;
-
             dvm.SelectedCompanion.DraftMessage = text;
-            try
-            {
-                await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
-            }
-            finally
-            {
-                ComposerTextBox.Clear();
-            }
+            try { await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null); }
+            finally { ComposerTextBox.Clear(); }
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
-            {
-                MaximizeRestore_Click(sender, e);
-                return;
-            }
-
-            try { DragMove(); }
-            catch (InvalidOperationException) { }
+            if (e.ClickCount == 2) { MaximizeRestore_Click(sender, e); return; }
+            try { DragMove(); } catch (InvalidOperationException) { }
         }
 
         private void ToggleLeftSidebar_Click(object sender, RoutedEventArgs e)
@@ -85,10 +72,8 @@ namespace ZoeyOS.App.Views
 
         private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
         {
-            if (WindowState == WindowState.Maximized)
-                SystemCommands.RestoreWindow(this);
-            else
-                SystemCommands.MaximizeWindow(this);
+            if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this);
+            else SystemCommands.MaximizeWindow(this);
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => ExitApplication();
@@ -102,12 +87,7 @@ namespace ZoeyOS.App.Views
 
         private void ShowMiniCompanion()
         {
-            if (_miniCompanion != null)
-            {
-                _miniCompanion.Activate();
-                return;
-            }
-
+            if (_miniCompanion != null) { _miniCompanion.Activate(); return; }
             _miniCompanion = new MiniCompanionWindow();
             _miniCompanion.RestoreRequested += MiniCompanion_RestoreRequested;
             _miniCompanion.ExitRequested += MiniCompanion_ExitRequested;
@@ -153,36 +133,20 @@ namespace ZoeyOS.App.Views
         }
 
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
-
-        private void OpenCapabilities_Click(object sender, RoutedEventArgs e) =>
-            new CapabilitiesWindow { Owner = this }.ShowDialog();
+        private void OpenCapabilities_Click(object sender, RoutedEventArgs e) => new CapabilitiesWindow { Owner = this }.ShowDialog();
 
         private void Navigation_Click(object sender, RoutedEventArgs e)
         {
             var target = (sender as Button)?.Tag?.ToString()?.ToLowerInvariant();
             switch (target)
             {
-                case "home":
-                    Activate();
-                    break;
-                case "chat":
-                    OpenChatWindow();
-                    break;
-                case "memory":
-                    new MemoryWindow { Owner = this }.ShowDialog();
-                    break;
-                case "music":
-                    OpenSettings(SettingsSection.Music);
-                    break;
-                case "smarthome":
-                    OpenSettings(SettingsSection.SmartHome);
-                    break;
+                case "home": Activate(); break;
+                case "chat": OpenChatWindow(); break;
+                case "memory": new MemoryWindow { Owner = this }.ShowDialog(); break;
+                case "music": OpenSettings(SettingsSection.Music); break;
+                case "smarthome": OpenSettings(SettingsSection.SmartHome); break;
                 case "tools":
-                    OpenCapabilities_Click(sender, e);
-                    break;
-                case "camera":
-                    OpenCapabilities_Click(sender, e);
-                    break;
+                case "camera": OpenCapabilities_Click(sender, e); break;
             }
         }
 
@@ -213,51 +177,30 @@ namespace ZoeyOS.App.Views
         {
             try
             {
-                if (!App.Settings.WindowsCameraEnabled)
-                {
-                    OpenCapabilities_Click(sender, e);
-                    return;
-                }
-
-                if (!App.Camera.IsInitialized)
-                    await App.Camera.InitializeAsync();
-
+                if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
+                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 var file = await App.Camera.CapturePhotoAsync();
                 MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private async void RecordVideo_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (!App.Settings.WindowsCameraEnabled)
-                {
-                    OpenCapabilities_Click(sender, e);
-                    return;
-                }
-
-                if (!App.Camera.IsInitialized)
-                    await App.Camera.InitializeAsync();
-
+                if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
+                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 if (App.Camera.IsRecording)
                 {
                     await App.Camera.StopRecordingAsync();
                     RecordVideoButton.Content = "▣\nRecord Video";
                     return;
                 }
-
                 await App.Camera.StartRecordingAsync();
                 RecordVideoButton.Content = "■\nStop Recording";
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenSettings(SettingsSection.SmartHome);
@@ -266,44 +209,40 @@ namespace ZoeyOS.App.Views
 
         private void Attach_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "Attach a file",
-                Multiselect = false,
-                Filter = "All files (*.*)|*.*"
-            };
-
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Attach a file", Multiselect = false, Filter = "All files (*.*)|*.*" };
             if (dialog.ShowDialog(this) != true) return;
-
             if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null)
                 dvm.SelectedCompanion.AttachFile(dialog.FileName);
         }
 
         private void OpenComposerMenu_Click(object sender, RoutedEventArgs e)
         {
-            ComposerMenu.IsOpen = true;
+            if (FindResource("ComposerMenu") is ContextMenu menu)
+            {
+                menu.PlacementTarget = sender as UIElement;
+                menu.IsOpen = true;
+            }
         }
+
+        private void ComposerMusic_Click(object sender, RoutedEventArgs e) => PlayMusic_Click(sender, e);
+        private void ComposerSettings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
         private void ProfileMenu_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button button) return;
-
             var menu = new ContextMenu
             {
                 PlacementTarget = button,
                 Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
                 StaysOpen = false
             };
-
             var settings = new MenuItem { Header = "⚙  Settings" };
             settings.Click += (_, _) => OpenSettings();
             menu.Items.Add(settings);
             menu.Items.Add(new Separator());
-
             var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" };
             capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
             menu.Items.Add(capabilities);
-
             menu.IsOpen = true;
         }
     }
