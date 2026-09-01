@@ -13,7 +13,6 @@ namespace ZoeyOS.App.Views
     public partial class MainWindow : Window
     {
         private MiniCompanionWindow? _miniCompanion;
-        private bool _allowClose;
         private bool _leftCollapsed;
         private bool _rightCollapsed;
 
@@ -115,7 +114,6 @@ namespace ZoeyOS.App.Views
 
         private void ExitApplication()
         {
-            _allowClose = true;
             _miniCompanion?.Close();
             _miniCompanion = null;
             Close();
@@ -194,11 +192,9 @@ namespace ZoeyOS.App.Views
                 if (App.Camera.IsRecording)
                 {
                     await App.Camera.StopRecordingAsync();
-                    RecordVideoButton.Content = "▣\nRecord Video";
                     return;
                 }
                 await App.Camera.StartRecordingAsync();
-                RecordVideoButton.Content = "■\nStop Recording";
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
