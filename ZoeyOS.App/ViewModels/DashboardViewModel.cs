@@ -16,6 +16,7 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
         [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
         [ObservableProperty] private bool _wakeWordFlash;
+        [ObservableProperty] private string _greetingText = "Good evening, Adam";
 
         // Today's Overview
         [ObservableProperty] private string _weatherSummary = "Loading weather…";
@@ -34,6 +35,8 @@ namespace ZoeyOS.App.ViewModels
 
         public DashboardViewModel()
         {
+            GreetingText = BuildGreeting();
+
             var existing = App.Memory.LoadCompanions();
             if (existing.Count == 0)
             {
@@ -56,6 +59,13 @@ namespace ZoeyOS.App.ViewModels
             _ = RefreshWeatherAsync();
         }
 
+        private static string BuildGreeting()
+        {
+            var hour = DateTime.Now.Hour;
+            var part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+            return $"Good {part}, Adam";
+        }
+
         private async System.Threading.Tasks.Task RefreshWeatherAsync()
         {
             try
@@ -74,8 +84,6 @@ namespace ZoeyOS.App.ViewModels
 
         private void ParseWeatherSummary(string result)
         {
-            // WeatherClient returns a human-readable string. Pull out the temperature and condition
-            // for the compact dashboard card while retaining the full result as the tooltip/detail.
             var marker = result.IndexOf(": ", StringComparison.Ordinal);
             var detail = marker >= 0 ? result[(marker + 2)..] : result;
             var tempMarker = detail.IndexOf(", ", StringComparison.Ordinal);
