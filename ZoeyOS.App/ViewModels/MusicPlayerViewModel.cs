@@ -16,11 +16,12 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private string _trackName = "";
         [ObservableProperty] private string _artistName = "";
         [ObservableProperty] private string _sourceApp = "";
+        [ObservableProperty] private string _albumArtUrl = "";
         [ObservableProperty] private bool _isPlaying;
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _statusText = "Checking what's playing...";
 
-        public bool IsConnected => _media.IsAvailable;
+        public bool IsConnected => _media.IsAvailable || App.Spotify.IsConfigured;
 
         public MusicPlayerViewModel()
         {
@@ -34,11 +35,30 @@ namespace ZoeyOS.App.ViewModels
 
         private async Task RefreshAsync()
         {
+            // Prefer Spotify when connected so the dashboard can show real album artwork.
+            if (App.Spotify.IsConfigured)
+            {
+                var spotify = await App.Spotify.GetNowPlayingAsync();
+                if (spotify.Found)
+                {
+                    HasTrack = true;
+                    TrackName = spotify.TrackName;
+                    ArtistName = spotify.Artist;
+                    AlbumArtUrl = spotify.AlbumArtUrl;
+                    SourceApp = "Spotify";
+                    IsPlaying = spotify.IsPlaying;
+                    StatusText = spotify.IsPlaying ? "Playing on Spotify" : "Paused on Spotify";
+                    OnPropertyChanged(nameof(IsConnected));
+                    return;
+                }
+            }
+
             if (!_media.IsAvailable)
             {
                 HasTrack = false;
                 IsPlaying = false;
-                StatusText = "Windows media controls aren't available on this PC.";
+                AlbumArtUrl = "";
+                StatusText = App.Spotify.IsConfigured ? "Nothing is currently playing." : "Windows media controls aren't available on this PC.";
                 return;
             }
 
@@ -48,6 +68,7 @@ namespace ZoeyOS.App.ViewModels
                 HasTrack = false;
                 IsPlaying = false;
                 SourceApp = "";
+                AlbumArtUrl = "";
                 StatusText = "Nothing is currently playing.";
                 return;
             }
@@ -56,6 +77,7 @@ namespace ZoeyOS.App.ViewModels
             TrackName = info.Title;
             ArtistName = info.Artist;
             SourceApp = info.AppName;
+            AlbumArtUrl = "";
             IsPlaying = string.Equals(info.PlaybackStatus, "Playing", StringComparison.OrdinalIgnoreCase);
             StatusText = string.IsNullOrWhiteSpace(SourceApp) ? "Windows media" : SourceApp;
             OnPropertyChanged(nameof(IsConnected));
@@ -66,7 +88,11 @@ namespace ZoeyOS.App.ViewModels
         {
             if (IsBusy) return;
             IsBusy = true;
-            try { await _media.ControlAsync("toggle"); await RefreshAsync(); }
+            try
+            {
+                await _media.ControlAsync("toggle");
+                await RefreshAsync();
+            }
             finally { IsBusy = false; }
         }
 
