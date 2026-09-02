@@ -45,6 +45,8 @@ namespace ZoeyOS.App.ViewModels
 
         private readonly Queue<string> _pendingUtterances = new();
         private bool _isDrainingQueue;
+        private string _lastSubmittedUtterance = "";
+        private DateTime _lastSubmittedAtUtc = DateTime.MinValue;
 
         [RelayCommand]
         private void Listen()
@@ -74,16 +76,32 @@ namespace ZoeyOS.App.ViewModels
 
         private void EnqueueHeardUtterance(string heard)
         {
-            var trimmed = heard.Trim();
-            if (string.IsNullOrWhiteSpace(trimmed)) return;
-            _pendingUtterances.Enqueue(trimmed);
+            var normalized = VoiceInputNormalizer.Normalize(heard);
+            if (!VoiceInputNormalizer.IsUsable(normalized)) return;
+
+            // Windows continuous recognition can emit the same completed phrase more than once.
+            // Suppress only immediate exact duplicates; distinct phrases remain untouched.
+            if (VoiceInputNormalizer.IsLikelyDuplicate(normalized, _lastSubmittedUtterance) &&
+                DateTime.UtcNow - _lastSubmittedAtUtc < TimeSpan.FromSeconds(2))
+                return;
+
+            _lastSubmittedUtterance = normalized;
+            _lastSubmittedAtUtc = DateTime.UtcNow;
+            _pendingUtterances.Enqueue(normalized);
             if (!_isDrainingQueue) _ = DrainUtteranceQueueAsync();
         }
 
         private async Task DrainUtteranceQueueAsync()
         {
             _isDrainingQueue = true;
-            try { while (_pendingUtterances.Count > 0) await SendCoreAsync(_pendingUtterances.Dequeue()); }
+            try
+            {
+                while (_pendingUtterances.Count > 0)
+                {
+                    var utterance = _pendingUtterances.Dequeue();
+                    await SendCoreAsync(utterance);
+                }
+            }
             finally { _isDrainingQueue = false; }
         }
 
@@ -108,14 +126,16 @@ namespace ZoeyOS.App.ViewModels
         private async Task SendAsync()
         {
             if (string.IsNullOrWhiteSpace(DraftMessage) || IsBusy) return;
-            var userText = DraftMessage.Trim();
+            var userText = VoiceInputNormalizer.Normalize(DraftMessage);
+            if (!VoiceInputNormalizer.IsUsable(userText)) return;
             DraftMessage = "";
             await SendCoreAsync(userText);
         }
 
         private async Task SendCoreAsync(string userText)
         {
-            if (string.IsNullOrWhiteSpace(userText)) return;
+            userText = VoiceInputNormalizer.Normalize(userText);
+            if (!VoiceInputNormalizer.IsUsable(userText)) return;
             var userMsg = new ChatMessage { CompanionId = Companion.Id, Role = "user", Content = userText };
             Messages.Add(userMsg);
             App.Memory.AppendMessage(userMsg);
