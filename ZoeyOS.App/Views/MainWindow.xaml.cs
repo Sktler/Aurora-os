@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shell;
 using ZoeyOS.App.Models;
+using ZoeyOS.App.Services;
 using ZoeyOS.App.ViewModels;
 
 namespace ZoeyOS.App.Views
@@ -19,6 +20,7 @@ namespace ZoeyOS.App.Views
         public MainWindow()
         {
             InitializeComponent();
+            AuroraOrbLoader.Apply(this);
             ComposerTextBox.KeyDown += ComposerTextBox_KeyDown;
         }
 
