@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App.Views
 {
@@ -12,6 +13,7 @@ namespace ZoeyOS.App.Views
         public MiniCompanionWindow()
         {
             InitializeComponent();
+            AuroraOrbLoader.Apply(this);
             Left = SystemParameters.WorkArea.Right - Width - 24;
             Top = SystemParameters.WorkArea.Bottom - Height - 24;
         }
