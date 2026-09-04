@@ -1,7 +1,6 @@
 <Application x:Class="ZoeyOS.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="Views/MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <Color x:Key="BgDeepColor">#0B0E14</Color><Color x:Key="BgPanelColor">#12161F</Color><Color x:Key="BgCardColor">#171C28</Color>
@@ -10,134 +9,17 @@
             <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/><Setter Property="FontFamily" Value="Segoe UI"/></Style>
             <Style x:Key="MutedText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="FontSize" Value="12"/></Style>
             <Style TargetType="ScrollBar"><Setter Property="Background" Value="Transparent"/><Setter Property="Width" Value="10"/></Style>
-            <!-- Context menus (including the dynamically-created profile menu) do not
-                 use ComboBox styles. Own their surfaces and states so Windows' light
-                 menu chrome cannot appear behind Aurora's white text. -->
             <Style TargetType="{x:Type ContextMenu}">
-                <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource IdleGlowBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="4"/>
-                <Setter Property="FontFamily" Value="Segoe UI"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ContextMenu}">
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    Padding="{TemplateBinding Padding}" CornerRadius="7">
-                                <ScrollViewer CanContentScroll="True"
-                                              VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Disabled">
-                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                                </ScrollViewer>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-                <Style.Resources>
-                    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type Separator}">
-                                    <Border Height="1" Margin="10,5"
-                                            Background="{DynamicResource IdleGlowBrush}"/>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Style.Resources>
+                <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/><Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource IdleGlowBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="4"/><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="14"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ContextMenu}"><Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="7"><ScrollViewer CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/></ScrollViewer></Border></ControlTemplate></Setter.Value></Setter>
+                <Style.Resources><Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}"><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type Separator}"><Border Height="1" Margin="10,5" Background="{DynamicResource IdleGlowBrush}"/></ControlTemplate></Setter.Value></Setter></Style></Style.Resources>
             </Style>
             <Style TargetType="{x:Type MenuItem}">
-                <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="10,8"/>
-                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type MenuItem}">
-                            <Grid>
-                                <Border x:Name="ItemBorder" Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        Padding="{TemplateBinding Padding}" CornerRadius="4">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <ContentPresenter x:Name="Icon" ContentSource="Icon"
-                                                          Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="CheckMark" Text="✓" Visibility="Collapsed"
-                                                   Margin="0,0,8,0" Foreground="{TemplateBinding Foreground}"/>
-                                        <ContentPresenter Grid.Column="1" ContentSource="Header"
-                                                          RecognizesAccessKey="True" VerticalAlignment="Center"
-                                                          TextElement.Foreground="{TemplateBinding Foreground}">
-                                            <!-- The app-wide TextBlock foreground must not
-                                                 override this item's disabled text color. -->
-                                            <ContentPresenter.Resources>
-                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}}"/>
-                                                </Style>
-                                            </ContentPresenter.Resources>
-                                        </ContentPresenter>
-                                        <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}"
-                                                   Margin="16,0,0,0" VerticalAlignment="Center"
-                                                   Foreground="{TemplateBinding Foreground}"/>
-                                        <Path x:Name="SubmenuArrow" Grid.Column="3" Data="M0,0 L4,4 L0,8"
-                                              Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5"
-                                              Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
-                                    </Grid>
-                                </Border>
-                                <Popup x:Name="PART_Popup" Placement="Right" Focusable="False"
-                                       AllowsTransparency="True" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
-                                    <Border Background="{DynamicResource BgPanelBrush}" Padding="4" CornerRadius="7"
-                                            BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1">
-                                        <ScrollViewer CanContentScroll="True" VerticalScrollBarVisibility="Auto">
-                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                                        </ScrollViewer>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="Icon" Value="{x:Null}">
-                                    <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
-                                </Trigger>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
-                                    <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                                </Trigger>
-                                <Trigger Property="HasItems" Value="True">
-                                    <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible"/>
-                                </Trigger>
-                                <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BgCardBrush}"/>
-                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource AccentCyanBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
-                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BgPanelBrush}"/>
-                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="Transparent"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/><Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/><Setter Property="BorderBrush" Value="Transparent"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="10,8"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type MenuItem}"><Grid><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="4"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><ContentPresenter x:Name="Icon" ContentSource="Icon" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock x:Name="CheckMark" Text="✓" Visibility="Collapsed" Margin="0,0,8,0" Foreground="{TemplateBinding Foreground}"/><ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" IsHitTestVisible="False" TextElement.Foreground="{TemplateBinding Foreground}"/><TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/><Path x:Name="SubmenuArrow" Grid.Column="3" Data="M0,0 L4,4 L0,8" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/></Grid></Border><Popup x:Name="PART_Popup" Placement="Right" Focusable="False" AllowsTransparency="True" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"><Border Background="{DynamicResource BgPanelBrush}" Padding="4" CornerRadius="7" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1"><ScrollViewer CanContentScroll="True" VerticalScrollBarVisibility="Auto"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/></ScrollViewer></Border></Popup></Grid><ControlTemplate.Triggers><Trigger Property="Icon" Value="{x:Null}"><Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/></Trigger><Trigger Property="IsChecked" Value="True"><Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/><Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="HasItems" Value="True"><Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BgCardBrush}"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource AccentCyanBrush}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/><Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BgPanelBrush}"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="Transparent"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
             </Style>
-            <Style x:Key="ComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
-                <Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#5BE0A0"/><Setter Property="Padding" Value="14,11"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBoxItem}"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" Padding="{TemplateBinding Padding}" CornerRadius="4"><ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontWeight="SemiBold"/></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#5BE0A0"/><Setter Property="Foreground" Value="#000000"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#000000"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
-            </Style>
-            <Style TargetType="{x:Type ComboBox}">
-                <Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="BorderBrush" Value="{StaticResource AccentGreenBrush}"/><Setter Property="BorderThickness" Value="2"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="ItemContainerStyle" Value="{StaticResource ComboBoxItemStyle}"/>
-                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBox}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions><Border x:Name="MainBorder" Grid.ColumnSpan="2" Background="#000000" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"/><TextBox x:Name="PART_EditableTextBox" Grid.Column="0" Margin="{TemplateBinding Padding}" Background="#000000" Foreground="#FFFFFF" CaretBrush="#5BE0A0" BorderThickness="0" VerticalContentAlignment="Center" FontWeight="SemiBold" Visibility="Hidden"/><ContentPresenter x:Name="ContentSite" Grid.Column="0" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" VerticalAlignment="Center" IsHitTestVisible="False" TextElement.Foreground="#FFFFFF" TextElement.FontWeight="SemiBold"/><ToggleButton Grid.Column="1" Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Background="Transparent" BorderThickness="0"><ToggleButton.Template><ControlTemplate TargetType="{x:Type ToggleButton}"><Border Background="Transparent"><Path Data="M0,0 L7,7 L14,0 Z" Fill="#5BE0A0" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></ToggleButton.Template></ToggleButton><Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide"><Border Background="#000000" BorderBrush="#5BE0A0" BorderThickness="2" CornerRadius="7" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="360" Margin="0,3,0,0"><Border.Effect><DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.55"/></Border.Effect><ScrollViewer VerticalScrollBarVisibility="Auto" Margin="2"><ItemsPresenter/></ScrollViewer></Border></Popup></Grid><ControlTemplate.Triggers><Trigger Property="IsEditable" Value="True"><Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/><Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/></Trigger><Trigger Property="IsDropDownOpen" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="MainBorder" Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
-            </Style>
+            <Style x:Key="ComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}"><Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#5BE0A0"/><Setter Property="Padding" Value="14,11"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBoxItem}"><Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" Padding="{TemplateBinding Padding}" CornerRadius="4"><ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontWeight="SemiBold"/></Border><ControlTemplate.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#5BE0A0"/><Setter Property="Foreground" Value="#000000"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#000000"/><Setter TargetName="ItemBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter Property="Foreground" Value="#FFFFFF"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+            <Style TargetType="{x:Type ComboBox}"><Setter Property="Background" Value="#000000"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="BorderBrush" Value="{StaticResource AccentGreenBrush}"/><Setter Property="BorderThickness" Value="2"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="46"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="ItemContainerStyle" Value="{StaticResource ComboBoxItemStyle}"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type ComboBox}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions><Border x:Name="MainBorder" Grid.ColumnSpan="2" Background="#000000" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7"/><TextBox x:Name="PART_EditableTextBox" Grid.Column="0" Margin="{TemplateBinding Padding}" Background="#000000" Foreground="#FFFFFF" CaretBrush="#5BE0A0" BorderThickness="0" VerticalContentAlignment="Center" FontWeight="SemiBold" Visibility="Hidden"/><ContentPresenter x:Name="ContentSite" Grid.Column="0" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" VerticalAlignment="Center" IsHitTestVisible="False" TextElement.Foreground="#FFFFFF" TextElement.FontWeight="SemiBold"/><ToggleButton Grid.Column="1" Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Background="Transparent" BorderThickness="0"><ToggleButton.Template><ControlTemplate TargetType="{x:Type ToggleButton}"><Border Background="Transparent"><Path Data="M0,0 L7,7 L14,0 Z" Fill="#5BE0A0" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></ToggleButton.Template></ToggleButton><Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide"><Border Background="#000000" BorderBrush="#5BE0A0" BorderThickness="2" CornerRadius="7" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="360" Margin="0,3,0,0"><Border.Effect><DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.55"/></Border.Effect><ScrollViewer VerticalScrollBarVisibility="Auto" Margin="2"><ItemsPresenter/></ScrollViewer></Border></Popup></Grid><ControlTemplate.Triggers><Trigger Property="IsEditable" Value="True"><Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/><Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#FFFFFF"/></Trigger><Trigger Property="IsDropDownOpen" Value="True"><Setter TargetName="MainBorder" Property="BorderBrush" Value="#5BE0A0"/><Setter TargetName="MainBorder" Property="BorderThickness" Value="2"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="MainBorder" Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
             <Style TargetType="{x:Type TextBox}"><Setter Property="Background" Value="{StaticResource BgCardBrush}"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="42"/><Setter Property="FontSize" Value="13"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
             <Style TargetType="{x:Type PasswordBox}"><Setter Property="Background" Value="{StaticResource BgCardBrush}"/><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="CaretBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,9"/><Setter Property="MinHeight" Value="42"/><Setter Property="FontSize" Value="13"/></Style>
             <Style TargetType="{x:Type CheckBox}"><Setter Property="Foreground" Value="#FFFFFF"/><Setter Property="FontSize" Value="13"/></Style>
