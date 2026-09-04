@@ -16,15 +16,14 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
         [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
         [ObservableProperty] private bool _wakeWordFlash;
+        [ObservableProperty] private string _userName = "Adam";
         [ObservableProperty] private string _greetingText = "Good evening, Adam";
 
-        // Today's Overview
         [ObservableProperty] private string _weatherSummary = "Waiting for location permission…";
         [ObservableProperty] private string _weatherLocation = "Finding your location…";
         [ObservableProperty] private string _weatherTemperature = "—";
         [ObservableProperty] private string _weatherCondition = "Weather";
 
-        // System card
         [ObservableProperty] private string _cpuUsage = "—";
         [ObservableProperty] private string _ramUsage = "—";
         [ObservableProperty] private string _diskUsage = "—";
@@ -35,6 +34,7 @@ namespace ZoeyOS.App.ViewModels
 
         public DashboardViewModel()
         {
+            UserName = NormalizeUserName(App.Settings.UserName);
             GreetingText = BuildGreeting();
 
             var existing = App.Memory.LoadCompanions();
@@ -57,11 +57,24 @@ namespace ZoeyOS.App.ViewModels
                 App.Metrics.Updated += OnMetricsUpdated;
         }
 
-        private static string BuildGreeting()
+        public void RefreshUserName()
+        {
+            UserName = NormalizeUserName(App.Settings.UserName);
+            GreetingText = BuildGreeting();
+        }
+
+        private static string NormalizeUserName(string? name)
+        {
+            var trimmed = name?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(trimmed)) return "Adam";
+            return trimmed.Length > 40 ? trimmed.Substring(0, 40) : trimmed;
+        }
+
+        private string BuildGreeting()
         {
             var hour = DateTime.Now.Hour;
             var part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-            return $"Good {part}, Adam";
+            return $"Good {part}, {UserName}";
         }
 
         public async System.Threading.Tasks.Task RefreshWeatherAsync()
