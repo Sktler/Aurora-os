@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Shell;
 using ZoeyOS.App.Models;
 using ZoeyOS.App.Services;
@@ -279,7 +280,7 @@ namespace ZoeyOS.App.Views
                 Content = "Save name",
                 Padding = new Thickness(16, 7, 16, 7),
                 HorizontalAlignment = HorizontalAlignment.Right,
-                Background = System.Windows.Media.Brushes.Transparent
+                Background = Brushes.Transparent
             };
 
             var dialog = new Window
@@ -290,7 +291,7 @@ namespace ZoeyOS.App.Views
                 Height = 180,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
-                Background = System.Windows.Media.Brushes.Transparent,
+                Background = Brushes.Transparent,
                 Content = new StackPanel { Margin = new Thickness(22) }
             };
 
