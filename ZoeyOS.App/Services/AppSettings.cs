@@ -60,6 +60,11 @@ namespace ZoeyOS.App.Services
         public bool WindowsMicrophoneEnabled { get; set; } = false;
         public bool WindowsMcpEnabled { get; set; } = false;
 
+        // Seconds to keep the startup bootstrap visible after Windows permission
+        // requests have completed. This is intentionally generous so the native
+        // Windows consent flow never feels rushed. Valid range is 0-600 seconds.
+        public int StartupBootstrapDelaySeconds { get; set; } = 120;
+
         public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
 
@@ -75,10 +80,15 @@ namespace ZoeyOS.App.Services
             else loaded = new AppSettings();
             if (string.IsNullOrWhiteSpace(loaded.UserName)) loaded.UserName = "Adam";
             if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
+
+            var clampedBootstrapDelay = Math.Clamp(loaded.StartupBootstrapDelaySeconds, 0, 600);
+            var bootstrapDelayChanged = loaded.StartupBootstrapDelaySeconds != clampedBootstrapDelay;
+            loaded.StartupBootstrapDelaySeconds = clampedBootstrapDelay;
+
             var originalModel = loaded.GeminiModel;
             if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
             loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
-            if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath) || string.IsNullOrWhiteSpace(loaded.UserName)) loaded.Save();
+            if (loaded.GeminiModel != originalModel || bootstrapDelayChanged || !File.Exists(ConfigPath)) loaded.Save();
             return loaded;
         }
         private static string StripModelsPrefix(string? model)
