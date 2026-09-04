@@ -29,14 +29,8 @@ namespace ZoeyOS.App.Views
         {
             Loaded -= MainWindow_Loaded;
 
-            // Request Windows privacy consent from the foreground UI thread.
-            // Windows owns these native prompts and will not repeatedly prompt
-            // after the user has already made a decision.
-            var permissions = new WindowsPermissionService();
-            await permissions.RequestLocationAsync();
-            await permissions.RequestMicrophoneAsync();
-            await permissions.RequestCameraAsync();
-
+            // Privacy consent is requested by App.OnStartup before this window is
+            // created. The dashboard only needs to fetch weather after it is visible.
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
