@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Threading;
 using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App
@@ -22,10 +23,29 @@ namespace ZoeyOS.App
         public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Do not let WPF create MainWindow automatically. Windows requires
+            // permission requests to happen while the app is foregrounded, so we
+            // show only this small bootstrap window while native consent is requested.
             Settings = AppSettings.LoadOrCreate();
+            var bootstrap = new Views.StartupPermissionWindow();
+            bootstrap.Show();
+            bootstrap.Activate();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+
+            // These calls are intentionally made before MainWindow is constructed.
+            // Windows owns the native consent UI and will only prompt when consent
+            // has not already been decided for this installation.
+            var permissions = new WindowsPermissionService();
+            await permissions.RequestLocationAsync();
+            await permissions.RequestMicrophoneAsync();
+            await permissions.RequestCameraAsync();
+
+            bootstrap.Close();
+
             if (!ActiveProviderIsConfigured()) new Views.SetupWindow().ShowDialog();
             Memory = new MemoryStore(Settings.DatabasePath); Memory.Initialize();
             AI = BuildChatEngine(); ImageGen = BuildImageGenClient();
@@ -37,6 +57,11 @@ namespace ZoeyOS.App
             Camera = new CameraService(); Mcp = new McpService(); WindowsAutomation = CreateWindowsService();
             Metrics = new SystemMetricsService();
             WakeWord.Start();
+
+            var mainWindow = new Views.MainWindow();
+            MainWindow = mainWindow;
+            mainWindow.Show();
+            mainWindow.Activate();
         }
 
         private static WindowsAutomationService CreateWindowsService()
