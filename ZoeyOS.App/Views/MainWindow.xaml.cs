@@ -28,9 +28,7 @@ namespace ZoeyOS.App.Views
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
-
-            // Privacy consent is requested by App.OnStartup before this window is
-            // created. The dashboard only needs to fetch weather after it is visible.
+            UpdateProfileNameDisplay();
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
@@ -141,6 +139,9 @@ namespace ZoeyOS.App.Views
         {
             var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this };
             window.ShowDialog();
+            if (DataContext is DashboardViewModel dvm)
+                dvm.RefreshUserName();
+            UpdateProfileNameDisplay();
         }
 
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -245,6 +246,11 @@ namespace ZoeyOS.App.Views
                 Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
                 StaysOpen = false
             };
+
+            var changeName = new MenuItem { Header = "✎  Change name" };
+            changeName.Click += (_, _) => ChangeUserName();
+            menu.Items.Add(changeName);
+
             var settings = new MenuItem { Header = "⚙  Settings" };
             settings.Click += (_, _) => OpenSettings();
             menu.Items.Add(settings);
@@ -253,6 +259,91 @@ namespace ZoeyOS.App.Views
             capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
             menu.Items.Add(capabilities);
             menu.IsOpen = true;
+        }
+
+        private void ChangeUserName()
+        {
+            var currentName = DataContext is DashboardViewModel dvm ? dvm.UserName : App.Settings.UserName;
+            var input = new TextBox
+            {
+                Text = currentName,
+                Margin = new Thickness(0, 8, 0, 14),
+                Padding = new Thickness(8, 6, 8, 6),
+                FontSize = 14,
+                MinWidth = 260
+            };
+            input.SelectAll();
+
+            var save = new Button
+            {
+                Content = "Save name",
+                Padding = new Thickness(16, 7, 16, 7),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Background = System.Windows.Media.Brushes.Transparent
+            };
+
+            var dialog = new Window
+            {
+                Owner = this,
+                Title = "Your name",
+                Width = 340,
+                Height = 180,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                Background = System.Windows.Media.Brushes.Transparent,
+                Content = new StackPanel { Margin = new Thickness(22) }
+            };
+
+            var panel = (StackPanel)dialog.Content;
+            panel.Children.Add(new TextBlock { Text = "What should Aurora call you?", FontSize = 16, FontWeight = FontWeights.SemiBold });
+            panel.Children.Add(input);
+            panel.Children.Add(save);
+
+            save.Click += (_, _) =>
+            {
+                var name = input.Text.Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    MessageBox.Show(dialog, "Please enter a name.", "Your name", MessageBoxButton.OK, MessageBoxImage.Information);
+                    input.Focus();
+                    return;
+                }
+
+                if (name.Length > 40) name = name.Substring(0, 40);
+                App.Settings.UserName = name;
+                App.Settings.Save();
+                if (DataContext is DashboardViewModel dashboard)
+                    dashboard.RefreshUserName();
+                UpdateProfileNameDisplay();
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            input.KeyDown += (_, args) =>
+            {
+                if (args.Key == Key.Enter) save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                else if (args.Key == Key.Escape) dialog.Close();
+            };
+
+            dialog.ShowDialog();
+        }
+
+        private void UpdateProfileNameDisplay()
+        {
+            var name = DataContext is DashboardViewModel dvm ? dvm.UserName : App.Settings.UserName;
+            var textBlock = FindVisualChild<TextBlock>(this, t => t.Text == "Adam" || t.Tag?.ToString() == "ProfileName");
+            if (textBlock != null) textBlock.Text = name;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
+        {
+            if (root is T match && predicate(match)) return match;
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var found = FindVisualChild<T>(VisualTreeHelper.GetChild(root, i), predicate);
+                if (found != null) return found;
+            }
+            return null;
         }
     }
 }
