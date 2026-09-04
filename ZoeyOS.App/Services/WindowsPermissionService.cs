@@ -5,53 +5,70 @@ using Windows.Media.Capture;
 
 namespace ZoeyOS.App.Services
 {
+    public enum PermissionResult
+    {
+        Allowed,
+        Denied,
+        Unavailable
+    }
+
     /// <summary>
-    /// Explicitly requests Windows privacy permissions before Aurora first uses
-    /// location, microphone, or camera features. Windows owns the consent UI.
+    /// Requests OS-level consent for location, microphone, and camera. Windows
+    /// owns the native consent UI; these methods complete only after Windows has
+    /// resolved the request or the request fails immediately.
     /// </summary>
     public sealed class WindowsPermissionService
     {
-        public async Task<bool> RequestLocationAsync()
+        public async Task<PermissionResult> RequestLocationAsync()
         {
-            var access = await Geolocator.RequestAccessAsync();
-            return access == GeolocationAccessStatus.Allowed;
+            try
+            {
+                var status = await Geolocator.RequestAccessAsync();
+                return status switch
+                {
+                    GeolocationAccessStatus.Allowed => PermissionResult.Allowed,
+                    GeolocationAccessStatus.Denied => PermissionResult.Denied,
+                    _ => PermissionResult.Unavailable
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[WindowsPermissionService] Location request failed: {ex}");
+                return PermissionResult.Unavailable;
+            }
         }
 
-        public Task<bool> RequestMicrophoneAsync() => RequestMediaCaptureAsync(StreamingCaptureMode.Audio);
+        public Task<PermissionResult> RequestMicrophoneAsync() =>
+            RequestMediaCaptureAsync(StreamingCaptureMode.Audio);
 
-        public Task<bool> RequestCameraAsync() => RequestMediaCaptureAsync(StreamingCaptureMode.Video);
+        public Task<PermissionResult> RequestCameraAsync() =>
+            RequestMediaCaptureAsync(StreamingCaptureMode.Video);
 
-        private static async Task<bool> RequestMediaCaptureAsync(StreamingCaptureMode mode)
+        private static async Task<PermissionResult> RequestMediaCaptureAsync(StreamingCaptureMode mode)
         {
             MediaCapture? capture = null;
             try
             {
                 capture = new MediaCapture();
-                var settings = new MediaCaptureInitializationSettings
+                await capture.InitializeAsync(new MediaCaptureInitializationSettings
                 {
                     StreamingCaptureMode = mode,
                     MediaCategory = MediaCategory.Other
-                };
-
-                // Windows displays its native consent prompt here when permission
-                // has not yet been decided. This must run on the foreground STA/UI thread.
-                await capture.InitializeAsync(settings);
-                return true;
+                });
+                return PermissionResult.Allowed;
             }
             catch (UnauthorizedAccessException)
             {
-                return false;
+                return PermissionResult.Denied;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                System.Diagnostics.Debug.WriteLine($"[WindowsPermissionService] Media request failed: {ex}");
+                return PermissionResult.Unavailable;
             }
             finally
             {
-                if (capture != null)
-                {
-                    try { capture.Dispose(); } catch { }
-                }
+                try { capture?.Dispose(); } catch { }
             }
         }
     }
