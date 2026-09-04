@@ -6,6 +6,7 @@ namespace ZoeyOS.App.Services
 {
     public class AppSettings
     {
+        public string UserName { get; set; } = "Adam";
         public string ChatProvider { get; set; } = "gemini";
         public string GeminiApiKey { get; set; } = "";
         public string GeminiModel { get; set; } = "gemini-3.6-flash";
@@ -30,7 +31,6 @@ namespace ZoeyOS.App.Services
         public string SpotifyRefreshToken { get; set; } = "";
         public bool SpotifyConnected { get; set; } = false;
         public string SpotifyAccountName { get; set; } = "";
-        // Legacy settings retained so older settings UI can deserialize safely.
         public string JamendoClientId { get; set; } = "";
         public bool JamendoConnected { get; set; } = false;
         public string DatabasePath { get; set; } = "";
@@ -48,8 +48,6 @@ namespace ZoeyOS.App.Services
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";
         public string TrustedFolderPath { get; set; } = "";
-
-        // Permissioned Windows capabilities; disabled by default.
         public bool WindowsFilesEnabled { get; set; } = false;
         public bool WindowsScreenEnabled { get; set; } = false;
         public bool WindowsClipboardEnabled { get; set; } = false;
@@ -75,11 +73,12 @@ namespace ZoeyOS.App.Services
                 loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
             else loaded = new AppSettings();
+            if (string.IsNullOrWhiteSpace(loaded.UserName)) loaded.UserName = "Adam";
             if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
             var originalModel = loaded.GeminiModel;
             if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";
             loaded.GeminiModel = StripModelsPrefix(loaded.GeminiModel);
-            if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath)) loaded.Save();
+            if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath) || string.IsNullOrWhiteSpace(loaded.UserName)) loaded.Save();
             return loaded;
         }
         private static string StripModelsPrefix(string? model)
