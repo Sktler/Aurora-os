@@ -19,8 +19,8 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private string _greetingText = "Good evening, Adam";
 
         // Today's Overview
-        [ObservableProperty] private string _weatherSummary = "Loading weather…";
-        [ObservableProperty] private string _weatherLocation = "Auburn, NY";
+        [ObservableProperty] private string _weatherSummary = "Waiting for location permission…";
+        [ObservableProperty] private string _weatherLocation = "Finding your location…";
         [ObservableProperty] private string _weatherTemperature = "—";
         [ObservableProperty] private string _weatherCondition = "Weather";
 
@@ -55,8 +55,6 @@ namespace ZoeyOS.App.ViewModels
 
             if (App.Metrics != null)
                 App.Metrics.Updated += OnMetricsUpdated;
-
-            _ = RefreshWeatherAsync();
         }
 
         private static string BuildGreeting()
@@ -66,38 +64,34 @@ namespace ZoeyOS.App.ViewModels
             return $"Good {part}, Adam";
         }
 
-        private async System.Threading.Tasks.Task RefreshWeatherAsync()
+        public async System.Threading.Tasks.Task RefreshWeatherAsync()
         {
             try
             {
-                var result = await App.Weather.GetCurrentWeatherAsync(WeatherLocation);
-                WeatherSummary = result;
-                ParseWeatherSummary(result);
+                var location = await new LocationService().GetCurrentLocationAsync();
+                if (location == null)
+                {
+                    WeatherLocation = "Location unavailable";
+                    WeatherTemperature = "—";
+                    WeatherCondition = "Location permission required";
+                    WeatherSummary = "Allow Aurora to use Windows location services to show local NWS weather.";
+                    return;
+                }
+
+                var weather = await App.Weather.GetCurrentWeatherAsync(location.Latitude, location.Longitude);
+                WeatherLocation = weather.Location;
+                WeatherTemperature = $"{weather.TemperatureF:0}°F";
+                WeatherCondition = weather.Condition;
+                WeatherSummary = $"{weather.Condition}, {weather.TemperatureF:0}°F • wind {weather.Wind}" +
+                                 (weather.PrecipitationChance.HasValue ? $" • {weather.PrecipitationChance.Value:0}% precipitation" : "") +
+                                 $" • {(weather.IsObserved ? "NWS observation" : "NWS forecast")}";
             }
             catch (Exception ex)
             {
-                WeatherSummary = $"Weather unavailable: {ex.Message}";
+                WeatherLocation = "Location unavailable";
                 WeatherTemperature = "—";
                 WeatherCondition = "Weather unavailable";
-            }
-        }
-
-        private void ParseWeatherSummary(string result)
-        {
-            var marker = result.IndexOf(": ", StringComparison.Ordinal);
-            var detail = marker >= 0 ? result[(marker + 2)..] : result;
-            var tempMarker = detail.IndexOf(", ", StringComparison.Ordinal);
-            if (tempMarker > 0)
-            {
-                WeatherCondition = detail[..tempMarker];
-                var tempPart = detail[(tempMarker + 2)..];
-                var end = tempPart.IndexOf("°F", StringComparison.Ordinal);
-                WeatherTemperature = end > 0 ? tempPart[..(end + 2)] : "—";
-            }
-            else
-            {
-                WeatherCondition = detail;
-                WeatherTemperature = "—";
+                WeatherSummary = $"Unable to load National Weather Service data: {ex.Message}";
             }
         }
 
