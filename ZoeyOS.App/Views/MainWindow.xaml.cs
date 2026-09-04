@@ -22,6 +22,14 @@ namespace ZoeyOS.App.Views
             InitializeComponent();
             AuroraOrbLoader.Apply(this);
             ComposerTextBox.KeyDown += ComposerTextBox_KeyDown;
+            Loaded += MainWindow_Loaded;
+        }
+
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= MainWindow_Loaded;
+            if (DataContext is DashboardViewModel dvm)
+                await dvm.RefreshWeatherAsync();
         }
 
         private void ComposerTextBox_KeyDown(object sender, KeyEventArgs e)
