@@ -28,6 +28,15 @@ namespace ZoeyOS.App.Views
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
+
+            // Request Windows privacy consent from the foreground UI thread.
+            // Windows owns these native prompts and will not repeatedly prompt
+            // after the user has already made a decision.
+            var permissions = new WindowsPermissionService();
+            await permissions.RequestLocationAsync();
+            await permissions.RequestMicrophoneAsync();
+            await permissions.RequestCameraAsync();
+
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
