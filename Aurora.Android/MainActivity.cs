@@ -1,42 +1,24 @@
 using Android.App;
 using Android.Content.PM;
+using Android.Hardware;
 using Android.OS;
 using Android.Widget;
 using Aurora.Core;
 
 namespace Aurora.Android;
 
-[Activity(
-    Label = "Aurora",
-    MainLauncher = true,
-    Exported = true,
-    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
+[Activity(Label = "Aurora", MainLauncher = true, Exported = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
 public sealed class MainActivity : Activity
 {
-    private readonly IDeviceCapabilities _capabilities = new AndroidDeviceCapabilities();
-
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
-
-        var status = $"Aurora Android\n\n" +
-                     $"Location: {YesNo(_capabilities.HasLocation)}\n" +
-                     $"Bluetooth: {YesNo(_capabilities.HasBluetooth)}\n" +
-                     $"Wi-Fi: {YesNo(_capabilities.HasWifi)}\n" +
-                     $"Camera: {YesNo(_capabilities.HasCamera)}\n" +
-                     $"Microphone: {YesNo(_capabilities.HasMicrophone)}\n" +
-                     $"Gyroscope: {YesNo(_capabilities.HasGyroscope)}\n" +
-                     $"Accelerometer: {YesNo(_capabilities.HasAccelerometer)}\n" +
-                     $"NFC: {YesNo(_capabilities.HasNfc)}\n" +
-                     $"Biometrics: {YesNo(_capabilities.HasBiometrics)}";
-
-        var view = new TextView(this)
+        var capabilities = new AndroidDeviceCapabilities(PackageManager, (SensorManager?)GetSystemService(SensorService));
+        SetContentView(new TextView(this)
         {
-            Text = status,
+            Text = $"Aurora Android\n\nUniversal Android build initialized.\n\nLocation: {YesNo(capabilities.HasLocation)}\nBluetooth: {YesNo(capabilities.HasBluetooth)}\nWi-Fi: {YesNo(capabilities.HasWifi)}\nCamera: {YesNo(capabilities.HasCamera)}\nMicrophone: {YesNo(capabilities.HasMicrophone)}\nGyroscope: {YesNo(capabilities.HasGyroscope)}\nAccelerometer: {YesNo(capabilities.HasAccelerometer)}\nNFC: {YesNo(capabilities.HasNfc)}\nBiometrics: {YesNo(capabilities.HasBiometrics)}",
             TextSize = 18
-        };
-        view.SetPadding(48, 64, 48, 48);
-        SetContentView(view);
+        });
     }
 
     private static string YesNo(bool value) => value ? "available" : "not available";
@@ -44,13 +26,22 @@ public sealed class MainActivity : Activity
 
 internal sealed class AndroidDeviceCapabilities : IDeviceCapabilities
 {
-    public bool HasLocation => true;
-    public bool HasBluetooth => true;
-    public bool HasWifi => true;
-    public bool HasCamera => true;
-    public bool HasMicrophone => true;
-    public bool HasGyroscope => true;
-    public bool HasAccelerometer => true;
-    public bool HasNfc => true;
-    public bool HasBiometrics => true;
+    private readonly PackageManager _packages;
+    private readonly SensorManager? _sensors;
+
+    public AndroidDeviceCapabilities(PackageManager packages, SensorManager? sensors)
+    {
+        _packages = packages;
+        _sensors = sensors;
+    }
+
+    public bool HasLocation => _packages.HasSystemFeature(PackageManager.FeatureLocation);
+    public bool HasBluetooth => _packages.HasSystemFeature(PackageManager.FeatureBluetooth);
+    public bool HasWifi => _packages.HasSystemFeature(PackageManager.FeatureWifi);
+    public bool HasCamera => _packages.HasSystemFeature(PackageManager.FeatureCameraAny);
+    public bool HasMicrophone => _packages.HasSystemFeature(PackageManager.FeatureMicrophone);
+    public bool HasGyroscope => _sensors?.GetDefaultSensor(SensorType.Gyroscope) != null;
+    public bool HasAccelerometer => _sensors?.GetDefaultSensor(SensorType.Accelerometer) != null;
+    public bool HasNfc => _packages.HasSystemFeature(PackageManager.FeatureNfc);
+    public bool HasBiometrics => Build.VERSION.SdkInt >= BuildVersionCodes.M && _packages.HasSystemFeature(PackageManager.FeatureFingerprint);
 }
