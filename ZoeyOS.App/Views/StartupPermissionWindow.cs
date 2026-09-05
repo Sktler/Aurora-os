@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -6,8 +7,9 @@ using System.Windows.Media;
 namespace ZoeyOS.App.Views
 {
     /// <summary>
-    /// Foreground bootstrap window shown while Windows handles privacy consent
-    /// and for the configurable post-permission startup delay.
+    /// Foreground bootstrap window used while Aurora asks for privacy permissions.
+    /// The permission cards below provide explicit Allow / Don't allow choices;
+    /// Allow then invokes the real Windows permission API for the requested device.
     /// </summary>
     internal sealed class StartupPermissionWindow : Window
     {
@@ -17,8 +19,8 @@ namespace ZoeyOS.App.Views
         public StartupPermissionWindow()
         {
             Title = "Aurora";
-            Width = 500;
-            Height = 270;
+            Width = 560;
+            Height = 360;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
             ShowInTaskbar = false;
@@ -27,7 +29,7 @@ namespace ZoeyOS.App.Views
 
             _statusText = new TextBlock
             {
-                Text = "Starting Windows permission checks...",
+                Text = "Aurora will ask for permission to use location, microphone, and camera.",
                 FontSize = 14,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
@@ -55,24 +57,66 @@ namespace ZoeyOS.App.Views
                     {
                         new TextBlock
                         {
-                            Text = "Aurora is preparing",
+                            Text = "Aurora needs your permission",
                             FontSize = 26,
                             FontWeight = FontWeights.SemiBold,
                             Margin = new Thickness(0, 0, 0, 8)
                         },
+                        _statusText,
                         new TextBlock
                         {
-                            Text = "Windows may ask for location, microphone, and camera access. Please finish each Windows prompt before Aurora continues.",
-                            FontSize = 14,
+                            Text = "Choose Allow or Don't allow for each capability. When you choose Allow, Aurora immediately asks Windows for the corresponding device permission.",
+                            FontSize = 13,
                             TextWrapping = TextWrapping.Wrap,
-                            Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
-                            Margin = new Thickness(0, 0, 0, 12)
+                            Foreground = new SolidColorBrush(Color.FromRgb(160, 170, 186)),
+                            Margin = new Thickness(0, 0, 0, 16)
                         },
-                        _statusText,
                         _countdownText
                     }
                 }
             };
+        }
+
+        public async Task<bool> AskPermissionAsync(string name, Func<Task<PermissionResult>> request)
+        {
+            _countdownText.Visibility = Visibility.Collapsed;
+            _statusText.Text = $"Aurora would like to use your {name.ToLowerInvariant()}. Choose an option below.";
+
+            var result = MessageBox.Show(
+                $"Allow Aurora to access your {name.ToLowerInvariant()}?\n\nChoose Yes to allow access or No to continue without it.",
+                $"Aurora — {name} permission",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question,
+                MessageBoxResult.No);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                _statusText.Text = $"{name} access denied. Continuing...";
+                await Task.Delay(250);
+                return false;
+            }
+
+            _statusText.Text = $"Allow selected. Waiting for Windows to finish the {name.ToLowerInvariant()} permission request...";
+
+            try
+            {
+                var permission = await request();
+                _statusText.Text = permission switch
+                {
+                    PermissionResult.Allowed => $"{name} access allowed. Continuing...",
+                    PermissionResult.Denied => $"Windows denied {name.ToLowerInvariant()} access. Continuing...",
+                    _ => $"Windows could not grant {name.ToLowerInvariant()} access. Continuing..."
+                };
+                await Task.Delay(250);
+                return permission == PermissionResult.Allowed;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StartupPermissionWindow] {name} request failed: {ex}");
+                _statusText.Text = $"{name} access could not be granted. Continuing...";
+                await Task.Delay(250);
+                return false;
+            }
         }
 
         public void SetStatus(string text)
