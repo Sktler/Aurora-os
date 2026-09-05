@@ -44,13 +44,9 @@ namespace ZoeyOS.App
 
             System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Opening dashboard immediately.");
 
-            // There is intentionally NO post-permission countdown or startup delay.
-            // As soon as the final permission dialog is finished, Aurora continues
-            // directly into setup (if needed) and then the main dashboard.
+            // The permission flow is complete. Do not open a blocking setup dialog here.
+            // Provider/API setup remains available from Settings after the dashboard opens.
             bootstrap.Close();
-
-            if (!ActiveProviderIsConfigured())
-                new Views.SetupWindow().ShowDialog();
 
             Memory = new MemoryStore(Settings.DatabasePath); Memory.Initialize();
             AI = BuildChatEngine(); ImageGen = BuildImageGenClient();
