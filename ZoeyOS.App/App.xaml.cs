@@ -27,42 +27,64 @@ namespace ZoeyOS.App
         {
             base.OnStartup(e);
 
+            // The permission window is only a temporary bootstrap window. The app must
+            // NOT shut down when that window closes, because WPF otherwise treats the
+            // first window as the main window and the last-window-close behavior can end
+            // the process before MainWindow is displayed.
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
             Settings = AppSettings.LoadOrCreate();
 
-            // Keep a visible foreground window while the startup permission choices
-            // are being made. MainWindow is created only after all three are complete.
             var bootstrap = new Views.StartupPermissionWindow();
             bootstrap.Show();
             bootstrap.Activate();
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
 
             var permissions = new WindowsPermissionService();
-
             await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
             await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
             await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
 
-            System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Opening dashboard immediately.");
+            System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
 
-            // The permission flow is complete. Do not open a blocking setup dialog here.
-            // Provider/API setup remains available from Settings after the dashboard opens.
-            bootstrap.Close();
-
-            Memory = new MemoryStore(Settings.DatabasePath); Memory.Initialize();
-            AI = BuildChatEngine(); ImageGen = BuildImageGenClient();
-            SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
-            HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
-            Voice = new VoiceService(Settings.VoiceName); WakeWord = new WakeWordService();
-            Weather = new WeatherClient(); WebSearch = new WebSearchClient();
-            Spotify = BuildSpotifyClient();
-            Camera = new CameraService(); Mcp = new McpService(); WindowsAutomation = CreateWindowsService();
-            Metrics = new SystemMetricsService();
-            WakeWord.Start();
+            // Only initialize what the dashboard itself requires before showing it.
+            // Optional integrations are initialized afterward so one broken integration
+            // can never prevent the main UI from appearing.
+            Memory = new MemoryStore(Settings.DatabasePath);
+            Memory.Initialize();
+            Weather = new WeatherClient();
 
             var mainWindow = new Views.MainWindow();
             MainWindow = mainWindow;
             mainWindow.Show();
             mainWindow.Activate();
+
+            // The dashboard is now visible. The permission bootstrap can safely disappear.
+            bootstrap.Close();
+
+            try
+            {
+                AI = BuildChatEngine();
+                ImageGen = BuildImageGenClient();
+                SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
+                HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
+                Voice = new VoiceService(Settings.VoiceName);
+                WakeWord = new WakeWordService();
+                WebSearch = new WebSearchClient();
+                Spotify = BuildSpotifyClient();
+                Camera = new CameraService();
+                Mcp = new McpService();
+                WindowsAutomation = CreateWindowsService();
+                Metrics = new SystemMetricsService();
+
+                try { WakeWord.Start(); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
+            }
+            catch (Exception ex)
+            {
+                // Never tear down the dashboard because an optional service failed.
+                // The affected integration can be configured/restarted from Settings.
+                System.Diagnostics.Debug.WriteLine($"[Startup] Optional service initialization failed: {ex}");
+            }
         }
 
         private static WindowsAutomationService CreateWindowsService()
