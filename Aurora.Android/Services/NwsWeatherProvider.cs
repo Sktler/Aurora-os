@@ -45,11 +45,10 @@ public sealed class NwsWeatherProvider : IWeatherProvider
         }
 
         var alerts = await GetActiveAlertsAsync(latitude, longitude, cancellationToken);
-        var useObservation = observation.ValueKind == JsonValueKind.Object &&
-                              observation.TryGetProperty("properties", out var observationProperties);
+        var useObservation = observation.ValueKind == JsonValueKind.Object && observation.TryGetProperty("properties", out var observationProperties);
 
         var temperature = useObservation
-            ? observationProperties.GetProperty("temperature").GetProperty("value").GetDoubleOrNull()
+            ? CelsiusToFahrenheit(observationProperties.GetProperty("temperature").GetProperty("value").GetDoubleOrNull())
             : period.GetProperty("temperature").GetDoubleOrNull();
         var condition = useObservation
             ? observationProperties.GetProperty("textDescription").GetString() ?? "Current conditions"
@@ -61,15 +60,7 @@ public sealed class NwsWeatherProvider : IWeatherProvider
             ? popValue.GetDoubleOrNull()
             : null;
 
-        return new WeatherData(
-            city,
-            temperature ?? double.NaN,
-            condition,
-            wind,
-            precipitation,
-            useObservation,
-            alerts.Count,
-            BuildAlertSummary(alerts));
+        return new WeatherData(city, temperature ?? double.NaN, condition, wind, precipitation, useObservation, alerts.Count, BuildAlertSummary(alerts));
     }
 
     public async Task<IReadOnlyList<WeatherAlert>> GetActiveAlertsAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
@@ -91,11 +82,7 @@ public sealed class NwsWeatherProvider : IWeatherProvider
                     ParseDate(p, "effective"),
                     ParseDate(p, "expires")));
             }
-            return results
-                .GroupBy(a => a.Event + "|" + a.Headline, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .OrderByDescending(a => a.Severity, StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            return results.GroupBy(a => a.Event + "|" + a.Headline, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToArray();
         }
         catch
         {
@@ -115,12 +102,15 @@ public sealed class NwsWeatherProvider : IWeatherProvider
     private static DateTimeOffset? ParseDate(JsonElement properties, string name) =>
         properties.TryGetProperty(name, out var value) && DateTimeOffset.TryParse(value.GetString(), out var parsed) ? parsed : null;
 
+    private static double? CelsiusToFahrenheit(double? celsius) => celsius.HasValue ? celsius.Value * 9 / 5 + 32 : null;
+
     private static string BuildObservationWind(JsonElement p)
     {
-        var speed = p.GetProperty("windSpeed").GetProperty("value").GetDoubleOrNull();
-        var direction = p.GetProperty("windDirection").GetProperty("value").GetDoubleOrNull();
-        if (!speed.HasValue) return "Calm";
-        return direction.HasValue ? $"{speed.Value:0} km/h @ {direction.Value:0}°" : $"{speed.Value:0} km/h";
+        var metersPerSecond = p.GetProperty("windSpeed").GetProperty("value").GetDoubleOrNull();
+        var degrees = p.GetProperty("windDirection").GetProperty("value").GetDoubleOrNull();
+        if (!metersPerSecond.HasValue) return "Calm";
+        var mph = metersPerSecond.Value * 2.236936;
+        return degrees.HasValue ? $"{mph:0} mph @ {degrees:0}°" : $"{mph:0} mph";
     }
 
     private static string BuildAlertSummary(IReadOnlyList<WeatherAlert> alerts)
