@@ -26,11 +26,6 @@ namespace ZoeyOS.App
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // The permission window is only a temporary bootstrap window. The app must
-            // NOT shut down when that window closes, because WPF otherwise treats the
-            // first window as the main window and the last-window-close behavior can end
-            // the process before MainWindow is displayed.
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             Settings = AppSettings.LoadOrCreate();
 
@@ -46,19 +41,20 @@ namespace ZoeyOS.App
 
             System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
 
-            // Only initialize what the dashboard itself requires before showing it.
-            // Optional integrations are initialized afterward so one broken integration
-            // can never prevent the main UI from appearing.
             Memory = new MemoryStore(Settings.DatabasePath);
             Memory.Initialize();
             Weather = new WeatherClient();
+
+            // DashboardViewModel subscribes to Metrics during construction, so the metrics
+            // service must exist before MainWindow is created. Otherwise all four dashboard
+            // resource readings remain at their initial placeholder values forever.
+            try { Metrics = new SystemMetricsService(); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
 
             var mainWindow = new Views.MainWindow();
             MainWindow = mainWindow;
             mainWindow.Show();
             mainWindow.Activate();
-
-            // The dashboard is now visible. The permission bootstrap can safely disappear.
             bootstrap.Close();
 
             try
@@ -74,15 +70,12 @@ namespace ZoeyOS.App
                 Camera = new CameraService();
                 Mcp = new McpService();
                 WindowsAutomation = CreateWindowsService();
-                Metrics = new SystemMetricsService();
 
                 try { WakeWord.Start(); }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
             }
             catch (Exception ex)
             {
-                // Never tear down the dashboard because an optional service failed.
-                // The affected integration can be configured/restarted from Settings.
                 System.Diagnostics.Debug.WriteLine($"[Startup] Optional service initialization failed: {ex}");
             }
         }
