@@ -14,10 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Install .NET Android workload
         run: dotnet workload install android
@@ -26,11 +26,11 @@ jobs:
         run: dotnet restore Aurora.Android/Aurora.Android.csproj
 
       - name: Build Android APK
-        run: dotnet build Aurora.Android/Aurora.Android.csproj --configuration Release --framework net8.0-android -p:AndroidPackageFormat=apk
+        run: dotnet build Aurora.Android/Aurora.Android.csproj --configuration Release --framework net10.0-android -p:AndroidPackageFormat=apk
 
-      - name: Upload Android build output
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: aurora-android-build
-          path: Aurora.Android/bin/Release/net8.0-android/**/*.apk
-          if-no-files-found: warn
+          name: aurora-android-apk
+          path: Aurora.Android/bin/Release/net10.0-android/**/*.apk
+          if-no-files-found: error
