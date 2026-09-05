@@ -5,6 +5,10 @@ VisualStudioVersion = 17.9.34714.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZoeyOS.App", "ZoeyOS.App\ZoeyOS.App.csproj", "{A1B2C3D4-E5F6-4A5B-9C8D-1234567890AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurora.Core", "Aurora.Core\Aurora.Core.csproj", "{B2C3D4E5-F6A7-4B8C-9D0E-234567890ABC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aurora.Android", "Aurora.Android\Aurora.Android.csproj", "{C3D4E5F6-A7B8-4C9D-0E1F-34567890ABCD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{A1B2C3D4-E5F6-4A5B-9C8D-1234567890AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-E5F6-4A5B-9C8D-1234567890AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-4A5B-9C8D-1234567890AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-4B8C-9D0E-234567890ABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-4B8C-9D0E-234567890ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-4B8C-9D0E-234567890ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-4B8C-9D0E-234567890ABC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-34567890ABCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-34567890ABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-34567890ABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-34567890ABCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
