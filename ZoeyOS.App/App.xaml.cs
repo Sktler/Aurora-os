@@ -30,8 +30,8 @@ namespace ZoeyOS.App
 
             Settings = AppSettings.LoadOrCreate();
 
-            // Keep a visible foreground window in place while Windows owns the
-            // native permission prompts. MainWindow is deliberately not created yet.
+            // Keep a visible foreground window in place while Aurora asks for
+            // privacy permissions. MainWindow is deliberately not created yet.
             var bootstrap = new Views.StartupPermissionWindow();
             bootstrap.Show();
             bootstrap.Activate();
@@ -39,22 +39,18 @@ namespace ZoeyOS.App
 
             var permissions = new WindowsPermissionService();
 
-            // Each request is awaited separately. That means Aurora never starts
-            // the next permission request until Windows has finished resolving the
-            // current Allow/Don't allow decision. A denied/unavailable permission
-            // is recorded and startup continues normally.
-            var location = await RequestPermissionAsync(
-                bootstrap,
+            // Every capability now gets a real, visible Allow / Don't allow choice.
+            // If Allow is selected, the real Windows API is invoked immediately after
+            // the choice, so Windows can show its native consent UI when applicable.
+            var location = await bootstrap.AskPermissionAsync(
                 "Location",
                 permissions.RequestLocationAsync);
 
-            var microphone = await RequestPermissionAsync(
-                bootstrap,
+            var microphone = await bootstrap.AskPermissionAsync(
                 "Microphone",
                 permissions.RequestMicrophoneAsync);
 
-            var camera = await RequestPermissionAsync(
-                bootstrap,
+            var camera = await bootstrap.AskPermissionAsync(
                 "Camera",
                 permissions.RequestCameraAsync);
 
@@ -94,32 +90,6 @@ namespace ZoeyOS.App
             MainWindow = mainWindow;
             mainWindow.Show();
             mainWindow.Activate();
-        }
-
-        private static async Task<PermissionResult> RequestPermissionAsync(
-            Views.StartupPermissionWindow bootstrap,
-            string name,
-            Func<Task<PermissionResult>> request)
-        {
-            bootstrap.SetStatus($"Requesting {name.ToLowerInvariant()} access...\nFinish the Windows prompt to continue.");
-
-            try
-            {
-                var result = await request();
-                bootstrap.SetStatus(result switch
-                {
-                    PermissionResult.Allowed => $"{name} access allowed. Continuing...",
-                    PermissionResult.Denied => $"{name} access denied. Continuing...",
-                    _ => $"{name} access unavailable. Continuing..."
-                });
-                return result;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[Startup] {name} permission request failed: {ex}");
-                bootstrap.SetStatus($"{name} access could not be checked. Continuing...");
-                return PermissionResult.Unavailable;
-            }
         }
 
         private static WindowsAutomationService CreateWindowsService()
