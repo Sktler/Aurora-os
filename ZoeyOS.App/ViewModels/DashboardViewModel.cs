@@ -101,7 +101,7 @@ namespace ZoeyOS.App.ViewModels
                 WeatherCondition = weather.Condition;
                 WeatherSummary = $"{weather.Condition}, {weather.TemperatureF:0}°F • wind {weather.Wind}" +
                                  (weather.PrecipitationChance.HasValue ? $" • {weather.PrecipitationChance.Value:0}% precipitation" : "") +
-                                 $" • {(weather.IsObserved ? "NWS observation" : "NWS forecast")}";
+                                 $" • {(weather.IsObserved ? "NWS observation" : "NWS forecast")} • {weather.ActiveAlertSummary}";
             }
             catch (Exception ex)
             {
