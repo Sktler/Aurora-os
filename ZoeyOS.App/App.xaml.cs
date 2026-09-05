@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using ZoeyOS.App.Services;
@@ -30,8 +29,8 @@ namespace ZoeyOS.App
 
             Settings = AppSettings.LoadOrCreate();
 
-            // Keep a visible foreground window in place while Aurora asks for
-            // privacy permissions. MainWindow is deliberately not created yet.
+            // Keep a visible foreground window while the startup permission choices
+            // are being made. MainWindow is created only after all three are complete.
             var bootstrap = new Views.StartupPermissionWindow();
             bootstrap.Show();
             bootstrap.Activate();
@@ -39,42 +38,20 @@ namespace ZoeyOS.App
 
             var permissions = new WindowsPermissionService();
 
-            // Every capability now gets a real, visible Allow / Don't allow choice.
-            // If Allow is selected, the real Windows API is invoked immediately after
-            // the choice, so Windows can show its native consent UI when applicable.
-            var location = await bootstrap.AskPermissionAsync(
-                "Location",
-                permissions.RequestLocationAsync);
+            await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
+            await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
+            await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
 
-            var microphone = await bootstrap.AskPermissionAsync(
-                "Microphone",
-                permissions.RequestMicrophoneAsync);
+            System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Opening dashboard immediately.");
 
-            var camera = await bootstrap.AskPermissionAsync(
-                "Camera",
-                permissions.RequestCameraAsync);
-
-            System.Diagnostics.Debug.WriteLine(
-                $"[Startup] Permissions - Location: {location}, Microphone: {microphone}, Camera: {camera}");
-
-            // Keep the bootstrap open after the permission flow has completed.
-            // The delay is persistent and configurable in AppSettings (0-600 sec).
-            var delaySeconds = Math.Clamp(Settings.StartupBootstrapDelaySeconds, 0, 600);
-            var endAt = DateTime.UtcNow.AddSeconds(delaySeconds);
-
-            while (true)
-            {
-                var remaining = endAt - DateTime.UtcNow;
-                if (remaining <= TimeSpan.Zero)
-                    break;
-
-                bootstrap.ShowCountdown(remaining);
-                await Task.Delay(TimeSpan.FromSeconds(Math.Min(1, Math.Max(0.05, remaining.TotalSeconds))));
-            }
-
+            // There is intentionally NO post-permission countdown or startup delay.
+            // As soon as the final permission dialog is finished, Aurora continues
+            // directly into setup (if needed) and then the main dashboard.
             bootstrap.Close();
 
-            if (!ActiveProviderIsConfigured()) new Views.SetupWindow().ShowDialog();
+            if (!ActiveProviderIsConfigured())
+                new Views.SetupWindow().ShowDialog();
+
             Memory = new MemoryStore(Settings.DatabasePath); Memory.Initialize();
             AI = BuildChatEngine(); ImageGen = BuildImageGenClient();
             SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
