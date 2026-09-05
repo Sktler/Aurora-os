@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Aurora.Android</RootNamespace>
+    <AssemblyName>Aurora.Android</AssemblyName>
+    <ApplicationTitle>Aurora</ApplicationTitle>
+    <ApplicationId>com.sktler.aurora</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aurora.Core\Aurora.Core.csproj" />
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.7.0.2" />
+  </ItemGroup>
+</Project>
