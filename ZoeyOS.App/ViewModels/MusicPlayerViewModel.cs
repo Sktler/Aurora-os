@@ -21,7 +21,9 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _statusText = "Checking what's playing...";
 
-        public bool IsConnected => _media.IsAvailable || App.Spotify.IsConfigured;
+        // Spotify is initialized after MainWindow is shown, so this must remain safe
+        // during dashboard construction and while the optional integration is offline.
+        public bool IsConnected => _media.IsAvailable || App.Spotify?.IsConfigured == true;
 
         public MusicPlayerViewModel()
         {
@@ -35,21 +37,30 @@ namespace ZoeyOS.App.ViewModels
 
         private async Task RefreshAsync()
         {
-            // Prefer Spotify when connected so the dashboard can show real album artwork.
-            if (App.Spotify.IsConfigured)
+            // The dashboard can be constructed before optional integrations are ready.
+            // Capture the current client and simply skip Spotify until it exists.
+            var spotifyClient = App.Spotify;
+            if (spotifyClient?.IsConfigured == true)
             {
-                var spotify = await App.Spotify.GetNowPlayingAsync();
-                if (spotify.Found)
+                try
                 {
-                    HasTrack = true;
-                    TrackName = spotify.TrackName;
-                    ArtistName = spotify.Artist;
-                    AlbumArtUrl = spotify.AlbumArtUrl;
-                    SourceApp = "Spotify";
-                    IsPlaying = spotify.IsPlaying;
-                    StatusText = spotify.IsPlaying ? "Playing on Spotify" : "Paused on Spotify";
-                    OnPropertyChanged(nameof(IsConnected));
-                    return;
+                    var spotify = await spotifyClient.GetNowPlayingAsync();
+                    if (spotify.Found)
+                    {
+                        HasTrack = true;
+                        TrackName = spotify.TrackName;
+                        ArtistName = spotify.Artist;
+                        AlbumArtUrl = spotify.AlbumArtUrl;
+                        SourceApp = "Spotify";
+                        IsPlaying = spotify.IsPlaying;
+                        StatusText = spotify.IsPlaying ? "Playing on Spotify" : "Paused on Spotify";
+                        OnPropertyChanged(nameof(IsConnected));
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Music] Spotify refresh failed: {ex}");
                 }
             }
 
@@ -58,29 +69,42 @@ namespace ZoeyOS.App.ViewModels
                 HasTrack = false;
                 IsPlaying = false;
                 AlbumArtUrl = "";
-                StatusText = App.Spotify.IsConfigured ? "Nothing is currently playing." : "Windows media controls aren't available on this PC.";
+                StatusText = spotifyClient?.IsConfigured == true
+                    ? "Nothing is currently playing."
+                    : "Windows media controls aren't available on this PC.";
                 return;
             }
 
-            var info = await _media.GetNowPlayingAsync();
-            if (info == null || string.IsNullOrWhiteSpace(info.Title))
+            try
             {
+                var info = await _media.GetNowPlayingAsync();
+                if (info == null || string.IsNullOrWhiteSpace(info.Title))
+                {
+                    HasTrack = false;
+                    IsPlaying = false;
+                    SourceApp = "";
+                    AlbumArtUrl = "";
+                    StatusText = "Nothing is currently playing.";
+                    return;
+                }
+
+                HasTrack = true;
+                TrackName = info.Title;
+                ArtistName = info.Artist;
+                SourceApp = info.AppName;
+                AlbumArtUrl = "";
+                IsPlaying = string.Equals(info.PlaybackStatus, "Playing", StringComparison.OrdinalIgnoreCase);
+                StatusText = string.IsNullOrWhiteSpace(SourceApp) ? "Windows media" : SourceApp;
+                OnPropertyChanged(nameof(IsConnected));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Music] Windows media refresh failed: {ex}");
                 HasTrack = false;
                 IsPlaying = false;
-                SourceApp = "";
                 AlbumArtUrl = "";
-                StatusText = "Nothing is currently playing.";
-                return;
+                StatusText = "Music controls unavailable.";
             }
-
-            HasTrack = true;
-            TrackName = info.Title;
-            ArtistName = info.Artist;
-            SourceApp = info.AppName;
-            AlbumArtUrl = "";
-            IsPlaying = string.Equals(info.PlaybackStatus, "Playing", StringComparison.OrdinalIgnoreCase);
-            StatusText = string.IsNullOrWhiteSpace(SourceApp) ? "Windows media" : SourceApp;
-            OnPropertyChanged(nameof(IsConnected));
         }
 
         [RelayCommand]
