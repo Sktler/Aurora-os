@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Aurora.Core</RootNamespace>
+    <AssemblyName>Aurora.Core</AssemblyName>
+  </PropertyGroup>
+</Project>
