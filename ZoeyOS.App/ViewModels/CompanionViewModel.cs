@@ -51,6 +51,16 @@ namespace ZoeyOS.App.ViewModels
         [RelayCommand]
         private void Listen()
         {
+            if (!App.Settings.WindowsMicrophoneEnabled)
+            {
+                System.Windows.MessageBox.Show(
+                    "Enable Microphone access in Aurora Settings before using voice input.",
+                    "Aurora Microphone",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
             if (IsListening)
             {
                 App.Voice.StopContinuousListening();

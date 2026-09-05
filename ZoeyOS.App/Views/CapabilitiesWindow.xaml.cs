@@ -25,11 +25,12 @@ namespace ZoeyOS.App.Views
             MicrophonePermission.IsChecked = App.Settings.WindowsMicrophoneEnabled;
             McpPermission.IsChecked = App.Settings.WindowsMcpEnabled;
             ImageProviderText.Text = $"Provider: {App.Settings.ImageProvider}. Image generation uses Aurora's configured provider and API key.";
-            Loaded += async (_, _) => await RefreshCamerasAsync();
         }
 
-        private void SavePermissions_Click(object sender, RoutedEventArgs e)
+        private async void SavePermissions_Click(object sender, RoutedEventArgs e)
         {
+            var microphoneWasEnabled = App.Settings.WindowsMicrophoneEnabled;
+            var cameraWasEnabled = App.Settings.WindowsCameraEnabled;
             App.Settings.WindowsFilesEnabled = FilesPermission.IsChecked == true;
             App.Settings.WindowsScreenEnabled = ScreenPermission.IsChecked == true;
             App.Settings.WindowsClipboardEnabled = ClipboardPermission.IsChecked == true;
@@ -42,6 +43,24 @@ namespace ZoeyOS.App.Views
             App.Settings.WindowsMicrophoneEnabled = MicrophonePermission.IsChecked == true;
             App.Settings.WindowsMcpEnabled = McpPermission.IsChecked == true;
             App.Settings.Save();
+
+            var permissions = new WindowsPermissionService();
+            if (!microphoneWasEnabled && App.Settings.WindowsMicrophoneEnabled &&
+                await permissions.RequestMicrophoneAsync() != PermissionResult.Allowed)
+            {
+                App.Settings.WindowsMicrophoneEnabled = false;
+                MicrophonePermission.IsChecked = false;
+            }
+
+            if (!cameraWasEnabled && App.Settings.WindowsCameraEnabled &&
+                await permissions.RequestCameraAsync() != PermissionResult.Allowed)
+            {
+                App.Settings.WindowsCameraEnabled = false;
+                CameraPermission.IsChecked = false;
+            }
+
+            App.Settings.Save();
+            App.RefreshMicrophonePermission();
             StatusText.Text = "Permissions saved. Aurora services will respect these settings.";
         }
 
@@ -49,6 +68,11 @@ namespace ZoeyOS.App.Views
         {
             try
             {
+                if (!App.Settings.WindowsCameraEnabled)
+                {
+                    StatusText.Text = "Enable Camera access and save before checking for devices.";
+                    return;
+                }
                 var devices = await App.Camera.RefreshDevicesAsync();
                 CameraPicker.ItemsSource = devices;
                 CameraPicker.DisplayMemberPath = "Name";

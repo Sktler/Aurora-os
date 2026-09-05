@@ -23,6 +23,7 @@ public sealed class AuroraHomeActivity : Activity
     private AndroidLocationService _location = null!;
     private IWeatherProvider _weather = null!;
     private AndroidNotificationService _notifications = null!;
+    private bool _refreshWeatherAfterPermission;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -33,8 +34,7 @@ public sealed class AuroraHomeActivity : Activity
         _weather = new NwsWeatherProvider();
         _notifications = new AndroidNotificationService(this);
         BuildUi();
-        new AndroidPermissionService(this).RequestRuntimePermissions();
-        _ = RefreshWeatherAsync();
+        _statusText.Text = "Ready. Refresh weather to choose location access.";
         _ = CheckForUpdatesAsync();
     }
 
@@ -67,7 +67,13 @@ public sealed class AuroraHomeActivity : Activity
         _alertText = Label("Checking active alerts…", 14, false, Color.ParseColor("#FFB86B"));
         weatherCard.AddView(_alertText);
         var refresh = new Button(this) { Text = "Refresh weather" };
-        refresh.Click += async (_, _) => await RefreshWeatherAsync();
+        refresh.Click += async (_, _) =>
+        {
+            if (new AndroidPermissionService(this).RequestLocationPermission())
+                await RefreshWeatherAsync();
+            else
+                _refreshWeatherAfterPermission = true;
+        };
         weatherCard.AddView(refresh);
         AddCard(weatherCard);
 
@@ -88,6 +94,22 @@ public sealed class AuroraHomeActivity : Activity
         AddCard(actions);
 
         SetContentView(root);
+    }
+
+    public override void OnRequestPermissionsResult(
+        int requestCode,
+        string[]? permissions,
+        Android.Content.PM.Permission[]? grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != AndroidPermissionService.RequestCode || !_refreshWeatherAfterPermission)
+            return;
+
+        _refreshWeatherAfterPermission = false;
+        if (grantResults?.Any(result => result == Android.Content.PM.Permission.Granted) == true)
+            _ = RefreshWeatherAsync();
+        else
+            _statusText.Text = "Location access was not granted.";
     }
 
     private async Task RefreshWeatherAsync()

@@ -26,9 +26,13 @@ namespace ZoeyOS.App.Views
             Loaded += MainWindow_Loaded;
         }
 
-        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
+        }
+
+        private async void RefreshWeather_Click(object sender, RoutedEventArgs e)
+        {
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
