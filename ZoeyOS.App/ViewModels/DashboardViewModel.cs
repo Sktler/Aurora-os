@@ -34,14 +34,18 @@ namespace ZoeyOS.App.ViewModels
 
         public DashboardViewModel()
         {
-            UserName = NormalizeUserName(App.Settings.UserName);
+            // The XAML designer can instantiate this view model before App.OnStartup has
+            // initialized the runtime services. Keep construction safe in both contexts.
+            var settings = App.Settings;
+            UserName = NormalizeUserName(settings?.UserName);
             GreetingText = BuildGreeting();
 
-            var existing = App.Memory.LoadCompanions();
-            if (existing.Count == 0)
+            var existing = App.Memory?.LoadCompanions();
+            if (existing == null || existing.Count == 0)
             {
                 existing = SeedDefaults();
-                foreach (var c in existing) App.Memory.SaveCompanion(c);
+                if (App.Memory != null)
+                    foreach (var c in existing) App.Memory.SaveCompanion(c);
             }
             foreach (var c in existing) Companions.Add(new CompanionViewModel(c));
             SelectedCompanion = Companions.FirstOrDefault();
@@ -59,7 +63,7 @@ namespace ZoeyOS.App.ViewModels
 
         public void RefreshUserName()
         {
-            UserName = NormalizeUserName(App.Settings.UserName);
+            UserName = NormalizeUserName(App.Settings?.UserName);
             GreetingText = BuildGreeting();
         }
 
