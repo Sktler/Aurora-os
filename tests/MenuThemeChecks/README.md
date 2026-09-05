@@ -19,6 +19,12 @@ application, and click-event routing. Highlighting is set through WPF's
 protected property setter; this does not send mouse or keyboard input.
 PNG renders are saved in `artifacts/menu-theme/after/` (ignored by Git).
 
+The shared Aurora orb payload and both orb views can be checked independently:
+
+```powershell
+dotnet run --project tests/MenuThemeChecks -- . --orb-only
+```
+
 No Aurora startup, settings, database, API calls, microphone, camera, or speech
 services are used. These are isolated presentation tests, not a complete app
 interaction test. Before release, open both the composer `+` menu and profile

@@ -27,6 +27,13 @@ internal static class Program
         resources.SetAttributeValue(XNamespace.Xmlns + "x", x.NamespaceName);
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         app.Resources = (ResourceDictionary)XamlReader.Parse(resources.ToString());
+        if (args.Contains("--orb-only"))
+        {
+            CheckOrbAsset(repo);
+            app.Shutdown();
+            Console.WriteLine($"{(failures == 0 ? "PASS" : "FAIL")}: {failures} orb checks failed.");
+            return failures == 0 ? 0 : 1;
+        }
 
         // Use the real composer menu declarations, omitting only code-behind handlers.
         var windowXml = XDocument.Load(Path.Combine(repo, "ZoeyOS.App", "Views", "MainWindow.xaml"));
@@ -43,9 +50,52 @@ internal static class Program
         profile.Items.Add(new Separator());
         profile.Items.Add(new MenuItem { Header = "Tools & Capabilities" });
         CheckMenu(profile, "profile", output);
+        CheckOrbAsset(repo);
         app.Shutdown();
         Console.WriteLine($"{(failures == 0 ? "PASS" : "FAIL")}: {failures} failed checks. Rendered menus: {output}");
         return failures == 0 ? 0 : 1;
+    }
+
+    private static void CheckOrbAsset(string repo)
+    {
+        var assetPath = Path.Combine(repo, "ZoeyOS.App", "Assets", "AuroraOrbNew.base64");
+        var base64 = File.ReadAllText(assetPath).Trim();
+        byte[] bytes;
+        try
+        {
+            bytes = Convert.FromBase64String(base64);
+        }
+        catch (FormatException)
+        {
+            Check(false, "orb asset is valid base64");
+            return;
+        }
+
+        var pngSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+        Check(bytes.Length >= pngSignature.Length
+            && pngSignature.SequenceEqual(bytes.Take(pngSignature.Length)),
+            "orb asset decodes to a PNG");
+
+        var project = File.ReadAllText(Path.Combine(repo, "ZoeyOS.App", "ZoeyOS.App.csproj"));
+        Check(project.Contains(@"<Resource Include=""Assets\AuroraOrbNew.base64"" />", StringComparison.Ordinal),
+            "orb payload is included as a WPF resource");
+
+        var loader = File.ReadAllText(Path.Combine(repo, "ZoeyOS.App", "Services", "AuroraOrbLoader.cs"));
+        Check(loader.Contains("Assembly.GetName().Name", StringComparison.Ordinal),
+            "orb loader resolves the resource using the assembly name");
+
+        foreach (var view in new[] { "MainWindow.xaml", "MiniCompanionWindow.xaml" })
+        {
+            var xaml = File.ReadAllText(Path.Combine(repo, "ZoeyOS.App", "Views", view));
+            Check(xaml.Contains("Assets/AuroraOrb.png", StringComparison.Ordinal),
+                $"{view} declares the shared orb image");
+
+            var codeBehind = Path.Combine(repo, "ZoeyOS.App", "Views",
+                Path.GetFileNameWithoutExtension(view) + ".xaml.cs");
+            var code = File.ReadAllText(codeBehind);
+            Check(code.Contains("AuroraOrbLoader.Apply(this)", StringComparison.Ordinal),
+                $"{view} applies the runtime orb payload");
+        }
     }
 
     private static void CheckMenu(ContextMenu menu, string name, string output)

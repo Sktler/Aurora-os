@@ -9,14 +9,18 @@ namespace ZoeyOS.App.Services
 {
     internal static class AuroraOrbLoader
     {
-        private const string ResourceUri = "/ZoeyOS.App;component/Assets/AuroraOrbNew.base64";
+        private const string ResourcePath = "Assets/AuroraOrbNew.base64";
 
         public static void Apply(DependencyObject root)
         {
             var image = FindFirstImage(root);
             if (image == null) return;
 
-            var streamInfo = Application.GetResourceStream(new Uri(ResourceUri, UriKind.Absolute));
+            var assemblyName = typeof(AuroraOrbLoader).Assembly.GetName().Name;
+            if (string.IsNullOrWhiteSpace(assemblyName)) return;
+
+            var resourceUri = new Uri($"/{assemblyName};component/{ResourcePath}", UriKind.Absolute);
+            var streamInfo = Application.GetResourceStream(resourceUri);
             if (streamInfo == null) return;
 
             using var reader = new StreamReader(streamInfo.Stream);
