@@ -6,7 +6,7 @@ namespace ZoeyOS.App.Services
 {
     public class AppSettings
     {
-        public string UserName { get; set; } = "Adam";
+        public string UserName { get; set; } = "";
         public string ChatProvider { get; set; } = "gemini";
         public string GeminiApiKey { get; set; } = "";
         public string GeminiModel { get; set; } = "gemini-3.6-flash";
@@ -73,7 +73,6 @@ namespace ZoeyOS.App.Services
                 loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
             else loaded = new AppSettings();
-            if (string.IsNullOrWhiteSpace(loaded.UserName)) loaded.UserName = "Adam";
             if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
 
             var originalModel = loaded.GeminiModel;
