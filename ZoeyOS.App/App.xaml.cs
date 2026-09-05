@@ -1,6 +1,5 @@
 using System;
 using System.Windows;
-using System.Windows.Threading;
 using ZoeyOS.App.Services;
 
 namespace ZoeyOS.App
@@ -23,23 +22,11 @@ namespace ZoeyOS.App
         public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             Settings = AppSettings.LoadOrCreate();
-
-            var bootstrap = new Views.StartupPermissionWindow();
-            bootstrap.Show();
-            bootstrap.Activate();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-
-            var permissions = new WindowsPermissionService();
-            await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
-            await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
-            await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
-
-            System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
 
             Memory = new MemoryStore(Settings.DatabasePath);
             Memory.Initialize();
@@ -55,8 +42,6 @@ namespace ZoeyOS.App
             MainWindow = mainWindow;
             mainWindow.Show();
             mainWindow.Activate();
-            bootstrap.Close();
-
             try
             {
                 AI = BuildChatEngine();
@@ -64,15 +49,18 @@ namespace ZoeyOS.App
                 SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
                 HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
                 Voice = new VoiceService(Settings.VoiceName);
-                WakeWord = new WakeWordService();
+                WakeWord = Settings.WindowsMicrophoneEnabled ? new WakeWordService() : null!;
                 WebSearch = new WebSearchClient();
                 Spotify = BuildSpotifyClient();
                 Camera = new CameraService();
                 Mcp = new McpService();
                 WindowsAutomation = CreateWindowsService();
 
-                try { WakeWord.Start(); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
+                if (Settings.WindowsMicrophoneEnabled)
+                {
+                    try { WakeWord.Start(); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
+                }
             }
             catch (Exception ex)
             {
@@ -95,6 +83,13 @@ namespace ZoeyOS.App
             };
         }
         public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); }
+        public static void RefreshMicrophonePermission()
+        {
+            WakeWord?.Dispose();
+            WakeWord = Settings.WindowsMicrophoneEnabled ? new WakeWordService() : null!;
+            if (Settings.WindowsMicrophoneEnabled)
+                WakeWord.Start();
+        }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };

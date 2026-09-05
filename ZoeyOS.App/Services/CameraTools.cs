@@ -35,6 +35,9 @@ namespace ZoeyOS.App.Services
 
         public static Task<string> ExecuteAsync(string name, JsonElement input)
         {
+            if (!App.Settings.WindowsCameraEnabled)
+                return Task.FromResult("Camera access is disabled in Aurora Settings.");
+
             return name switch
             {
                 "camera" => StartPreviewAsync(input),
