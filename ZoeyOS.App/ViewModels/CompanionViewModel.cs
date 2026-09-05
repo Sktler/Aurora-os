@@ -162,7 +162,13 @@ namespace ZoeyOS.App.ViewModels
                     ". Never claim to have inspected the source code or an internal registry. " +
                     "If asked which tools are available, use this inventory; do not invent or omit tools. " +
                     "The camera tool is available when `camera` appears in this inventory.";
-                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext;
+                var localNow = DateTimeOffset.Now;
+                var systemTimeContext =
+                    $"AUTHORITATIVE WINDOWS SYSTEM DATE/TIME: {localNow:dddd, MMMM d, yyyy h:mm:ss tt zzz}. " +
+                    $"LOCAL TIME ZONE: {TimeZoneInfo.Local.Id} ({TimeZoneInfo.Local.DisplayName}). " +
+                    "Use this as the authoritative current date and time for this request. " +
+                    "When the user asks what day, date, or time it is, answer from this system context rather than guessing.";
+                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext;
 
                 var reply = await App.AI.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
                 var assistantMsg = new ChatMessage { CompanionId = Companion.Id, Role = "assistant", Content = reply };
