@@ -66,8 +66,8 @@
                 <DockPanel>
                     <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="A" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                            <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock Text="Adam" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
+                            <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="{Binding ProfileInitial}" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock Text="{Binding ProfileName}" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
                             <Button Grid.Column="2" Content="⌄" Width="28" Height="32" Background="Transparent" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" FontSize="18" Click="ProfileMenu_Click" ToolTip="Account menu"/>
                         </Grid>
                     </Border>

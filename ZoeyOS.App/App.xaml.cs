@@ -50,6 +50,20 @@ namespace ZoeyOS.App
                 HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
                 Voice = new VoiceService(Settings.VoiceName);
                 WakeWord = Settings.WindowsMicrophoneEnabled ? new WakeWordService() : null!;
+                var wakeWordWasEnabledBeforeSpeech = false;
+                Voice.SpeakingChanged += speaking =>
+                {
+                    if (speaking)
+                    {
+                        wakeWordWasEnabledBeforeSpeech = WakeWord.IsEnabled;
+                        if (wakeWordWasEnabledBeforeSpeech) WakeWord.Stop();
+                    }
+                    else if (wakeWordWasEnabledBeforeSpeech)
+                    {
+                        WakeWord.Start();
+                        wakeWordWasEnabledBeforeSpeech = false;
+                    }
+                };
                 WebSearch = new WebSearchClient();
                 Spotify = BuildSpotifyClient();
                 Camera = new CameraService();

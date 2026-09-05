@@ -48,6 +48,8 @@ namespace ZoeyOS.App.Services
         private SpeechRecognitionEngine? _continuousRecognizer;
         private Action? _onStoppedExternally;
 
+        public event Action<bool>? SpeakingChanged;
+
         public VoiceService(string? preferredVoiceName = null)
         {
             try
@@ -118,6 +120,7 @@ namespace ZoeyOS.App.Services
         {
             if (string.IsNullOrWhiteSpace(text)) return;
 
+            SpeakingChanged?.Invoke(true);
             var provider = App.Settings.TtsProvider;
             try
             {
@@ -126,27 +129,41 @@ namespace ZoeyOS.App.Services
                     case "openai": await SpeakOpenAiAsync(text); break;
                     case "elevenlabs": await SpeakElevenLabsAsync(text); break;
                     case "azure": await SpeakAzureAsync(text); break;
-                    default: SpeakWindows(text); break; // "windows" or unrecognized
+                    default: await SpeakWindowsAsync(text); break; // "windows" or unrecognized
                 }
             }
             catch
             {
                 // Cloud call failed - fall back to the local voice rather than stay silent.
-                SpeakWindows(text);
+                await SpeakWindowsAsync(text);
+            }
+            finally
+            {
+                SpeakingChanged?.Invoke(false);
             }
         }
 
-        private void SpeakWindows(string text)
+        private async Task SpeakWindowsAsync(string text)
         {
             if (!_synthAvailable || string.IsNullOrWhiteSpace(text)) return;
+
+            var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            EventHandler<SpeakCompletedEventArgs>? handler = null;
+            handler = (_, _) => completed.TrySetResult(true);
             try
             {
+                _synth!.SpeakCompleted += handler;
                 _synth!.SpeakAsyncCancelAll();
                 _synth.SpeakAsync(text);
+                await completed.Task;
             }
             catch
             {
                 // A speech engine hiccup shouldn't take down a chat reply - just skip the audio.
+            }
+            finally
+            {
+                _synth!.SpeakCompleted -= handler;
             }
         }
 
@@ -158,7 +175,7 @@ namespace ZoeyOS.App.Services
             var key = string.IsNullOrWhiteSpace(App.Settings.OpenAiTtsApiKey)
                 ? App.Settings.OpenAIApiKey
                 : App.Settings.OpenAiTtsApiKey;
-            if (string.IsNullOrWhiteSpace(key)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key)) { await SpeakWindowsAsync(text); return; }
 
             var voice = string.IsNullOrWhiteSpace(App.Settings.OpenAiTtsVoice) ? "alloy" : App.Settings.OpenAiTtsVoice;
             var payload = JsonSerializer.Serialize(new { model = "tts-1", input = text, voice, response_format = "wav" });
@@ -178,7 +195,7 @@ namespace ZoeyOS.App.Services
         {
             var key = App.Settings.ElevenLabsApiKey;
             var voiceId = App.Settings.ElevenLabsVoiceId;
-            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(voiceId)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(voiceId)) { await SpeakWindowsAsync(text); return; }
 
             var payload = JsonSerializer.Serialize(new { text, model_id = "eleven_multilingual_v2" });
             using var req = new HttpRequestMessage(HttpMethod.Post,
@@ -200,7 +217,7 @@ namespace ZoeyOS.App.Services
         {
             var key = App.Settings.AzureSpeechKey;
             var region = App.Settings.AzureSpeechRegion;
-            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(region)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(region)) { await SpeakWindowsAsync(text); return; }
 
             var voiceName = string.IsNullOrWhiteSpace(App.Settings.AzureVoiceName) ? "en-US-JennyNeural" : App.Settings.AzureVoiceName;
             var ssml = "<speak version='1.0' xml:lang='en-US'><voice name='" + voiceName + "'>" +
@@ -282,8 +299,7 @@ namespace ZoeyOS.App.Services
             var stream = new MemoryStream(wavBytes);
             var player = new System.Media.SoundPlayer(stream);
             player.Load(); // reads the full stream into the player synchronously first...
-            player.Play(); // ...so it's safe to let the stream go out of scope once playback
-                            // (which runs on its own background thread) has started.
+            player.PlaySync();
         }
 
         /// <summary>Wraps headerless raw PCM in a standard 44-byte WAV header, since

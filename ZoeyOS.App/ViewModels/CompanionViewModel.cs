@@ -186,7 +186,7 @@ namespace ZoeyOS.App.ViewModels
                 App.Memory.AppendMessage(assistantMsg);
                 Companion.LastActivitySummary = Truncate(reply, 60);
                 Companion.Status = CompanionStatus.Idle;
-                if (SpeakRepliesEnabled) App.Voice.Speak(reply);
+                if (SpeakRepliesEnabled) await SpeakReplyAsync(reply);
             }
             catch (Exception ex)
             {
@@ -205,6 +205,35 @@ namespace ZoeyOS.App.ViewModels
 
         private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input) =>
             CameraTools.IsCameraTool(toolName) ? CameraTools.ExecuteAsync(toolName, input) : SystemTools.ExecuteAsync(toolName, input);
+
+        private async Task SpeakReplyAsync(string reply)
+        {
+            var wasListening = IsListening;
+            if (wasListening)
+            {
+                App.Voice.StopContinuousListening();
+                IsListening = false;
+            }
+
+            try
+            {
+                await App.Voice.SpeakAsync(reply);
+            }
+            finally
+            {
+                if (wasListening)
+                {
+                    var restarted = App.Voice.StartContinuousListening(
+                        onUtteranceRecognized: heard => System.Windows.Application.Current?.Dispatcher.Invoke(() => EnqueueHeardUtterance(heard)),
+                        onStoppedByAnotherListener: () => System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                        {
+                            IsListening = false;
+                            App.WakeWord?.Start();
+                        }));
+                    IsListening = restarted;
+                }
+            }
+        }
 
         private List<ChatMessage> SliceHistory() { var list = new List<ChatMessage>(Messages); list.RemoveAt(list.Count - 1); return list; }
         private static string Truncate(string s, int len) => s.Length <= len ? s : s.Substring(0, len) + "…";

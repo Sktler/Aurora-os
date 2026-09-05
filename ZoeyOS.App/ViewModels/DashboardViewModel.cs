@@ -16,8 +16,10 @@ namespace ZoeyOS.App.ViewModels
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
         [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
         [ObservableProperty] private bool _wakeWordFlash;
-        [ObservableProperty] private string _userName = "Adam";
-        [ObservableProperty] private string _greetingText = "Good evening, Adam";
+        [ObservableProperty] private string _userName = "";
+        [ObservableProperty] private string _greetingText = "";
+        public string ProfileName => string.IsNullOrWhiteSpace(UserName) ? "Your name" : UserName;
+        public string ProfileInitial => string.IsNullOrWhiteSpace(UserName) ? "?" : UserName.Substring(0, 1).ToUpperInvariant();
 
         [ObservableProperty] private string _weatherSummary = "Waiting for location permission…";
         [ObservableProperty] private string _weatherLocation = "Finding your location…";
@@ -37,7 +39,8 @@ namespace ZoeyOS.App.ViewModels
             // The XAML designer can instantiate this view model before App.OnStartup has
             // initialized the runtime services. Keep construction safe in both contexts.
             var settings = App.Settings;
-            UserName = NormalizeUserName(settings?.UserName);
+            UserName = UserGreeting.NormalizeName(settings?.UserName);
+            NotifyProfileChanged();
             GreetingText = BuildGreeting();
 
             var existing = App.Memory?.LoadCompanions();
@@ -63,22 +66,20 @@ namespace ZoeyOS.App.ViewModels
 
         public void RefreshUserName()
         {
-            UserName = NormalizeUserName(App.Settings?.UserName);
+            UserName = UserGreeting.NormalizeName(App.Settings?.UserName);
+            NotifyProfileChanged();
             GreetingText = BuildGreeting();
         }
 
-        private static string NormalizeUserName(string? name)
+        private void NotifyProfileChanged()
         {
-            var trimmed = name?.Trim() ?? "";
-            if (string.IsNullOrWhiteSpace(trimmed)) return "Adam";
-            return trimmed.Length > 40 ? trimmed.Substring(0, 40) : trimmed;
+            OnPropertyChanged(nameof(ProfileName));
+            OnPropertyChanged(nameof(ProfileInitial));
         }
 
         private string BuildGreeting()
         {
-            var hour = DateTime.Now.Hour;
-            var part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-            return $"Good {part}, {UserName}";
+            return UserGreeting.Build(DateTime.Now, UserName);
         }
 
         public async System.Threading.Tasks.Task RefreshWeatherAsync()

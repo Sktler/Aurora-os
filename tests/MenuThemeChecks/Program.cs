@@ -6,6 +6,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Xml.Linq;
+using ZoeyOS.App.Services;
 
 // Load only presentation resources, never Aurora's startup code or user settings.
 internal static class Program
@@ -17,6 +18,7 @@ internal static class Program
     {
         var repo = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
         bool baseline = args.Contains("--baseline");
+        CheckGreetingBehavior();
         var output = Path.Combine(repo, "artifacts", "menu-theme", baseline ? "before" : "after");
         Directory.CreateDirectory(output);
         XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
@@ -54,6 +56,15 @@ internal static class Program
         app.Shutdown();
         Console.WriteLine($"{(failures == 0 ? "PASS" : "FAIL")}: {failures} failed checks. Rendered menus: {output}");
         return failures == 0 ? 0 : 1;
+    }
+
+    private static void CheckGreetingBehavior()
+    {
+        Check(UserGreeting.Build(new DateTime(2026, 1, 1, 18, 0, 0), "") == "Good evening",
+            "greeting omits an unset user name");
+        Check(UserGreeting.Build(new DateTime(2026, 1, 1, 9, 0, 0), "  Riley  ") == "Good morning, Riley",
+            "greeting uses the stored user name");
+        Check(UserGreeting.NormalizeName(null) == "", "missing user name remains unset");
     }
 
     private static void CheckOrbAsset(string repo)
