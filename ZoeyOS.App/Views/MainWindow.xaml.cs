@@ -29,7 +29,6 @@ namespace ZoeyOS.App.Views
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
-            UpdateProfileNameDisplay();
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
@@ -142,7 +141,6 @@ namespace ZoeyOS.App.Views
             window.ShowDialog();
             if (DataContext is DashboardViewModel dvm)
                 dvm.RefreshUserName();
-            UpdateProfileNameDisplay();
         }
 
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -315,7 +313,6 @@ namespace ZoeyOS.App.Views
                 App.Settings.Save();
                 if (DataContext is DashboardViewModel dashboard)
                     dashboard.RefreshUserName();
-                UpdateProfileNameDisplay();
                 dialog.DialogResult = true;
                 dialog.Close();
             };
@@ -329,22 +326,5 @@ namespace ZoeyOS.App.Views
             dialog.ShowDialog();
         }
 
-        private void UpdateProfileNameDisplay()
-        {
-            var name = DataContext is DashboardViewModel dvm ? dvm.UserName : App.Settings.UserName;
-            var textBlock = FindVisualChild<TextBlock>(this, t => t.Text == "Adam" || t.Tag?.ToString() == "ProfileName");
-            if (textBlock != null) textBlock.Text = name;
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
-        {
-            if (root is T match && predicate(match)) return match;
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            {
-                var found = FindVisualChild<T>(VisualTreeHelper.GetChild(root, i), predicate);
-                if (found != null) return found;
-            }
-            return null;
-        }
     }
 }
