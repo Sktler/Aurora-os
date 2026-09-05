@@ -1,0 +1,36 @@
+name: Aurora Android Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install .NET Android workload
+        run: dotnet workload install android
+
+      - name: Restore Android project
+        run: dotnet restore Aurora.Android/Aurora.Android.csproj
+
+      - name: Build Android APK
+        run: dotnet build Aurora.Android/Aurora.Android.csproj --configuration Release --framework net8.0-android -p:AndroidPackageFormat=apk
+
+      - name: Upload Android build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-android-build
+          path: Aurora.Android/bin/Release/net8.0-android/**/*.apk
+          if-no-files-found: warn
