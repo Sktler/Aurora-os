@@ -4,6 +4,7 @@ using System.IO;
 var repo = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var workflow = File.ReadAllText(Path.Combine(repo, ".github", "workflows", "android-build.yml"));
 var project = File.ReadAllText(Path.Combine(repo, "Aurora.Android", "Aurora.Android.csproj"));
+var manifest = File.ReadAllText(Path.Combine(repo, "Aurora.Android", "AndroidManifest.xml"));
 var sdkSetup = "android-actions/setup-android@v3";
 var sdkPackages = "sdkmanager \"platform-tools\" \"platforms;android-35\" \"build-tools;35.0.0\"";
 var workloadInstall = "dotnet workload install android";
@@ -38,6 +39,36 @@ Check(project.Contains("<TargetFramework>net10.0-android</TargetFramework>", Str
     "Android project targets .NET Android");
 Check(project.Contains("<AndroidPackageFormat>apk</AndroidPackageFormat>", StringComparison.Ordinal),
     "Android project declares APK packaging");
+foreach (var feature in new[]
+{
+    "android.hardware.camera.any",
+    "android.hardware.microphone",
+    "android.hardware.bluetooth",
+    "android.hardware.wifi",
+    "android.hardware.nfc",
+    "android.hardware.location",
+    "android.hardware.sensor.gyroscope",
+    "android.hardware.sensor.accelerometer",
+    "android.hardware.biometrics.face",
+    "android.hardware.fingerprint"
+})
+{
+    Check(manifest.Contains($"<uses-feature android:name=\"{feature}\" android:required=\"false\" />",
+        StringComparison.Ordinal),
+        $"{feature} is optional so devices without it can install Aurora");
+}
+Check(workflow.Contains("api-level: [23, 29, 35]", StringComparison.Ordinal),
+    "Android compatibility matrix covers API 23, 29, and 35");
+Check(workflow.Contains("adb install", StringComparison.Ordinal),
+    "Android compatibility job installs the release APK");
+Check(workflow.Contains("adb shell monkey -p com.sktler.aurora", StringComparison.Ordinal),
+    "Android compatibility job launches the installed APK");
+Check(workflow.Contains("adb shell pidof com.sktler.aurora", StringComparison.Ordinal),
+    "Android compatibility job verifies the app process stays alive");
+Check(workflow.Contains("adb shell input keyevent 3", StringComparison.Ordinal),
+    "Android compatibility job covers background and foreground transitions");
+Check(workflow.Contains("adb shell svc wifi disable", StringComparison.Ordinal),
+    "Android compatibility job covers unavailable network services");
 
 Console.WriteLine(failures == 0
     ? "PASS: Android build checks."

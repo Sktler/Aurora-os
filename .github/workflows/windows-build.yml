@@ -9,18 +9,61 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
+
+      - name: Check Windows startup and compatibility configuration
+        run: dotnet run --project tests/WindowsBuildChecks/WindowsBuildChecks.csproj -- .
 
       - name: Restore
         run: dotnet restore ZoeyOS.App/ZoeyOS.App.csproj
 
       - name: Build
         run: dotnet build ZoeyOS.App/ZoeyOS.App.csproj --configuration Release --no-restore
+
+      - name: Publish Windows application
+        run: dotnet publish ZoeyOS.App/ZoeyOS.App.csproj --configuration Release --no-restore --runtime win-x64 --self-contained false
+
+      - name: Smoke test application startup and shutdown
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $app = Join-Path $env:GITHUB_WORKSPACE 'ZoeyOS.App\bin\Release\net10.0-windows10.0.17763.0\win-x64\Aurora.exe'
+          if (-not (Test-Path $app)) {
+            throw "Published Aurora executable was not found at $app"
+          }
+          $process = Start-Process -FilePath $app -PassThru
+          try {
+            Start-Sleep -Seconds 12
+            if ($process.HasExited) {
+              throw "Aurora exited during startup with code $($process.ExitCode)"
+            }
+            $process.CloseMainWindow() | Out-Null
+            if (-not $process.WaitForExit(10000)) {
+              Stop-Process -Id $process.Id -Force
+              throw "Aurora did not shut down cleanly"
+            }
+          }
+          finally {
+            if (-not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
+
+      - name: Upload Windows application
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-windows-${{ matrix.os }}
+          path: ZoeyOS.App/bin/Release/net10.0-windows10.0.17763.0/win-x64/**
+          if-no-files-found: error
