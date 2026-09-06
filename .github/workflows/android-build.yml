@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,6 +18,21 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Check Android build configuration
+        run: dotnet run --project tests/AndroidBuildChecks/AndroidBuildChecks.csproj -- .
 
       - name: Install .NET Android workload
         run: dotnet workload install android
