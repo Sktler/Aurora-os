@@ -87,7 +87,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim
           disable-animations: true
           script: |
-            set -euo pipefail
+            bash -euo pipefail <<'EOF'
             apk="$(find artifacts -name '*.apk' -type f | head -n 1)"
             test -n "$apk"
             adb install "$apk"
@@ -109,3 +109,4 @@ jobs:
             sleep 3
             adb shell pidof com.sktler.aurora
             adb shell dumpsys package com.sktler.aurora | grep -q 'versionName'
+            EOF

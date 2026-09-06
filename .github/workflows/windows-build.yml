@@ -27,7 +27,7 @@ jobs:
         run: dotnet run --project tests/WindowsBuildChecks/WindowsBuildChecks.csproj -- .
 
       - name: Restore
-        run: dotnet restore ZoeyOS.App/ZoeyOS.App.csproj
+        run: dotnet restore ZoeyOS.App/ZoeyOS.App.csproj --runtime win-x64
 
       - name: Build
         run: dotnet build ZoeyOS.App/ZoeyOS.App.csproj --configuration Release --no-restore
