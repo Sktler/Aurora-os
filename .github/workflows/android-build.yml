@@ -40,8 +40,8 @@ jobs:
       - name: Restore Android project
         run: dotnet restore Aurora.Android/Aurora.Android.csproj
 
-      - name: Build Android APK
-        run: dotnet build Aurora.Android/Aurora.Android.csproj --configuration Release --framework net10.0-android -p:AndroidPackageFormat=apk
+      - name: Publish Android APK
+        run: dotnet publish Aurora.Android/Aurora.Android.csproj --configuration Release --framework net10.0-android -p:AndroidPackageFormat=apk
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
