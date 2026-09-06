@@ -59,3 +59,53 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: Aurora.Android/bin/Release/net10.0-android/**/*.apk
+
+  android-compatibility:
+    name: Android API ${{ matrix.api-level }} smoke test
+    needs: build-android
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [23, 29, 35]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: aurora-android-apk
+          path: artifacts
+
+      - name: Start emulator and exercise APK
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            apk="$(find artifacts -name '*.apk' -type f | head -n 1)"
+            test -n "$apk"
+            adb install "$apk"
+            adb shell pm revoke com.sktler.aurora android.permission.ACCESS_COARSE_LOCATION || true
+            adb shell pm revoke com.sktler.aurora android.permission.ACCESS_FINE_LOCATION || true
+            adb shell am force-stop com.sktler.aurora
+            adb shell monkey -p com.sktler.aurora -c android.intent.category.LAUNCHER 1
+            sleep 8
+            adb shell pidof com.sktler.aurora
+            adb shell input keyevent 3
+            sleep 2
+            adb shell monkey -p com.sktler.aurora -c android.intent.category.LAUNCHER 1
+            sleep 3
+            adb shell pidof com.sktler.aurora
+            adb shell svc wifi disable
+            adb shell svc data disable
+            adb shell am force-stop com.sktler.aurora
+            adb shell monkey -p com.sktler.aurora -c android.intent.category.LAUNCHER 1
+            sleep 3
+            adb shell pidof com.sktler.aurora
+            adb shell dumpsys package com.sktler.aurora | grep -q 'versionName'
