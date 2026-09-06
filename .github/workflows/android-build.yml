@@ -3,9 +3,13 @@ name: Aurora Android Build
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-android:
@@ -49,3 +53,9 @@ jobs:
           name: aurora-android-apk
           path: Aurora.Android/bin/Release/net10.0-android/**/*.apk
           if-no-files-found: error
+
+      - name: Upload APK to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Aurora.Android/bin/Release/net10.0-android/**/*.apk
