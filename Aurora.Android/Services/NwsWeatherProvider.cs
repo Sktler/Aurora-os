@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Aurora.Core;
 
-namespace Aurora.Android.Services;
+namespace Aurora.AndroidApp.Services;
 
 public sealed class NwsWeatherProvider : IWeatherProvider
 {
@@ -45,7 +45,14 @@ public sealed class NwsWeatherProvider : IWeatherProvider
         }
 
         var alerts = await GetActiveAlertsAsync(latitude, longitude, cancellationToken);
-        var useObservation = observation.ValueKind == JsonValueKind.Object && observation.TryGetProperty("properties", out var observationProperties);
+
+        var useObservation = false;
+        var observationProperties = default(JsonElement);
+
+        if (observation.ValueKind == JsonValueKind.Object)
+        {
+            useObservation = observation.TryGetProperty("properties", out observationProperties);
+        }
 
         var temperature = useObservation
             ? CelsiusToFahrenheit(observationProperties.GetProperty("temperature").GetProperty("value").GetDoubleOrNull())

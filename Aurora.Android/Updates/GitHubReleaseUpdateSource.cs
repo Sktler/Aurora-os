@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Aurora.Core;
 
-namespace Aurora.Android.Updates;
+namespace Aurora.AndroidApp.Updates;
 
 public sealed class GitHubReleaseUpdateSource(HttpClient http) : IUpdateSource
 {

@@ -1,7 +1,7 @@
 using Android.Content;
 using Android.Locations;
 
-namespace Aurora.Android.Services;
+namespace Aurora.AndroidApp.Services;
 
 public sealed class AndroidLocationService(Context context)
 {
@@ -31,7 +31,7 @@ public sealed class AndroidLocationService(Context context)
                 if (location != null && (best == null || location.Time > best.Time))
                     best = location;
             }
-            catch (SecurityException)
+            catch (RecoverableSecurityException)
             {
                 return Task.FromResult<(double Latitude, double Longitude)?>(null);
             }

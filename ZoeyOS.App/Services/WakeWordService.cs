@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Speech.Recognition;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ZoeyOS.App.Services

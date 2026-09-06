@@ -2,7 +2,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 
-namespace Aurora.Android.Services;
+namespace Aurora.AndroidApp.Services;
 
 public sealed class AndroidNotificationService(Context context)
 {

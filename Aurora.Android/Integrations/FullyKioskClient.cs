@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 
-namespace Aurora.Android.Integrations;
+namespace Aurora.AndroidApp.Integrations;
 
 public sealed class FullyKioskClient(HttpClient http)
 {

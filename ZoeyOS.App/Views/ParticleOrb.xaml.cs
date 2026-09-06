@@ -1,8 +1,6 @@
 using System;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
 namespace ZoeyOS.App.Views
@@ -29,7 +27,7 @@ namespace ZoeyOS.App.Views
         private const double WaveAmplitude = 0.07;
 
         // Base (un-rotated, un-waved) unit-sphere positions - computed once, reused every frame.
-        private readonly Point3 [] _basePoints = new Point3[ParticleCount];
+        private readonly Point3[] _basePoints = new Point3[ParticleCount];
         private readonly Ellipse[] _dots = new Ellipse[ParticleCount];
         private readonly SolidColorBrush[] _brushes = new SolidColorBrush[ParticleCount];
 

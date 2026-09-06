@@ -3,7 +3,7 @@ using Android.Hardware;
 using Android.OS;
 using Aurora.Core;
 
-namespace Aurora.Android.Services;
+namespace Aurora.AndroidApp.Services;
 
 public sealed class AndroidDeviceCapabilities : IDeviceCapabilities
 {

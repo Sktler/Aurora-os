@@ -8,11 +8,11 @@ using Android.OS;
 using Android.Provider;
 using Android.Views;
 using Android.Widget;
-using Aurora.Android.Services;
-using Aurora.Android.Updates;
+using Aurora.AndroidApp.Services;
+using Aurora.AndroidApp.Updates;
 using Aurora.Core;
 
-namespace Aurora.Android;
+namespace Aurora.AndroidApp;
 
 [Activity(Label = "Aurora", Exported = false, ConfigurationChanges = Android.Content.PM.ConfigChanges.ScreenSize | Android.Content.PM.ConfigChanges.Orientation | Android.Content.PM.ConfigChanges.UiMode | Android.Content.PM.ConfigChanges.ScreenLayout | Android.Content.PM.ConfigChanges.SmallestScreenSize)]
 public sealed class AuroraHomeActivity : Activity
@@ -153,7 +153,7 @@ public sealed class AuroraHomeActivity : Activity
             }
             _notifications.Show("Aurora update available", $"Version {update.Version} is available.");
             var open = new Button(this) { Text = $"Download Aurora {update.Version}" };
-            open.Click += (_, _) => StartActivity(new Intent(Intent.ActionView, Uri.Parse(update.DownloadUrl)));
+            open.Click += (_, _) => StartActivity(new Intent(Intent.ActionView, Android.Net.Uri.Parse(update.DownloadUrl)));
             _content.AddView(open, 0);
         }
         catch

@@ -2,7 +2,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 
-namespace Aurora.Android;
+namespace Aurora.AndroidApp;
 
 [Activity(Label = "Aurora", MainLauncher = true, Exported = true)]
 public sealed class MainActivity : Activity

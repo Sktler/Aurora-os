@@ -5,7 +5,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shell;
 using ZoeyOS.App.Models;
 using ZoeyOS.App.Services;
 using ZoeyOS.App.ViewModels;

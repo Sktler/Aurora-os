@@ -2,7 +2,7 @@ using Android.App;
 using Android.Content.PM;
 using Android.OS;
 
-namespace Aurora.Android.Services;
+namespace Aurora.AndroidApp.Services;
 
 public sealed class AndroidPermissionService(Activity activity)
 {
