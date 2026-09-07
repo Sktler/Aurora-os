@@ -494,6 +494,25 @@
                     </StackPanel>
                 </Border>
 
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="App updates" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,10" TextWrapping="Wrap"
+                                   Text="Checks the latest GitHub release, downloads the matching Windows package, and prepares a safe restart once the update is staged."/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Check for updates" Padding="16,8"
+                                    Command="{Binding CheckForUpdatesCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Button Content="Pull latest" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding PullLatestUpdateCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock Text="System volume" FontSize="15" FontWeight="SemiBold"/>
