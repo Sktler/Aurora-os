@@ -1,0 +1,45 @@
+name: Aurora Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore ZoeyOS.App/ZoeyOS.App.csproj
+
+      - name: Publish Aurora
+        run: dotnet publish ZoeyOS.App/ZoeyOS.App.csproj --configuration Release --runtime win-x64 --self-contained false --no-restore
+
+      - name: Package Aurora
+        shell: pwsh
+        run: |
+          $publish = Join-Path $env:GITHUB_WORKSPACE 'ZoeyOS.App\bin\Release\net8.0-windows10.0.17763.0\win-x64'
+          if (-not (Test-Path (Join-Path $publish 'Aurora.exe'))) { throw 'Aurora.exe was not produced.' }
+          $package = Join-Path $env:RUNNER_TEMP 'Aurora-Windows'
+          if (Test-Path $package) { Remove-Item $package -Recurse -Force }
+          New-Item -ItemType Directory -Path $package | Out-Null
+          Copy-Item (Join-Path $publish '*') $package -Recurse -Force
+          Compress-Archive -Path (Join-Path $package '*') -DestinationPath (Join-Path $env:GITHUB_WORKSPACE 'Aurora-Windows.zip') -Force
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Aurora-Windows.zip
+          generate_release_notes: true
