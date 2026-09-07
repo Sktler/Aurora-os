@@ -22,12 +22,14 @@ namespace ZoeyOS.App
         public static McpService Mcp { get; private set; } = null!;
         public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
+        public static WindowsUpdaterService Updater { get; private set; } = null!;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             Settings = AppSettings.LoadOrCreate();
+            Updater = new WindowsUpdaterService();
 
             var bootstrap = new Views.StartupPermissionWindow();
             bootstrap.Show();

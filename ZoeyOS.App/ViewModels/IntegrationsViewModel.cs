@@ -67,6 +67,9 @@ namespace ZoeyOS.App.ViewModels
 
         [ObservableProperty] private bool _isDiscovering;
         [ObservableProperty] private string _statusMessage = "";
+        [ObservableProperty] private string _updateStatus = "";
+        [ObservableProperty] private bool _isCheckingForUpdates;
+        [ObservableProperty] private bool _isDownloadingUpdate;
 
         // --- Voice ---
         // Windows SAPI voices - only relevant when TtsProvider == "windows".
@@ -546,6 +549,72 @@ namespace ZoeyOS.App.ViewModels
         {
             IsSystemMuted = !IsSystemMuted;
             SystemVolumeControl.SetMute(IsSystemMuted);
+        }
+
+        [RelayCommand]
+        private async Task CheckForUpdatesAsync()
+        {
+            if (IsCheckingForUpdates) return;
+
+            IsCheckingForUpdates = true;
+            UpdateStatus = "Checking for an Aurora update...";
+
+            try
+            {
+                var result = await App.Updater.CheckForUpdateAsync();
+                if (result.IsError)
+                {
+                    UpdateStatus = result.Error ?? "Could not check for updates right now.";
+                    return;
+                }
+
+                if (!result.UpdateAvailable)
+                {
+                    UpdateStatus = $"Aurora is already up to date ({result.LatestVersion}).";
+                    return;
+                }
+
+                UpdateStatus = $"Update available: Aurora {result.LatestVersion}.";
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus = $"Update check failed: {ex.Message}";
+            }
+            finally
+            {
+                IsCheckingForUpdates = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task PullLatestUpdateAsync()
+        {
+            if (IsDownloadingUpdate) return;
+
+            IsDownloadingUpdate = true;
+            UpdateStatus = "Downloading the latest Windows package...";
+
+            try
+            {
+                var result = await App.Updater.DownloadAndPrepareUpdateAsync();
+                if (!result.Succeeded)
+                {
+                    UpdateStatus = result.Error ?? "The update could not be downloaded.";
+                    return;
+                }
+
+                var scriptPath = WindowsUpdaterService.CreateRestartScript(result.StagingPath ?? WindowsUpdaterService.DefaultUpdateRoot);
+                WindowsUpdaterService.LaunchRestartScript(scriptPath);
+                UpdateStatus = $"Downloaded Aurora {result.LatestVersion}. The app will restart with the new build.";
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus = $"Update pull failed: {ex.Message}";
+            }
+            finally
+            {
+                IsDownloadingUpdate = false;
+            }
         }
 
         [RelayCommand]
