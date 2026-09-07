@@ -6,13 +6,26 @@
             <StackPanel>
                 <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
 
+                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Aurora Updates" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="VersionText" Margin="0,8,0,14" Opacity="0.7"/>
+                        <TextBlock Text="Check GitHub Releases for a newer Aurora version and pull it directly into the installed application." TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,14"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="CheckUpdatesButton" Content="Check for Updates" Padding="16,9" Click="CheckUpdates_Click"/>
+                            <Button x:Name="InstallUpdateButton" Content="Pull Update" Padding="16,9" Margin="10,0,0,0" Click="InstallUpdate_Click" IsEnabled="False"/>
+                        </StackPanel>
+                        <ProgressBar x:Name="UpdateProgress" Height="6" Margin="0,14,0,0" Minimum="0" Maximum="100" Visibility="Collapsed"/>
+                        <TextBlock x:Name="UpdateStatusText" Text="Up to date" Margin="0,10,0,0" Opacity="0.75" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Music -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="Music" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="Jamendo" FontSize="16" FontWeight="Medium" Margin="0,14,0,4"/>
                         <TextBlock Text="Search and play music directly in Aurora using the Jamendo catalog." TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,14"/>
-
                         <TextBlock Text="Jamendo Client ID" Margin="0,0,0,5"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -22,12 +35,10 @@
                             <PasswordBox x:Name="JamendoClientIdBox" Grid.Column="0" Padding="10"/>
                             <Button Grid.Column="1" Content="Get Client ID" Padding="14,8" Margin="10,0,0,0" Click="GetJamendoClientId_Click"/>
                         </Grid>
-
                         <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                             <Button Content="Save &amp; Connect" Padding="16,9" Click="SaveJamendo_Click"/>
                             <TextBlock x:Name="JamendoStatusText" Text="Not connected" VerticalAlignment="Center" Margin="14,0,0,0" Opacity="0.75"/>
                         </StackPanel>
-
                         <TextBlock Text="Jamendo is intended for supported non-commercial use. Track licensing and attribution requirements apply." TextWrapping="Wrap" FontSize="12" Opacity="0.6" Margin="0,14,0,0"/>
                     </StackPanel>
                 </Border>
