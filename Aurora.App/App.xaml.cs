@@ -43,31 +43,19 @@ namespace Aurora.App
                 }
 
                 await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-                while (!AppSettings.HasSavedConfiguration)
+                var setup = new Views.SetupWindow(restartOnSave: false)
                 {
-                    var setup = new Views.SetupWindow(restartOnSave: false)
-                    {
-                        Topmost = true,
-                        ShowInTaskbar = true,
-                        WindowState = WindowState.Normal
-                    };
-                    setup.Loaded += (_, _) =>
-                    {
-                        setup.Activate();
-                        setup.Focus();
-                    };
-                    setup.ShowDialog();
-                    setup.Topmost = false;
-
-                    if (!AppSettings.HasSavedConfiguration)
-                    {
-                        MessageBox.Show(
-                            "Aurora needs a provider API key before it can continue. The setup wizard will remain open until setup is complete.",
-                            "Aurora setup required",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
-                    }
-                }
+                    Topmost = true,
+                    ShowInTaskbar = true,
+                    WindowState = WindowState.Normal
+                };
+                setup.Loaded += (_, _) =>
+                {
+                    setup.Activate();
+                    setup.Focus();
+                };
+                setup.ShowDialog();
+                setup.Topmost = false;
             }
 
             var bootstrap = new Views.StartupPermissionWindow();
