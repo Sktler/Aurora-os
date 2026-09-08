@@ -40,6 +40,15 @@ namespace ZoeyOS.App
             await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
             await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
             await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
+            Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
+            Settings.WindowsScreenEnabled = await bootstrap.AskCapabilityPermissionAsync("Screen capture");
+            Settings.WindowsClipboardEnabled = await bootstrap.AskCapabilityPermissionAsync("Clipboard");
+            Settings.WindowsApplicationsEnabled = await bootstrap.AskCapabilityPermissionAsync("Applications");
+            Settings.WindowsTerminalEnabled = await bootstrap.AskCapabilityPermissionAsync("Terminal");
+            Settings.WindowsUiAutomationEnabled = await bootstrap.AskCapabilityPermissionAsync("UI automation");
+            Settings.WindowsNetworkEnabled = await bootstrap.AskCapabilityPermissionAsync("Network");
+            Settings.WindowsPowerEnabled = await bootstrap.AskCapabilityPermissionAsync("Power controls");
+            Settings.Save();
 
             System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
 
