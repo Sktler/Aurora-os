@@ -81,6 +81,7 @@ public sealed class WindowsUpdateService
                 }
             }
 
+            progress?.Report(100);
             ZipFile.ExtractToDirectory(zipPath, extractPath);
             var appPath = Environment.ProcessPath ?? throw new InvalidOperationException("Aurora process path is unavailable.");
             var appDirectory = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
@@ -88,11 +89,28 @@ public sealed class WindowsUpdateService
             var payload = Directory.GetFiles(extractPath, "*", SearchOption.AllDirectories);
             if (payload.Length == 0) throw new InvalidDataException("The update package is empty.");
 
+            var safeTemp = EscapeBatchArgument(tempRoot);
+            var safeExtract = EscapeBatchArgument(extractPath);
+            var safeAppDirectory = EscapeBatchArgument(appDirectory);
+            var safeAppPath = EscapeBatchArgument(appPath);
+            var prompt = EscapePowerShellSingleQuoted($"Aurora {update.Version} has finished downloading and is ready to install. Click OK to apply the update. Aurora will restart automatically when installation is complete.");
+            var errorTitle = EscapePowerShellSingleQuoted("Aurora Update");
+            var successTitle = EscapePowerShellSingleQuoted("Aurora Update");
+
             var scriptText = "@echo off\r\n" +
+                "setlocal\r\n" +
+                $"powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -Command \"Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('{prompt}','{errorTitle}', 'OK', 'Information') | Out-Null\"\r\n" +
                 "timeout /t 2 /nobreak >nul\r\n" +
-                $"robocopy \"{extractPath}\" \"{appDirectory}\" /E /IS /IT /NFL /NDL /NJH /NJS >nul\r\n" +
-                $"start \"\" \"{appPath}\"\r\n" +
-                $"rmdir /S /Q \"{tempRoot}\"\r\n";
+                $"robocopy \"{safeExtract}\" \"{safeAppDirectory}\" /E /IS /IT /NFL /NDL /NJH /NJS >nul\r\n" +
+                "if %ERRORLEVEL% GEQ 8 goto update_failed\r\n" +
+                $"powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -Command \"Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Aurora was updated successfully. The application will now restart.','{successTitle}', 'OK', 'Information') | Out-Null\"\r\n" +
+                $"start \"\" \"{safeAppPath}\"\r\n" +
+                $"rmdir /S /Q \"{safeTemp}\"\r\n" +
+                "exit /b 0\r\n" +
+                ":update_failed\r\n" +
+                $"powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -Command \"Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Aurora could not complete the update. Your existing installation was left in place. You can try Pull Update again.','{errorTitle}', 'OK', 'Error') | Out-Null\"\r\n" +
+                "exit /b 1\r\n";
+
             await File.WriteAllTextAsync(script, scriptText, cancellationToken);
 
             Process.Start(new ProcessStartInfo
@@ -109,6 +127,10 @@ public sealed class WindowsUpdateService
             throw;
         }
     }
+
+    private static string EscapeBatchArgument(string value) => value.Replace("%", "%%").Replace("\"", "\"\"");
+
+    private static string EscapePowerShellSingleQuoted(string value) => value.Replace("'", "''");
 
     private static Version? NormalizeVersion(string? tag)
     {
