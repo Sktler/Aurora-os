@@ -255,6 +255,9 @@
                                         <Button Tag="#F0D45C" Background="#F0D45C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Gold"/>
                                         <Button Tag="#5BE0A0" Background="#5BE0A0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Green"/>
                                         <Button Tag="#4FD0A8" Background="#4FD0A8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Teal"/>
+                                        <Button Content="Custom..." Click="CustomColor_Click" Padding="10,4" Margin="4,0,0,8"
+                                                Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="1" Cursor="Hand"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
