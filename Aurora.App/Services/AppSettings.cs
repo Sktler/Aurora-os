@@ -62,7 +62,31 @@ namespace Aurora.App.Services
 
         public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
-        public static bool HasSavedConfiguration => File.Exists(ConfigPath);
+        public static bool HasSavedConfiguration
+        {
+            get
+            {
+                if (!File.Exists(ConfigPath))
+                    return false;
+
+                try
+                {
+                    var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(ConfigPath));
+                    return settings != null &&
+                           (settings.ChatProvider switch
+                           {
+                               "groq" => !string.IsNullOrWhiteSpace(settings.GroqApiKey),
+                               "openai" => !string.IsNullOrWhiteSpace(settings.OpenAIApiKey),
+                               "claude" => !string.IsNullOrWhiteSpace(settings.ClaudeApiKey),
+                               _ => !string.IsNullOrWhiteSpace(settings.GeminiApiKey)
+                           });
+                }
+                catch (JsonException)
+                {
+                    return false;
+                }
+            }
+        }
 
         public static AppSettings LoadOrCreate()
         {
