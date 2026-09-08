@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Threading.Tasks;
+using System;
 
 namespace Aurora.App.Views
 {
@@ -19,7 +20,7 @@ namespace Aurora.App.Views
 
             var progressText = new TextBlock
             {
-                Text = "Preparing Aurora setup...",
+                Text = "Preparing Aurora setup... 60 seconds",
                 FontSize = 13,
                 Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                 Margin = new Thickness(0, 0, 0, 8),
@@ -28,7 +29,8 @@ namespace Aurora.App.Views
             var progressBar = new ProgressBar
             {
                 Height = 8,
-                IsIndeterminate = true,
+                Minimum = 0,
+                Maximum = 60,
                 Margin = new Thickness(0, 0, 0, 20),
                 Visibility = Visibility.Collapsed
             };
@@ -47,7 +49,14 @@ namespace Aurora.App.Views
                 installButton.IsEnabled = false;
                 progressText.Visibility = Visibility.Visible;
                 progressBar.Visibility = Visibility.Visible;
-                await Task.Delay(650);
+                for (var remaining = 60; remaining > 0; remaining--)
+                {
+                    progressBar.Value = 60 - remaining;
+                    progressText.Text = $"Preparing Aurora setup... {remaining} seconds";
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+                progressBar.Value = progressBar.Maximum;
+                progressText.Text = "Preparing Aurora setup... ready";
                 DialogResult = true;
             };
 
