@@ -9,7 +9,7 @@ namespace ZoeyOS.App.Views
 {
     /// <summary>
     /// Foreground bootstrap window used while Aurora asks for privacy permissions.
-    /// Each capability gets an explicit Allow / Don't allow dialog before Aurora
+    /// Each capability gets an explicit Allow / Deny dialog before Aurora
     /// invokes the real Windows permission API.
     /// </summary>
     internal sealed class StartupPermissionWindow : Window
@@ -66,7 +66,7 @@ namespace ZoeyOS.App.Views
                         _statusText,
                         new TextBlock
                         {
-                            Text = "For each capability, choose Allow or Don't allow. If you allow it, Aurora then asks Windows for the actual device permission.",
+                            Text = "For each capability, choose Allow or Deny. If you allow it, Aurora then asks Windows for the actual device permission.",
                             FontSize = 13,
                             TextWrapping = TextWrapping.Wrap,
                             Foreground = new SolidColorBrush(Color.FromRgb(160, 170, 186)),
@@ -111,7 +111,7 @@ namespace ZoeyOS.App.Views
 
             var denyButton = new Button
             {
-                Content = "Don't allow",
+                Content = "Deny",
                 Width = 150,
                 Height = 42,
                 FontSize = 14,
