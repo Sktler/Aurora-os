@@ -24,9 +24,15 @@ namespace Aurora.App.Views
             Height = 360;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = false;
+            Topmost = true;
+            ShowInTaskbar = true;
             Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
             Foreground = Brushes.White;
+            Loaded += (_, _) =>
+            {
+                Activate();
+                Focus();
+            };
 
             _statusText = new TextBlock
             {
@@ -138,10 +144,16 @@ namespace Aurora.App.Views
                 Height = 230,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
+                Topmost = true,
+                ShowInTaskbar = true,
                 Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
                 Foreground = Brushes.White,
                 WindowStyle = WindowStyle.SingleBorderWindow
+            };
+            dialog.Loaded += (_, _) =>
+            {
+                dialog.Activate();
+                dialog.Focus();
             };
 
             var allowButton = new Button
