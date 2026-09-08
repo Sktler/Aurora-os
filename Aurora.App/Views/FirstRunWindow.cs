@@ -56,7 +56,8 @@ namespace Aurora.App.Views
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
                 progressBar.Value = progressBar.Maximum;
-                progressText.Text = "Preparing Aurora setup... ready";
+                progressText.Text = "Preparation complete. Opening Aurora setup...";
+                await Task.Delay(TimeSpan.FromMilliseconds(700));
                 DialogResult = true;
             };
 
