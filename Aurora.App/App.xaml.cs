@@ -42,7 +42,7 @@ namespace Aurora.App
                     return;
                 }
 
-                var setup = new Views.SetupWindow();
+                var setup = new Views.SetupWindow(restartOnSave: false);
                 setup.ShowDialog();
             }
 
