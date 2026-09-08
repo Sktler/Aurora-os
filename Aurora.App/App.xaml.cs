@@ -42,12 +42,17 @@ namespace Aurora.App
                     return;
                 }
 
-                var setup = new Views.SetupWindow(restartOnSave: false);
+                var setup = new Views.SetupWindow(restartOnSave: false)
+                {
+                    Topmost = true
+                };
+                setup.Loaded += (_, _) => setup.Activate();
                 if (setup.ShowDialog() != true)
                 {
                     Shutdown();
                     return;
                 }
+                setup.Topmost = false;
             }
 
             var bootstrap = new Views.StartupPermissionWindow();
