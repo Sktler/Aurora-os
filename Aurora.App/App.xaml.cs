@@ -42,13 +42,20 @@ namespace Aurora.App
                     return;
                 }
 
+                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
                 while (!AppSettings.HasSavedConfiguration)
                 {
                     var setup = new Views.SetupWindow(restartOnSave: false)
                     {
-                        Topmost = true
+                        Topmost = true,
+                        ShowInTaskbar = true,
+                        WindowState = WindowState.Normal
                     };
-                    setup.Loaded += (_, _) => setup.Activate();
+                    setup.Loaded += (_, _) =>
+                    {
+                        setup.Activate();
+                        setup.Focus();
+                    };
                     setup.ShowDialog();
                     setup.Topmost = false;
 
