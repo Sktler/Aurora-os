@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using Xunit;
 using Aurora.App.Services;
@@ -194,6 +195,46 @@ public class WindowsUpdaterServiceTests
 
         Assert.Null(threadException);
         Assert.Equal("AuroraOrb", orbTag);
+    }
+
+    [Fact]
+    public void MiniCompanionWindow_CloseButton_InvokesExitRequested()
+    {
+        MiniCompanionWindow? window = null;
+        Exception? threadException = null;
+        var raised = false;
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                window = new MiniCompanionWindow();
+                window.ExitRequested += (_, _) => raised = true;
+
+                var method = typeof(MiniCompanionWindow).GetMethod("Close_Click", BindingFlags.NonPublic | BindingFlags.Instance);
+                Assert.NotNull(method);
+
+                method.Invoke(window, new object[] { window, new RoutedEventArgs() });
+            }
+            catch (Exception ex)
+            {
+                threadException = ex;
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(threadException);
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void SetupWindow_HasSkipClickHandler()
+    {
+        var method = typeof(SetupWindow).GetMethod("Skip_Click", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(method);
     }
 
     [Fact]
