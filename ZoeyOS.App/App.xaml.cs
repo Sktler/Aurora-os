@@ -84,17 +84,7 @@ namespace ZoeyOS.App
 
         private static WindowsAutomationService CreateWindowsService()
         {
-            return new WindowsAutomationService
-            {
-                FilesEnabled = Settings.WindowsFilesEnabled,
-                ScreenEnabled = Settings.WindowsScreenEnabled,
-                ClipboardEnabled = Settings.WindowsClipboardEnabled,
-                ApplicationsEnabled = Settings.WindowsApplicationsEnabled,
-                TerminalEnabled = Settings.WindowsTerminalEnabled,
-                UiAutomationEnabled = Settings.WindowsUiAutomationEnabled,
-                NetworkEnabled = Settings.WindowsNetworkEnabled,
-                PowerEnabled = Settings.WindowsPowerEnabled
-            };
+            return WindowsAutomationService.FromSettings(Settings);
         }
         public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }

@@ -16,6 +16,9 @@ namespace ZoeyOS.App.Services
 
         public async Task<McpServerConnection> ConnectStdioAsync(string name, string command, IEnumerable<string>? arguments = null)
         {
+            if (!App.Settings.WindowsMcpEnabled)
+                throw new UnauthorizedAccessException("MCP access is disabled in Aurora Settings.");
+
             await _gate.WaitAsync();
             try
             {

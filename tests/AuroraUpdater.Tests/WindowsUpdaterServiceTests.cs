@@ -8,6 +8,42 @@ namespace AuroraUpdater.Tests;
 public class WindowsUpdaterServiceTests
 {
     [Fact]
+    public void WindowsAutomationService_FromSettingsMapsClipboardAndApplicationPermissions()
+    {
+        var settings = new AppSettings
+        {
+            WindowsFilesEnabled = true,
+            WindowsScreenEnabled = true,
+            WindowsClipboardEnabled = true,
+            WindowsApplicationsEnabled = true,
+            WindowsTerminalEnabled = true,
+            WindowsUiAutomationEnabled = true,
+            WindowsNetworkEnabled = true,
+            WindowsPowerEnabled = true
+        };
+
+        var service = WindowsAutomationService.FromSettings(settings);
+
+        Assert.True(service.FilesEnabled);
+        Assert.True(service.ScreenEnabled);
+        Assert.True(service.ClipboardEnabled);
+        Assert.True(service.ApplicationsEnabled);
+        Assert.True(service.TerminalEnabled);
+        Assert.True(service.UiAutomationEnabled);
+        Assert.True(service.NetworkEnabled);
+        Assert.True(service.PowerEnabled);
+    }
+
+    [Fact]
+    public void WindowsAutomationService_RejectsClipboardAndApplicationAccessWhenDisabled()
+    {
+        var service = new WindowsAutomationService();
+
+        Assert.Throws<UnauthorizedAccessException>(() => service.GetClipboardText());
+        Assert.Throws<UnauthorizedAccessException>(() => service.GetProcesses());
+    }
+
+    [Fact]
     public void NormalizeVersionString_StripsLeadingVAndKeepsNumericCore()
     {
         Assert.Equal("1.2.3", WindowsUpdaterService.NormalizeVersionString("v1.2.3"));

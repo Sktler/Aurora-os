@@ -25,6 +25,22 @@ namespace ZoeyOS.App.Services
         public bool NetworkEnabled { get; set; }
         public bool PowerEnabled { get; set; }
 
+        public static WindowsAutomationService FromSettings(AppSettings settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+            return new WindowsAutomationService
+            {
+                FilesEnabled = settings.WindowsFilesEnabled,
+                ScreenEnabled = settings.WindowsScreenEnabled,
+                ClipboardEnabled = settings.WindowsClipboardEnabled,
+                ApplicationsEnabled = settings.WindowsApplicationsEnabled,
+                TerminalEnabled = settings.WindowsTerminalEnabled,
+                UiAutomationEnabled = settings.WindowsUiAutomationEnabled,
+                NetworkEnabled = settings.WindowsNetworkEnabled,
+                PowerEnabled = settings.WindowsPowerEnabled
+            };
+        }
+
         public IReadOnlyList<ProcessInfo> GetProcesses()
         {
             if (!ApplicationsEnabled) throw new UnauthorizedAccessException("Application access is disabled.");
