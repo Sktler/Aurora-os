@@ -43,7 +43,11 @@ namespace Aurora.App
                 }
 
                 var setup = new Views.SetupWindow(restartOnSave: false);
-                setup.ShowDialog();
+                if (setup.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
             }
 
             var bootstrap = new Views.StartupPermissionWindow();
