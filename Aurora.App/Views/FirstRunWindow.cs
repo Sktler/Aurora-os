@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Threading.Tasks;
 
 namespace Aurora.App.Views
 {
@@ -16,6 +17,21 @@ namespace Aurora.App.Views
             Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
             Foreground = Brushes.White;
 
+            var progressText = new TextBlock
+            {
+                Text = "Preparing Aurora setup...",
+                FontSize = 13,
+                Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
+                Margin = new Thickness(0, 0, 0, 8),
+                Visibility = Visibility.Collapsed
+            };
+            var progressBar = new ProgressBar
+            {
+                Height = 8,
+                IsIndeterminate = true,
+                Margin = new Thickness(0, 0, 0, 20),
+                Visibility = Visibility.Collapsed
+            };
             var installButton = new Button
             {
                 Content = "Install Aurora",
@@ -26,7 +42,14 @@ namespace Aurora.App.Views
                 IsDefault = true,
                 HorizontalAlignment = HorizontalAlignment.Right
             };
-            installButton.Click += (_, _) => DialogResult = true;
+            installButton.Click += async (_, _) =>
+            {
+                installButton.IsEnabled = false;
+                progressText.Visibility = Visibility.Visible;
+                progressBar.Visibility = Visibility.Visible;
+                await Task.Delay(650);
+                DialogResult = true;
+            };
 
             Content = new Border
             {
@@ -61,6 +84,8 @@ namespace Aurora.App.Views
                             Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                             Margin = new Thickness(0, 0, 0, 28)
                         },
+                        progressText,
+                        progressBar,
                         installButton
                     }
                 }
