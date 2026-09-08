@@ -8,11 +8,13 @@ namespace Aurora.App.Views
 {
     public partial class SetupWindow : Window
     {
+        private readonly bool _restartOnSave;
         public bool KeySaved { get; private set; }
 
-        public SetupWindow()
+        public SetupWindow(bool restartOnSave = true)
         {
             InitializeComponent();
+            _restartOnSave = restartOnSave;
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
@@ -214,7 +216,10 @@ namespace Aurora.App.Views
             App.Settings.ChatProvider = p.Key;
             App.Settings.Save();
             KeySaved = true;
-            RestartApp();
+            if (_restartOnSave)
+                RestartApp();
+            else
+                DialogResult = true;
         }
 
         private static void RestartApp()

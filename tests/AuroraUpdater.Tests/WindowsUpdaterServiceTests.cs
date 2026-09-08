@@ -12,6 +12,36 @@ namespace AuroraUpdater.Tests;
 public class WindowsUpdaterServiceTests
 {
     [Fact]
+    public void ResetAll_RemovesExternalDatabaseAndSqliteSidecars()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-reset-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var databasePath = Path.Combine(root, "aurora.db");
+        var configDirectory = Path.Combine(root, "config");
+        Directory.CreateDirectory(configDirectory);
+        File.WriteAllText(Path.Combine(configDirectory, "settings.json"), "settings");
+        File.WriteAllText(databasePath, "database");
+        File.WriteAllText($"{databasePath}-wal", "wal");
+        File.WriteAllText($"{databasePath}-shm", "shm");
+
+        try
+        {
+            AppSettings.ResetAll(databasePath, configDirectory);
+
+            Assert.False(Directory.Exists(configDirectory));
+            Assert.False(File.Exists(databasePath));
+            Assert.False(File.Exists($"{databasePath}-wal"));
+            Assert.False(File.Exists($"{databasePath}-shm"));
+        }
+
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void WindowsAutomationService_FromSettingsMapsClipboardAndApplicationPermissions()
     {
         var settings = new AppSettings
