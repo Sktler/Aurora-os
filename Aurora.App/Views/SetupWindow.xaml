@@ -1,11 +1,13 @@
 <Window x:Class="Aurora.App.Views.SetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Aurora Setup" Height="720" Width="560"
+        Title="Aurora - AI Provider Setup" Height="720" Width="560"
         MinHeight="620" MinWidth="520"
         Background="{StaticResource BgDeepBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow"
+        ShowInTaskbar="True"
         Activated="Window_Activated">
 
     <Grid Margin="28">
