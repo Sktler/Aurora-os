@@ -104,8 +104,8 @@ for a possible v2, not missing pieces of v1.
    - .NET 8 SDK (Visual Studio installer will offer this automatically).
 
 2. **Open it**
-   - Double-click `ZoeyOS.sln`, or open Visual Studio → *Open a project or
-     solution* → select `ZoeyOS.sln`.
+   - Double-click `Aurora.sln`, or open Visual Studio → *Open a project or
+     solution* → select `Aurora.sln`.
    - Let NuGet restore packages (Sqlite, System.Text.Json,
      CommunityToolkit.Mvvm, System.Speech) — happens automatically on first
      build.
@@ -245,8 +245,8 @@ deliberately deferred to a possible v2, not gaps in v1:
 ## Project layout
 
 ```
-ZoeyOS.sln
-ZoeyOS.App/
+Aurora.sln
+Aurora.App/
   App.xaml / App.xaml.cs        - startup, wires up services, provider
                                    selection, full reset
   Models/                       - Companion, ChatMessage, DiscoveredDevice

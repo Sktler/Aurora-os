@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore ZoeyOS.App/ZoeyOS.App.csproj
+        run: dotnet restore Aurora.App/Aurora.App.csproj
 
       - name: Build
-        run: dotnet build ZoeyOS.App/ZoeyOS.App.csproj --configuration Release --no-restore
+        run: dotnet build Aurora.App/Aurora.App.csproj --configuration Release --no-restore

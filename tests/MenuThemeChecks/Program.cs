@@ -22,14 +22,14 @@ internal static class Program
         XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
         var appXml = baseline ? XDocument.Parse(ReadBaseline(repo))
-            : XDocument.Load(Path.Combine(repo, "ZoeyOS.App", "App.xaml"));
+            : XDocument.Load(Path.Combine(repo, "Aurora.App", "App.xaml"));
         var resources = new XElement(appXml.Descendants(wpf + "ResourceDictionary").First());
         resources.SetAttributeValue(XNamespace.Xmlns + "x", x.NamespaceName);
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         app.Resources = (ResourceDictionary)XamlReader.Parse(resources.ToString());
 
         // Use the real composer menu declarations, omitting only code-behind handlers.
-        var windowXml = XDocument.Load(Path.Combine(repo, "ZoeyOS.App", "Views", "MainWindow.xaml"));
+        var windowXml = XDocument.Load(Path.Combine(repo, "Aurora.App", "Views", "MainWindow.xaml"));
         var menuXml = new XElement(windowXml.Descendants(wpf + "ContextMenu").Single());
         menuXml.SetAttributeValue(XNamespace.Xmlns + "x", x.NamespaceName);
         menuXml.Attribute(x + "Key")?.Remove();
@@ -99,7 +99,7 @@ internal static class Program
 
     private static string ReadBaseline(string repo)
     {
-        using var process = Process.Start(new ProcessStartInfo("git", "show HEAD:ZoeyOS.App/App.xaml")
+        using var process = Process.Start(new ProcessStartInfo("git", "show HEAD:Aurora.App/App.xaml")
         {
             WorkingDirectory = repo, RedirectStandardOutput = true,
             UseShellExecute = false, CreateNoWindow = true
