@@ -13,7 +13,7 @@ namespace ZoeyOS.App.Services
 
         public static void Apply(DependencyObject root)
         {
-            var image = FindFirstImage(root);
+            var image = FindTargetImage(root);
             if (image == null) return;
 
             var streamInfo = Application.GetResourceStream(new Uri(ResourceUri, UriKind.Absolute));
@@ -32,16 +32,27 @@ namespace ZoeyOS.App.Services
             image.Source = bitmap;
         }
 
-        private static Image? FindFirstImage(DependencyObject root)
+        private static Image? FindTargetImage(DependencyObject root)
         {
-            if (root is Image image) return image;
+            if (root is Image image && IsOrbImage(image))
+            {
+                return image;
+            }
+
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
             {
                 var child = VisualTreeHelper.GetChild(root, i);
-                var found = FindFirstImage(child);
+                var found = FindTargetImage(child);
                 if (found != null) return found;
             }
+
             return null;
+        }
+
+        private static bool IsOrbImage(Image image)
+        {
+            return string.Equals(image.Tag as string, "AuroraOrb", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(image.Name, "AuroraOrbImage", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

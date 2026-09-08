@@ -92,7 +92,7 @@
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
                 <Grid Grid.Row="1">
-                    <Image Source="/ZoeyOS.App;component/Assets/AuroraOrb.png" Width="430" Height="430" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"/>
+                    <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/ZoeyOS.App;component/Assets/AuroraOrb.png" Width="430" Height="430" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"/>
                 </Grid>
                 <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
                     <Grid>

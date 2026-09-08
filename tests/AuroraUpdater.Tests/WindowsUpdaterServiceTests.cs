@@ -1,7 +1,11 @@
+using System.IO;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Windows.Controls;
 using Xunit;
 using ZoeyOS.App.Services;
-using System.IO;
-using System.Security.Cryptography;
+using ZoeyOS.App.Views;
 
 namespace AuroraUpdater.Tests;
 
@@ -121,6 +125,45 @@ public class WindowsUpdaterServiceTests
         Assert.Equal(
             "https://example.invalid/Aurora.sha256",
             WindowsUpdaterService.SelectPreferredChecksumUrl(document.RootElement));
+    }
+
+    [Fact]
+    public void AuroraOrbLoader_PrefersTheOrbImageOverOtherImagesInTheVisualTree()
+    {
+        Exception? threadException = null;
+        string? orbTag = null;
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var root = new System.Windows.Controls.Grid();
+                var albumArt = new Image { Tag = "AlbumArt" };
+                var orb = new Image { Tag = "AuroraOrb" };
+                var nested = new System.Windows.Controls.Grid();
+                nested.Children.Add(orb);
+                root.Children.Add(albumArt);
+                root.Children.Add(nested);
+
+                var orbLoaderType = typeof(MainWindow).Assembly.GetType("ZoeyOS.App.Services.AuroraOrbLoader", throwOnError: true)!;
+                var method = orbLoaderType.GetMethod("FindTargetImage", BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.NotNull(method);
+
+                var orbResult = Assert.IsType<Image>(method.Invoke(null, new object[] { root }));
+                orbTag = orbResult.Tag as string;
+            }
+            catch (Exception ex)
+            {
+                threadException = ex;
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(threadException);
+        Assert.Equal("AuroraOrb", orbTag);
     }
 
     [Fact]
