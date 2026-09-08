@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ClipToBounds="False">
     <Grid Width="740" Height="740" Background="Transparent">
-        <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/ZoeyOS.App;component/Assets/AuroraOrb.png"
+        <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/Aurora;component/Assets/AuroraOrb.png"
                Width="740" Height="740" Stretch="Fill"
                SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="HighQuality"/>
     </Grid>

@@ -9,7 +9,7 @@ namespace ZoeyOS.App.Services
 {
     internal static class AuroraOrbLoader
     {
-        private const string ResourceUri = "/ZoeyOS.App;component/Assets/AuroraOrbNew.base64";
+        private const string ResourceUri = "/Aurora;component/Assets/AuroraOrb.png";
 
         public static void Apply(DependencyObject root)
         {
