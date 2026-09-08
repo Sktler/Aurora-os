@@ -15,6 +15,7 @@ namespace Aurora.App.Views
         {
             InitializeComponent();
             _restartOnSave = restartOnSave;
+            Title = "Aurora - AI Provider Setup";
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
