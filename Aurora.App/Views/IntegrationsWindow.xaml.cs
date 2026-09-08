@@ -54,6 +54,17 @@ namespace Aurora.App.Views
         private void UnlockDevMode_Click(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) { vm.UnlockDevModeCommand.Execute(null); OverrideCodeBox.Password = ""; } }
         private void SaveOverrides_Click(object sender, RoutedEventArgs e) { if (sender is Button { DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SaveCompanionOverrides(companion); }
         private void ColorSwatch_Click(object sender, RoutedEventArgs e) { if (sender is Button { Tag: string hex, DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SetCompanionColor(companion, hex); }
+        private void CustomColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: Companion companion } || DataContext is not IntegrationsViewModel vm)
+                return;
+
+            using var dialog = new System.Windows.Forms.ColorDialog { FullOpen = true, AllowFullOpen = true };
+            if (!dialog.ShowDialog().Equals(System.Windows.Forms.DialogResult.OK))
+                return;
+
+            vm.SetCompanionColor(companion, $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}");
+        }
         private void GoogleSecretBox_PasswordChanged(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) vm.GoogleClientSecret = GoogleSecretBox.Password; }
         private void ChangeApiKey_Click(object sender, RoutedEventArgs e) { new SetupWindow { Owner = this }.ShowDialog(); }
 
