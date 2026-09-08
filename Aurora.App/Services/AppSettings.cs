@@ -62,6 +62,7 @@ namespace Aurora.App.Services
 
         public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
+        public static bool HasSavedConfiguration => File.Exists(ConfigPath);
 
         public static AppSettings LoadOrCreate()
         {
@@ -93,6 +94,26 @@ namespace Aurora.App.Services
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigPath, json);
         }
-        public static void ResetAll() { if (Directory.Exists(ConfigDir)) Directory.Delete(ConfigDir, recursive: true); }
+        public static void ResetAll(string? databasePath = null, string? configDirectory = null)
+        {
+            var resetDirectory = configDirectory ?? ConfigDir;
+            if (Directory.Exists(resetDirectory))
+                Directory.Delete(resetDirectory, recursive: true);
+
+            if (string.IsNullOrWhiteSpace(databasePath))
+                return;
+
+            var fullDatabasePath = Path.GetFullPath(databasePath);
+            var fullConfigDirectory = Path.GetFullPath(resetDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (fullDatabasePath.StartsWith(fullConfigDirectory, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            foreach (var path in new[] { fullDatabasePath, $"{fullDatabasePath}-wal", $"{fullDatabasePath}-shm" })
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+        }
     }
 }

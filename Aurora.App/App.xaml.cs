@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 using Aurora.App.Services;
@@ -28,8 +29,22 @@ namespace Aurora.App
         {
             base.OnStartup(e);
             ShutdownMode = ShutdownMode.OnMainWindowClose;
+            var firstRun = !AppSettings.HasSavedConfiguration;
             Settings = AppSettings.LoadOrCreate();
             Updater = new WindowsUpdaterService();
+
+            if (firstRun)
+            {
+                var welcome = new Views.FirstRunWindow();
+                if (welcome.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
+
+                var setup = new Views.SetupWindow(restartOnSave: false);
+                setup.ShowDialog();
+            }
 
             var bootstrap = new Views.StartupPermissionWindow();
             bootstrap.Show();
@@ -101,7 +116,37 @@ namespace Aurora.App
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
         public static void RefreshIntegrationClients() { SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
-        public static void ResetEverythingAndRestart() { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); AppSettings.ResetAll(); var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName; if (!string.IsNullOrEmpty(exePath)) { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = exePath, UseShellExecute = true }); } catch { } } Environment.Exit(0); }
+        public static void ResetEverythingAndRestart()
+        {
+            var databasePath = Settings?.DatabasePath;
+            Memory?.Dispose();
+            Voice?.Dispose();
+            WakeWord?.Dispose();
+            Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            Metrics?.Dispose();
+            AppSettings.ResetAll(databasePath);
+
+            var processPath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(processPath))
+            {
+                var arguments = Environment.GetCommandLineArgs()
+                    .Skip(1)
+                    .Select(QuoteProcessArgument);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = processPath,
+                    Arguments = string.Join(" ", arguments),
+                    UseShellExecute = true
+                });
+            }
+
+            Environment.Exit(0);
+        }
+        private static string QuoteProcessArgument(string argument) =>
+            argument.Contains(' ') || argument.Contains('"')
+                ? $"\"{argument.Replace("\"", "\\\"")}\""
+                : argument;
         protected override void OnExit(ExitEventArgs e) { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
 }
