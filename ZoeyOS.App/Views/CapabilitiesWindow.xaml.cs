@@ -42,6 +42,7 @@ namespace ZoeyOS.App.Views
             App.Settings.WindowsMicrophoneEnabled = MicrophonePermission.IsChecked == true;
             App.Settings.WindowsMcpEnabled = McpPermission.IsChecked == true;
             App.Settings.Save();
+            App.RefreshWindowsPermissions();
             StatusText.Text = "Permissions saved. Aurora services will respect these settings.";
         }
 
