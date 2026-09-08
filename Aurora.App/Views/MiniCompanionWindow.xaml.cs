@@ -27,6 +27,6 @@ namespace Aurora.App.Views
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
-            => RestoreRequested?.Invoke(this, EventArgs.Empty);
+            => ExitRequested?.Invoke(this, EventArgs.Empty);
     }
 }
