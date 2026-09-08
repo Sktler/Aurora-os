@@ -4,7 +4,7 @@ Run from the repository root on Windows with the .NET 8 runtime and an SDK:
 
 ```powershell
 dotnet run --project tests/MenuThemeChecks -- .
-dotnet build ZoeyOS.sln --configuration Release
+dotnet build Aurora.sln --configuration Release
 ```
 
 The check process loads the real application XAML resource dictionary without
@@ -33,7 +33,7 @@ While HEAD still refers to the pre-fix commit, run:
 dotnet run --project tests/MenuThemeChecks -- . --baseline
 ```
 
-This reads `HEAD:ZoeyOS.App/App.xaml` without changing the working tree and saves
+This reads `HEAD:Aurora.App/App.xaml` without changing the working tree and saves
 renders in `artifacts/menu-theme/before/`. At baseline `452b180`, the rendered
 headers are white (`#FFFFFF`) over the default light menu (`#F5F5F5`). The
 contrast and custom-theme assertions intentionally fail. Once the fix is

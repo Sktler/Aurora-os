@@ -4,8 +4,8 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Controls;
 using Xunit;
-using ZoeyOS.App.Services;
-using ZoeyOS.App.Views;
+using Aurora.App.Services;
+using Aurora.App.Views;
 
 namespace AuroraUpdater.Tests;
 
@@ -145,7 +145,7 @@ public class WindowsUpdaterServiceTests
                 root.Children.Add(albumArt);
                 root.Children.Add(nested);
 
-                var orbLoaderType = typeof(MainWindow).Assembly.GetType("ZoeyOS.App.Services.AuroraOrbLoader", throwOnError: true)!;
+                var orbLoaderType = typeof(MainWindow).Assembly.GetType("Aurora.App.Services.AuroraOrbLoader", throwOnError: true)!;
                 var method = orbLoaderType.GetMethod("FindTargetImage", BindingFlags.NonPublic | BindingFlags.Static);
                 Assert.NotNull(method);
 
