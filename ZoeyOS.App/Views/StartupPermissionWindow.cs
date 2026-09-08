@@ -9,7 +9,7 @@ namespace ZoeyOS.App.Views
 {
     /// <summary>
     /// Foreground bootstrap window used while Aurora asks for privacy permissions.
-    /// Each capability gets an explicit Allow / Don't allow dialog before Aurora
+    /// Each capability gets an explicit Allow / Deny dialog before Aurora
     /// invokes the real Windows permission API.
     /// </summary>
     internal sealed class StartupPermissionWindow : Window
@@ -30,7 +30,7 @@ namespace ZoeyOS.App.Views
 
             _statusText = new TextBlock
             {
-                Text = "Aurora will ask for permission to use location, microphone, and camera.",
+                Text = "Aurora will ask for permission to use location, microphone, camera, and Windows capabilities.",
                 FontSize = 14,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
@@ -66,7 +66,7 @@ namespace ZoeyOS.App.Views
                         _statusText,
                         new TextBlock
                         {
-                            Text = "For each capability, choose Allow or Don't allow. If you allow it, Aurora then asks Windows for the actual device permission.",
+                            Text = "For each capability, choose Allow or Deny. Device permissions are also confirmed by Windows when required.",
                             FontSize = 13,
                             TextWrapping = TextWrapping.Wrap,
                             Foreground = new SolidColorBrush(Color.FromRgb(160, 170, 186)),
@@ -111,7 +111,7 @@ namespace ZoeyOS.App.Views
 
             var denyButton = new Button
             {
-                Content = "Don't allow",
+                Content = "Deny",
                 Width = 150,
                 Height = 42,
                 FontSize = 14,
@@ -151,6 +151,100 @@ namespace ZoeyOS.App.Views
                             Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
                             Children = { allowButton, denyButton }
+                        }
+
+                        public async Task<bool> AskCapabilityPermissionAsync(string name)
+                        {
+                            _countdownText.Visibility = Visibility.Collapsed;
+                            _statusText.Text = $"Aurora would like to use {name.ToLowerInvariant()}.";
+
+                            var decision = await ShowChoiceDialogAsync(name);
+                            _statusText.Text = decision
+                                ? $"{name} access allowed. Continuing..."
+                                : $"{name} access denied. Continuing...";
+                            await Task.Delay(150);
+                            return decision;
+                        }
+
+                        private async Task<bool> ShowChoiceDialogAsync(string name)
+                        {
+                            var decision = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            var dialog = new Window
+                            {
+                                Owner = this,
+                                Title = $"Aurora - {name} permission",
+                                Width = 460,
+                                Height = 230,
+                                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                                ResizeMode = ResizeMode.NoResize,
+                                ShowInTaskbar = false,
+                                Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
+                                Foreground = Brushes.White,
+                                WindowStyle = WindowStyle.SingleBorderWindow
+                            };
+
+                            var allowButton = new Button
+                            {
+                                Content = "Allow",
+                                Width = 150,
+                                Height = 42,
+                                FontSize = 14,
+                                FontWeight = FontWeights.SemiBold,
+                                Margin = new Thickness(0, 0, 10, 0),
+                                IsDefault = true
+                            };
+                            var denyButton = new Button
+                            {
+                                Content = "Deny",
+                                Width = 150,
+                                Height = 42,
+                                FontSize = 14,
+                                FontWeight = FontWeights.SemiBold,
+                                IsCancel = true
+                            };
+
+                            allowButton.Click += (_, _) => decision.TrySetResult(true);
+                            denyButton.Click += (_, _) => decision.TrySetResult(false);
+                            dialog.Closed += (_, _) => decision.TrySetResult(false);
+                            dialog.Content = new Border
+                            {
+                                Padding = new Thickness(26),
+                                Child = new StackPanel
+                                {
+                                    Children =
+                                    {
+                                        new TextBlock
+                                        {
+                                            Text = $"Allow Aurora to access {name.ToLowerInvariant()}?",
+                                            FontSize = 20,
+                                            FontWeight = FontWeights.SemiBold,
+                                            TextWrapping = TextWrapping.Wrap,
+                                            Margin = new Thickness(0, 0, 0, 10)
+                                        },
+                                        new TextBlock
+                                        {
+                                            Text = "You can change this permission later in Windows capabilities settings.",
+                                            FontSize = 13,
+                                            TextWrapping = TextWrapping.Wrap,
+                                            Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
+                                            Margin = new Thickness(0, 0, 0, 20)
+                                        },
+                                        new StackPanel
+                                        {
+                                            Orientation = Orientation.Horizontal,
+                                            HorizontalAlignment = HorizontalAlignment.Right,
+                                            Children = { allowButton, denyButton }
+                                        }
+                                    }
+                                }
+                            };
+
+                            dialog.Show();
+                            dialog.Activate();
+                            var allowed = await decision.Task;
+                            if (dialog.IsVisible)
+                                dialog.Close();
+                            return allowed;
                         }
                     }
                 }
