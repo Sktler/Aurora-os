@@ -15,8 +15,15 @@ namespace Aurora.App.Views
             Height = 390;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
+            Topmost = true;
+            ShowInTaskbar = true;
             Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
             Foreground = Brushes.White;
+            Loaded += (_, _) =>
+            {
+                Activate();
+                Focus();
+            };
 
             var progressText = new TextBlock
             {
