@@ -4,7 +4,7 @@
         Width="96" Height="96" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="True">
     <Grid Width="96" Height="96" Background="Transparent" MouseLeftButtonDown="Avatar_MouseLeftButtonDown">
-        <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/ZoeyOS.App;component/Assets/AuroraOrb.png"
+        <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/Aurora;component/Assets/AuroraOrb.png"
                Width="92" Height="92"
                Stretch="Uniform"
                HorizontalAlignment="Center" VerticalAlignment="Center"
