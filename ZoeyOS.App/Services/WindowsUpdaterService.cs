@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -22,6 +23,7 @@ namespace ZoeyOS.App.Services
         public string LatestVersion { get; set; } = "";
         public string? ReleaseUrl { get; set; }
         public string? DownloadUrl { get; set; }
+        public string? ChecksumUrl { get; set; }
         public string? ReleaseNotes { get; set; }
         public string? Error { get; set; }
     }
@@ -117,6 +119,7 @@ namespace ZoeyOS.App.Services
 
                 var latestVersionText = NormalizeVersionString(string.IsNullOrWhiteSpace(releaseVersionText) ? currentVersionText : releaseVersionText);
                 var downloadUrl = SelectPreferredAssetUrl(root);
+                var checksumUrl = SelectPreferredChecksumUrl(root);
                 var updateAvailable = IsVersionGreater(currentVersionText, latestVersionText);
 
                 return new UpdateCheckResult
@@ -125,6 +128,7 @@ namespace ZoeyOS.App.Services
                     LatestVersion = latestVersionText,
                     ReleaseUrl = releaseUrl,
                     DownloadUrl = downloadUrl,
+                    ChecksumUrl = checksumUrl,
                     ReleaseNotes = releaseNotes,
                     UpdateAvailable = updateAvailable,
                     Error = updateAvailable ? null : "Aurora is already up to date."
@@ -154,7 +158,7 @@ namespace ZoeyOS.App.Services
 
                 var assetName = nameElement.GetString() ?? "";
                 var assetUrl = urlElement.GetString();
-                if (string.IsNullOrWhiteSpace(assetUrl))
+                if (!IsHttpsUrl(assetUrl))
                     continue;
 
                 var lowered = assetName.ToLowerInvariant();
@@ -165,17 +169,13 @@ namespace ZoeyOS.App.Services
                     return assetUrl;
             }
 
-            foreach (var asset in assetsElement.EnumerateArray())
-            {
-                if (!asset.TryGetProperty("browser_download_url", out var urlElement))
-                    continue;
-
-                var assetUrl = urlElement.GetString();
-                if (!string.IsNullOrWhiteSpace(assetUrl))
-                    return assetUrl;
-            }
-
             return null;
+        }
+
+        private static bool IsHttpsUrl(string? value)
+        {
+            return Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+                   uri.Scheme == Uri.UriSchemeHttps;
         }
 
         public static bool IsWindowsPackageCandidate(string assetNameLower)
@@ -185,6 +185,28 @@ namespace ZoeyOS.App.Services
                    assetNameLower.Contains(".exe") ||
                    assetNameLower.Contains("windows") ||
                    assetNameLower.Contains("portable");
+        }
+
+        public static string? SelectPreferredChecksumUrl(JsonElement root)
+        {
+            if (!root.TryGetProperty("assets", out var assetsElement) || assetsElement.ValueKind != JsonValueKind.Array)
+                return null;
+
+            foreach (var asset in assetsElement.EnumerateArray())
+            {
+                if (!asset.TryGetProperty("name", out var nameElement) ||
+                    !asset.TryGetProperty("browser_download_url", out var urlElement))
+                    continue;
+
+                var name = nameElement.GetString() ?? "";
+                var url = urlElement.GetString();
+                var lowered = name.ToLowerInvariant();
+                if (IsHttpsUrl(url) &&
+                    (lowered.EndsWith(".sha256") || lowered.Contains("checksum")))
+                    return url;
+            }
+
+            return null;
         }
 
         public async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
@@ -262,6 +284,38 @@ namespace ZoeyOS.App.Services
                     await downloadResponse.Content.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
                 }
 
+                if (!string.IsNullOrWhiteSpace(check.ChecksumUrl))
+                {
+                    using var checksumRequest = new HttpRequestMessage(HttpMethod.Get, check.ChecksumUrl);
+                    checksumRequest.Headers.Add("User-Agent", DefaultUserAgent);
+                    using var checksumResponse = await HttpClient.SendAsync(
+                        checksumRequest,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        cancellationToken).ConfigureAwait(false);
+                    if (!checksumResponse.IsSuccessStatusCode)
+                    {
+                        File.Delete(packagePath);
+                        return new UpdateDownloadResult
+                        {
+                            Succeeded = false,
+                            LatestVersion = check.LatestVersion,
+                            Error = $"Checksum download failed with {(int)checksumResponse.StatusCode} ({checksumResponse.ReasonPhrase})."
+                        };
+                    }
+
+                    var checksumText = await checksumResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    if (!await VerifySha256Async(packagePath, checksumText, cancellationToken).ConfigureAwait(false))
+                    {
+                        File.Delete(packagePath);
+                        return new UpdateDownloadResult
+                        {
+                            Succeeded = false,
+                            LatestVersion = check.LatestVersion,
+                            Error = "Downloaded update failed SHA-256 validation."
+                        };
+                    }
+                }
+
                 var stagingPath = PrepareUpdateFolder(packagePath);
 
                 return new UpdateDownloadResult
@@ -301,20 +355,46 @@ namespace ZoeyOS.App.Services
 
         public static string PrepareUpdateFolder(string packagePath)
         {
-            var stageRoot = Path.Combine(DefaultUpdateRoot, "staged");
-            Directory.CreateDirectory(stageRoot);
-
             if (File.Exists(packagePath) && packagePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                var extractedRoot = Path.Combine(stageRoot, Path.GetFileNameWithoutExtension(packagePath));
-                if (Directory.Exists(extractedRoot))
-                    Directory.Delete(extractedRoot, recursive: true);
+                return StageZipPackage(packagePath, Path.GetFileNameWithoutExtension(packagePath));
 
-                ZipFile.ExtractToDirectory(packagePath, extractedRoot);
-                return extractedRoot;
-            }
+            return Path.Combine(DefaultUpdateRoot, "staged");
+        }
 
-            return stageRoot;
+        public static string StageZipPackage(string packagePath, string version)
+        {
+            var stageRoot = Path.Combine(DefaultUpdateRoot, "staged");
+            var safeVersion = NormalizeVersionString(version).Replace(".", "-");
+            var temporaryPath = Path.Combine(stageRoot, $"{safeVersion}.tmp");
+            var finalPath = Path.Combine(stageRoot, safeVersion);
+
+            Directory.CreateDirectory(stageRoot);
+            if (Directory.Exists(temporaryPath))
+                Directory.Delete(temporaryPath, recursive: true);
+            if (Directory.Exists(finalPath))
+                Directory.Delete(finalPath, recursive: true);
+
+            ZipFile.ExtractToDirectory(packagePath, temporaryPath);
+            Directory.Move(temporaryPath, finalPath);
+            return finalPath;
+        }
+
+        public static async Task<bool> VerifySha256Async(
+            string packagePath,
+            string checksumText,
+            CancellationToken cancellationToken = default)
+        {
+            var expectedHash = checksumText
+                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(expectedHash) || expectedHash.Length != 64)
+                return false;
+
+            await using var stream = File.OpenRead(packagePath);
+            using var sha256 = SHA256.Create();
+            var actualBytes = await sha256.ComputeHashAsync(stream, cancellationToken);
+            var actualHash = Convert.ToHexString(actualBytes);
+            return string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase);
         }
 
         public static string CreateRestartScript(string stagingPath)
@@ -334,6 +414,11 @@ namespace ZoeyOS.App.Services
             script.AppendLine($"if exist \"{exePath}\" taskkill /F /IM Aurora.exe > nul 2>&1");
             script.AppendLine("ping 127.0.0.1 -n 3 > nul");
             script.AppendLine($"robocopy \"{stagingPath}\" \"{appDirectory}\" /E /NFL /NDL /NJH /NJS > nul");
+            script.AppendLine("set COPY_RESULT=%ERRORLEVEL%");
+            script.AppendLine("if %COPY_RESULT% GTR 7 (");
+            script.AppendLine("  echo Aurora update failed with robocopy code %COPY_RESULT%.");
+            script.AppendLine("  exit /b %COPY_RESULT%");
+            script.AppendLine(")");
             script.AppendLine($"start \"\" \"{exePath}\"");
             script.AppendLine("exit /b 0");
 
