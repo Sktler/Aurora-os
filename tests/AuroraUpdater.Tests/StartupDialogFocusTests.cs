@@ -12,6 +12,7 @@ public sealed class StartupDialogFocusTests
 
         Assert.Contains("Topmost = true;", source);
         Assert.Contains("ShowInTaskbar = true;", source);
+        Assert.Contains("WindowState = WindowState.Normal;", source);
         Assert.Contains("Loaded += (_, _) =>", source);
         Assert.Contains("Activate();", source);
         Assert.Contains("Focus();", source);
@@ -24,6 +25,7 @@ public sealed class StartupDialogFocusTests
 
         Assert.Equal(2, CountOccurrences(source, "Topmost = true;"));
         Assert.Equal(2, CountOccurrences(source, "ShowInTaskbar = true;"));
+        Assert.Equal(3, CountOccurrences(source, "WindowState = WindowState.Normal;"));
         Assert.Equal(1, CountOccurrences(source, "dialog.Activate();"));
         Assert.Equal(2, CountOccurrences(source, "Activate();"));
         Assert.Equal(2, CountOccurrences(source, "Focus();"));

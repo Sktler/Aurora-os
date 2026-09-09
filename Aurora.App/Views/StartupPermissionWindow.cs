@@ -26,10 +26,12 @@ namespace Aurora.App.Views
             ResizeMode = ResizeMode.NoResize;
             Topmost = true;
             ShowInTaskbar = true;
+            WindowState = WindowState.Normal;
             Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
             Foreground = Brushes.White;
             Loaded += (_, _) =>
             {
+                WindowState = WindowState.Normal;
                 Activate();
                 Focus();
             };
@@ -146,12 +148,14 @@ namespace Aurora.App.Views
                 ResizeMode = ResizeMode.NoResize,
                 Topmost = true,
                 ShowInTaskbar = true,
+                WindowState = WindowState.Normal,
                 Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
                 Foreground = Brushes.White,
                 WindowStyle = WindowStyle.SingleBorderWindow
             };
             dialog.Loaded += (_, _) =>
             {
+                dialog.WindowState = WindowState.Normal;
                 dialog.Activate();
                 dialog.Focus();
             };
