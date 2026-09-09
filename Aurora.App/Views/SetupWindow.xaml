@@ -7,7 +7,10 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         WindowStyle="SingleBorderWindow"
+        Topmost="True"
+        WindowState="Normal"
         ShowInTaskbar="True"
+        Loaded="Window_Loaded"
         Activated="Window_Activated">
 
     <Grid Margin="28">

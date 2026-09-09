@@ -37,6 +37,13 @@ namespace Aurora.App.Views
 
         private AIProviderInfo SelectedProvider => (AIProviderInfo)ProviderCombo.SelectedItem;
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Normal;
+            Activate();
+            Focus();
+        }
+
         private static string GetApiKeyFor(string key) => key switch
         {
             "groq" => App.Settings.GroqApiKey,

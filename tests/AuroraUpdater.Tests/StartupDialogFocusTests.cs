@@ -31,6 +31,20 @@ public sealed class StartupDialogFocusTests
         Assert.Equal(2, CountOccurrences(source, "Focus();"));
     }
 
+    [Fact]
+    public void SetupWindow_is_configured_to_foreground_itself()
+    {
+        var xaml = ReadViewSource("SetupWindow.xaml");
+        var code = ReadViewSource("SetupWindow.xaml.cs");
+
+        Assert.Contains("Topmost=\"True\"", xaml);
+        Assert.Contains("WindowState=\"Normal\"", xaml);
+        Assert.Contains("Loaded=\"Window_Loaded\"", xaml);
+        Assert.Contains("WindowState = WindowState.Normal;", code);
+        Assert.Contains("Activate();", code);
+        Assert.Contains("Focus();", code);
+    }
+
     private static string ReadViewSource(string fileName)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
