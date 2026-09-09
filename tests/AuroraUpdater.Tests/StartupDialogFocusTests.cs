@@ -10,6 +10,8 @@ public sealed class StartupDialogFocusTests
     {
         var source = ReadViewSource("FirstRunWindow.cs");
 
+        Assert.DoesNotContain("TimeSpan.FromSeconds(1)", source);
+        Assert.Contains("TimeSpan.FromMilliseconds(250)", source);
         Assert.Contains("Topmost = true;", source);
         Assert.Contains("ShowInTaskbar = true;", source);
         Assert.Contains("WindowState = WindowState.Normal;", source);

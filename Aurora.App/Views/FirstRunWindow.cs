@@ -29,7 +29,7 @@ namespace Aurora.App.Views
 
             var progressText = new TextBlock
             {
-                Text = "Preparing Aurora setup... 60 seconds",
+                Text = "Preparing Aurora setup...",
                 FontSize = 13,
                 Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                 Margin = new Thickness(0, 0, 0, 8),
@@ -39,7 +39,7 @@ namespace Aurora.App.Views
             {
                 Height = 8,
                 Minimum = 0,
-                Maximum = 60,
+                Maximum = 1,
                 Margin = new Thickness(0, 0, 0, 20),
                 Visibility = Visibility.Collapsed
             };
@@ -58,15 +58,9 @@ namespace Aurora.App.Views
                 installButton.IsEnabled = false;
                 progressText.Visibility = Visibility.Visible;
                 progressBar.Visibility = Visibility.Visible;
-                for (var remaining = 60; remaining > 0; remaining--)
-                {
-                    progressBar.Value = 60 - remaining;
-                    progressText.Text = $"Preparing Aurora setup... {remaining} seconds";
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                }
                 progressBar.Value = progressBar.Maximum;
                 progressText.Text = "Preparation complete. Opening Aurora setup...";
-                await Task.Delay(TimeSpan.FromMilliseconds(700));
+                await Task.Delay(TimeSpan.FromMilliseconds(250));
                 DialogResult = true;
             };
 
