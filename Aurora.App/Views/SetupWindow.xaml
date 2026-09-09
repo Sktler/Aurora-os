@@ -21,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock x:Name="HeaderText" Text="Welcome to Aurora" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
+            <TextBlock x:Name="HeaderText" Text="Aurora AI Provider Setup" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
             <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,0,0,14"
                        Text="Pick an engine and paste your key - no need to touch settings.json by hand."/>
         </StackPanel>
