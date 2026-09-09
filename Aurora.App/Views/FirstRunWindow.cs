@@ -17,10 +17,12 @@ namespace Aurora.App.Views
             ResizeMode = ResizeMode.NoResize;
             Topmost = true;
             ShowInTaskbar = true;
+            WindowState = WindowState.Normal;
             Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
             Foreground = Brushes.White;
             Loaded += (_, _) =>
             {
+                WindowState = WindowState.Normal;
                 Activate();
                 Focus();
             };
