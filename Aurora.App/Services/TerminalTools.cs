@@ -6,32 +6,57 @@ using System.Threading.Tasks;
 namespace Aurora.App.Services
 {
     /// <summary>
-    /// Executes commands through the Windows command shells that users already have installed.
+    /// Executes commands through Windows PowerShell and Command Prompt.
     /// Terminal access is the master permission for this service.
     /// </summary>
     public static class TerminalTools
     {
         public static async Task<string> RunPowerShellAsync(string script)
         {
-            if (!App.Settings.WindowsTerminalEnabled)
-                throw new UnauthorizedAccessException("Terminal access is disabled.");
-
+            EnsureTerminalAccess();
             if (string.IsNullOrWhiteSpace(script))
                 throw new ArgumentException("A PowerShell command is required.", nameof(script));
 
-            var shell = FindPowerShell();
-            return await RunProcessAsync(shell, "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command " + Quote(script));
+            var psi = new ProcessStartInfo
+            {
+                FileName = FindPowerShell(),
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
+            };
+            psi.ArgumentList.Add("-NoLogo");
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-NonInteractive");
+            psi.ArgumentList.Add("-ExecutionPolicy");
+            psi.ArgumentList.Add("Bypass");
+            psi.ArgumentList.Add("-Command");
+            psi.ArgumentList.Add(script);
+            return await RunProcessAsync(psi);
         }
 
         public static async Task<string> RunCmdAsync(string command)
         {
-            if (!App.Settings.WindowsTerminalEnabled)
-                throw new UnauthorizedAccessException("Terminal access is disabled.");
-
+            EnsureTerminalAccess();
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("A Command Prompt command is required.", nameof(command));
 
-            return await RunProcessAsync(Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe", "/d /c " + Quote(command));
+            var psi = new ProcessStartInfo
+            {
+                FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
+            };
+            psi.ArgumentList.Add("/d");
+            psi.ArgumentList.Add("/c");
+            psi.ArgumentList.Add(command);
+            return await RunProcessAsync(psi);
         }
 
         public static Task<string> PowerAsync(string action)
@@ -51,6 +76,13 @@ namespace Aurora.App.Services
         public static Task<string> NetworkStatusAsync()
             => RunPowerShellAsync("Get-NetAdapter | Select-Object Name,Status,LinkSpeed,MacAddress | Format-Table -AutoSize | Out-String");
 
+        public static Task<string> NetworkToggleAsync(string name, bool enabled)
+        {
+            if (string.IsNullOrWhiteSpace(name)) name = "Wi-Fi";
+            var cmd = enabled ? "Enable-NetAdapter" : "Disable-NetAdapter";
+            return RunPowerShellAsync($"{cmd} -Name '{EscapePowerShell(name)}' -Confirm:$false");
+        }
+
         public static Task<string> WifiStatusAsync()
             => RunCmdAsync("netsh wlan show interfaces");
 
@@ -64,29 +96,30 @@ namespace Aurora.App.Services
         public static Task<string> BluetoothStatusAsync()
             => RunPowerShellAsync("Get-PnpDevice -Class Bluetooth | Select-Object Status,FriendlyName,InstanceId | Format-Table -AutoSize | Out-String");
 
+        public static Task<string> BluetoothToggleAsync(string instanceId, bool enabled)
+        {
+            if (string.IsNullOrWhiteSpace(instanceId))
+                throw new ArgumentException("A Bluetooth device InstanceId is required.", nameof(instanceId));
+            var cmd = enabled ? "Enable-PnpDevice" : "Disable-PnpDevice";
+            return RunPowerShellAsync($"{cmd} -InstanceId '{EscapePowerShell(instanceId)}' -Confirm:$false");
+        }
+
+        private static void EnsureTerminalAccess()
+        {
+            if (!App.Settings.WindowsTerminalEnabled)
+                throw new UnauthorizedAccessException("Terminal access is disabled.");
+        }
+
         private static string FindPowerShell()
         {
-            var pwsh = Environment.GetEnvironmentVariable("ProgramFiles") is { Length: > 0 } pf
-                ? System.IO.Path.Combine(pf, "PowerShell", "7", "pwsh.exe")
-                : "";
+            var pf = Environment.GetEnvironmentVariable("ProgramFiles");
+            var pwsh = string.IsNullOrWhiteSpace(pf) ? "" : System.IO.Path.Combine(pf, "PowerShell", "7", "pwsh.exe");
             return System.IO.File.Exists(pwsh) ? pwsh : "powershell.exe";
         }
 
-        private static async Task<string> RunProcessAsync(string fileName, string arguments)
+        private static async Task<string> RunProcessAsync(ProcessStartInfo psi)
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8
-            };
-
-            using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+            using var process = new Process { StartInfo = psi };
             process.Start();
             var stdoutTask = process.StandardOutput.ReadToEndAsync();
             var stderrTask = process.StandardError.ReadToEndAsync();
@@ -97,7 +130,7 @@ namespace Aurora.App.Services
             return $"Exit code: {process.ExitCode}{Environment.NewLine}{output.Trim()}".Trim();
         }
 
-        private static string Quote(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        private static string EscapePowerShell(string value) => value.Replace("'", "''");
         private static string EscapeCmd(string value) => value.Replace("\"", "\\\"");
     }
 }
