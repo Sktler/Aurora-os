@@ -61,6 +61,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition x:Name="RightSidebarColumn" Width="350"/>
             </Grid.ColumnDefinitions>
+
             <Border Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
                 <DockPanel>
                     <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
@@ -82,6 +83,7 @@
                     </StackPanel>
                 </DockPanel>
             </Border>
+
             <Grid Grid.Column="1" Background="#080B11">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,22,0,0">
@@ -89,9 +91,12 @@
                     <TextBlock Text="Aurora" FontSize="48" FontWeight="Light" HorizontalAlignment="Center" Foreground="{StaticResource AccentCyanBrush}"><TextBlock.Effect><DropShadowEffect Color="#4FD8E8" BlurRadius="22" ShadowDepth="0" Opacity="0.45"/></TextBlock.Effect></TextBlock>
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
-                <Grid Grid.Row="1"><Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/Aurora;component/Assets/AuroraOrb.png" Width="560" Height="560" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/></Grid>
+                <Grid Grid.Row="1">
+                    <Image x:Name="AuroraOrbImage" Tag="AuroraOrb" Source="/Aurora;component/Assets/AuroraOrb.png" Width="560" Height="560" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
+                </Grid>
                 <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
-                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
                         <Button Grid.Column="0" Width="38" Height="38" Background="#171D29" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" Content="♩" FontSize="19" Command="{Binding SelectedCompanion.ListenCommand}" ToolTip="Voice input"/>
                         <Button Grid.Column="1" Width="40" Height="40" Margin="4,0" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="＋" FontSize="20" Click="OpenComposerMenu_Click" ToolTip="Add files, tools, and actions"/>
                         <TextBox x:Name="ComposerTextBox" Grid.Column="2" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" VerticalContentAlignment="Center" FontSize="14" Padding="12,0" ToolTip="Ask Aurora anything"/>
@@ -100,6 +105,7 @@
                     </Grid>
                 </Border>
             </Grid>
+
             <Border Grid.Column="2" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="1,0,0,0" Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                     <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,26,0,10"><StackPanel><TextBlock Text="Aurora Status" FontSize="17" FontWeight="SemiBold"/><StackPanel Orientation="Horizontal" Margin="0,14,0,0"><Ellipse Width="10" Height="10" Fill="{StaticResource AccentGreenBrush}"/><TextBlock Text="Online" Foreground="{StaticResource AccentGreenBrush}" Margin="8,0,0,0" FontSize="14"/></StackPanel><TextBlock Text="{Binding WakeWordStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/></StackPanel></Border>
