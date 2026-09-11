@@ -62,7 +62,7 @@ namespace Aurora.App.Views
                 {
                     progressBar.Value = 60 - remaining;
                     progressText.Text = $"Preparing Aurora setup... {remaining} seconds";
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(.01));
                 }
                 progressBar.Value = progressBar.Maximum;
                 progressText.Text = "Preparation complete. Opening Aurora setup...";

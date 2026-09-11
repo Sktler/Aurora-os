@@ -27,106 +27,118 @@ namespace Aurora.App
 
         protected override async void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-            ShutdownMode = ShutdownMode.OnMainWindowClose;
-            var firstRun = !AppSettings.HasSavedConfiguration;
-            Settings = AppSettings.LoadOrCreate();
-            Updater = new WindowsUpdaterService();
-
-            if (firstRun)
-            {
-                var welcome = new Views.FirstRunWindow();
-                if (welcome.ShowDialog() != true)
-                {
-                    Shutdown();
-                    return;
-                }
-
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-                while (!AppSettings.HasSavedConfiguration)
-                {
-                    var setup = new Views.SetupWindow(restartOnSave: false)
-                    {
-                        Topmost = true,
-                        ShowInTaskbar = true,
-                        WindowState = WindowState.Normal
-                    };
-                    setup.Loaded += (_, _) =>
-                    {
-                        setup.Activate();
-                        setup.Focus();
-                    };
-                    setup.ShowDialog();
-                    setup.Topmost = false;
-
-                    if (!AppSettings.HasSavedConfiguration)
-                    {
-                        MessageBox.Show(
-                            "Aurora needs a provider API key before it can continue. The setup wizard will remain open until setup is complete.",
-                            "Aurora setup required",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
-                    }
-                }
-            }
-
-            var bootstrap = new Views.StartupPermissionWindow();
-            bootstrap.Show();
-            bootstrap.Activate();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-
-            var permissions = new WindowsPermissionService();
-            await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
-            await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
-            await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
-            Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
-            Settings.WindowsScreenEnabled = await bootstrap.AskCapabilityPermissionAsync("Screen capture");
-            Settings.WindowsClipboardEnabled = await bootstrap.AskCapabilityPermissionAsync("Clipboard");
-            Settings.WindowsApplicationsEnabled = await bootstrap.AskCapabilityPermissionAsync("Applications");
-            Settings.WindowsTerminalEnabled = await bootstrap.AskCapabilityPermissionAsync("Terminal");
-            Settings.WindowsUiAutomationEnabled = await bootstrap.AskCapabilityPermissionAsync("UI automation");
-            Settings.WindowsNetworkEnabled = await bootstrap.AskCapabilityPermissionAsync("Network");
-            Settings.WindowsPowerEnabled = await bootstrap.AskCapabilityPermissionAsync("Power controls");
-            Settings.Save();
-
-            System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
-
-            Memory = new MemoryStore(Settings.DatabasePath);
-            Memory.Initialize();
-            Weather = new WeatherClient();
-
-            // DashboardViewModel subscribes to Metrics during construction, so the metrics
-            // service must exist before MainWindow is created. Otherwise all four dashboard
-            // resource readings remain at their initial placeholder values forever.
-            try { Metrics = new SystemMetricsService(); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
-
-            var mainWindow = new Views.MainWindow();
-            MainWindow = mainWindow;
-            mainWindow.Show();
-            mainWindow.Activate();
-            bootstrap.Close();
-
             try
             {
-                AI = BuildChatEngine();
-                ImageGen = BuildImageGenClient();
-                SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
-                HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
-                Voice = new VoiceService(Settings.VoiceName);
-                WakeWord = new WakeWordService();
-                WebSearch = new WebSearchClient();
-                Spotify = BuildSpotifyClient();
-                Camera = new CameraService();
-                Mcp = new McpService();
-                WindowsAutomation = CreateWindowsService();
+                base.OnStartup(e);
+                // Keep the application alive while startup dialogs are shown. WPF assigns
+                // the first shown window as MainWindow automatically, so closing the
+                // welcome dialog would otherwise shut down the application here.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                var firstRun = !AppSettings.HasSavedConfiguration;
+                Settings = AppSettings.LoadOrCreate();
+                Updater = new WindowsUpdaterService();
 
-                try { WakeWord.Start(); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
+                if (firstRun)
+                {
+                    var welcome = new Views.FirstRunWindow();
+                    if (welcome.ShowDialog() != true)
+                    {
+                        Shutdown();
+                        return;
+                    }
+
+                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                    while (!AppSettings.HasSavedConfiguration)
+                    {
+                        var setup = new Views.SetupWindow(restartOnSave: false)
+                        {
+                            Topmost = true,
+                            ShowInTaskbar = true,
+                            WindowState = WindowState.Normal
+                        };
+                        setup.Loaded += (_, _) =>
+                        {
+                            setup.Activate();
+                            setup.Focus();
+                        };
+                        setup.ShowDialog();
+                        setup.Topmost = false;
+
+                        if (!AppSettings.HasSavedConfiguration)
+                        {
+                            MessageBox.Show(
+                                "Aurora needs a provider API key before it can continue. The setup wizard will remain open until setup is complete.",
+                                "Aurora setup required",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                        }
+                    }
+                }
+
+                var bootstrap = new Views.StartupPermissionWindow();
+                bootstrap.Show();
+                bootstrap.Activate();
+                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+
+                var permissions = new WindowsPermissionService();
+                await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
+                await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
+                await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
+                Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
+                Settings.WindowsScreenEnabled = await bootstrap.AskCapabilityPermissionAsync("Screen capture");
+                Settings.WindowsClipboardEnabled = await bootstrap.AskCapabilityPermissionAsync("Clipboard");
+                Settings.WindowsApplicationsEnabled = await bootstrap.AskCapabilityPermissionAsync("Applications");
+                Settings.WindowsTerminalEnabled = await bootstrap.AskCapabilityPermissionAsync("Terminal");
+                Settings.WindowsUiAutomationEnabled = await bootstrap.AskCapabilityPermissionAsync("UI automation");
+                Settings.WindowsNetworkEnabled = await bootstrap.AskCapabilityPermissionAsync("Network");
+                Settings.WindowsPowerEnabled = await bootstrap.AskCapabilityPermissionAsync("Power controls");
+                Settings.Save();
+
+                System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
+
+                Memory = new MemoryStore(Settings.DatabasePath);
+                Memory.Initialize();
+                Weather = new WeatherClient();
+
+                // DashboardViewModel subscribes to Metrics during construction, so the metrics
+                // service must exist before MainWindow is created. Otherwise all four dashboard
+                // resource readings remain at their initial placeholder values forever.
+                try { Metrics = new SystemMetricsService(); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
+
+                var mainWindow = new Views.MainWindow();
+                MainWindow = mainWindow;
+                ShutdownMode = ShutdownMode.OnMainWindowClose;
+                mainWindow.Show();
+                mainWindow.Activate();
+                bootstrap.Close();
+
+                try
+                {
+                    AI = BuildChatEngine();
+                    ImageGen = BuildImageGenClient();
+                    SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
+                    HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
+                    Voice = new VoiceService(Settings.VoiceName);
+                    WakeWord = new WakeWordService();
+                    WebSearch = new WebSearchClient();
+                    Spotify = BuildSpotifyClient();
+                    Camera = new CameraService();
+                    Mcp = new McpService();
+                    WindowsAutomation = CreateWindowsService();
+
+                    try { WakeWord.Start(); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Startup] Optional service initialization failed: {ex}");
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Startup] Optional service initialization failed: {ex}");
+                MessageBox.Show(ex.ToString(), "Startup failure");
+                Shutdown(-1);
             }
         }
 
