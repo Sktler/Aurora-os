@@ -299,6 +299,47 @@ public class WindowsUpdaterServiceTests
     }
 
     [Fact]
+    public void Globe3D_InvalidAccentColorFallsBackToDefaultTint()
+    {
+        Exception? threadException = null;
+        Color? tintedColor = null;
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var globe = new Globe3D();
+                var orb = Assert.IsType<Image>(globe.FindName("AuroraOrbImage"));
+
+                var bitmap = new WriteableBitmap(1, 1, 96, 96, PixelFormats.Bgra32, null);
+                bitmap.WritePixels(new Int32Rect(0, 0, 1, 1), new byte[] { 100, 100, 100, 255 }, 4, 0);
+                orb.Source = bitmap;
+
+                globe.AccentColor = "not-a-color";
+
+                var tinted = Assert.IsAssignableFrom<BitmapSource>(orb.Source);
+                var pixels = new byte[4];
+                tinted.CopyPixels(pixels, 4, 0);
+                tintedColor = Color.FromArgb(pixels[3], pixels[2], pixels[1], pixels[0]);
+            }
+            catch (Exception ex)
+            {
+                threadException = ex;
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(threadException);
+        Assert.True(tintedColor.HasValue);
+        Assert.True(tintedColor.Value.B > tintedColor.Value.R);
+        Assert.True(tintedColor.Value.G > tintedColor.Value.R);
+        Assert.Equal(255, tintedColor.Value.A);
+    }
+
+    [Fact]
     public async Task VerifySha256Async_ValidatesPackageContents()
     {
         var packagePath = Path.Combine(Path.GetTempPath(), $"aurora-{Guid.NewGuid():N}.bin");
