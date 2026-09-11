@@ -30,6 +30,13 @@ namespace Aurora.App.Services
             new { name = "windows_get_clipboard", description = "Reads Windows clipboard text.", input_schema = new { type = "object", properties = new { } } },
             new { name = "windows_set_clipboard", description = "Writes Windows clipboard text.", input_schema = new { type = "object", properties = new { text = new { type = "string" } }, required = new[] { "text" } } },
             new { name = "windows_run_command", description = "Runs an approved Windows command.", input_schema = new { type = "object", properties = new { command = new { type = "string" }, arguments = new { type = "string" } }, required = new[] { "command" } } },
+            new { name = "windows_run_powershell", description = "Runs a PowerShell command and returns stdout, stderr and the exit code. Requires Aurora Terminal permission.", input_schema = new { type = "object", properties = new { script = new { type = "string" } }, required = new[] { "script" } } },
+            new { name = "windows_run_cmd", description = "Runs a Command Prompt command and returns stdout, stderr and the exit code. Requires Aurora Terminal permission.", input_schema = new { type = "object", properties = new { command = new { type = "string" } }, required = new[] { "command" } } },
+            new { name = "windows_power_control", description = "Uses Windows terminal commands for lock, sleep, hibernate, restart, shutdown or logoff.", input_schema = new { type = "object", properties = new { action = new { type = "string", @enum = new[] { "lock", "sleep", "hibernate", "restart", "shutdown", "logoff" } } }, required = new[] { "action" } } },
+            new { name = "windows_network_status", description = "Reads Windows network adapter status through PowerShell.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_wifi_status", description = "Reads Wi-Fi connection status through netsh.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_wifi_toggle", description = "Enables or disables a Windows network interface such as Wi-Fi.", input_schema = new { type = "object", properties = new { name = new { type = "string" }, enabled = new { type = "boolean" } }, required = new[] { "enabled" } } },
+            new { name = "windows_bluetooth_status", description = "Lists Windows Bluetooth devices through PowerShell.", input_schema = new { type = "object", properties = new { } } },
             new { name = "windows_capture_screen", description = "Captures the primary Windows display.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera", description = "Primary Aurora webcam tool. Reports camera availability and status.", input_schema = new { type = "object", properties = new { } } },
             new { name = "camera_open_windows_app", description = "Opens the native Windows Camera app.", input_schema = new { type = "object", properties = new { } } },
@@ -72,6 +79,13 @@ namespace Aurora.App.Services
                 case "windows_get_clipboard": return App.WindowsAutomation.GetClipboardText();
                 case "windows_set_clipboard": App.WindowsAutomation.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
                 case "windows_run_command": { var exit = await App.WindowsAutomation.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
+                case "windows_run_powershell": return await TerminalTools.RunPowerShellAsync(input.GetProperty("script").GetString() ?? "");
+                case "windows_run_cmd": return await TerminalTools.RunCmdAsync(input.GetProperty("command").GetString() ?? "");
+                case "windows_power_control": return await TerminalTools.PowerAsync(input.GetProperty("action").GetString() ?? "");
+                case "windows_network_status": return await TerminalTools.NetworkStatusAsync();
+                case "windows_wifi_status": return await TerminalTools.WifiStatusAsync();
+                case "windows_wifi_toggle": return await TerminalTools.WifiToggleAsync(input.TryGetProperty("name", out var n) ? n.GetString() ?? "Wi-Fi" : "Wi-Fi", input.GetProperty("enabled").GetBoolean());
+                case "windows_bluetooth_status": return await TerminalTools.BluetoothStatusAsync();
                 case "windows_capture_screen": return SaveScreen();
                 case "camera_open_windows_app": return await CameraTools.ExecuteAsync(toolName, input);
                 case "camera_list_devices": return await CameraTools.ExecuteAsync("camera_list", input);
