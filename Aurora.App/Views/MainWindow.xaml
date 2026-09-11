@@ -19,37 +19,55 @@
             <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
         </Style>
         <Style x:Key="MiniButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
-            <Setter Property="Width" Value="38"/><Setter Property="Height" Value="30"/>
+            <Setter Property="Background" Value="#101722"/><Setter Property="Foreground" Value="{StaticResource AccentCyanBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/><Setter Property="BorderThickness" Value="1"/>
         </Style>
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="48"/><Setter Property="Margin" Value="0,3"/><Setter Property="Padding" Value="14,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/><Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#24142F"/><Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/></Trigger></Style.Triggers>
+        </Style>
+        <ContextMenu x:Key="ComposerMenu" x:Name="ComposerMenu">
+            <MenuItem Header="📎  Add file" Click="Attach_Click"/>
+            <MenuItem Header="📷  Take photo" Click="TakePhoto_Click"/>
+            <MenuItem x:Name="RecordVideoButton" Header="🎥  Record video" Click="RecordVideo_Click"/>
+            <Separator/>
+            <MenuItem Header="🎙  Voice input" Command="{Binding SelectedCompanion.ListenCommand}"/>
+            <MenuItem Header="♫  Music" Click="ComposerMusic_Click"/>
+            <MenuItem Header="⌂  Smart Home" Click="SmartHome_Click"/>
+            <MenuItem Header="☑  Add reminder" Click="AddReminder_Click"/>
+            <Separator/>
+            <MenuItem Header="⚙  Settings" Click="ComposerSettings_Click"/>
+        </ContextMenu>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Border Grid.Row="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-            <Grid>
-                <TextBlock Text="Aurora" FontWeight="SemiBold" Margin="14,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButtonStyle}" Content="—" Click="Minimize_Click" ToolTip="Minimize to orb"/>
-                    <Button x:Name="MaximizeRestoreButton" Style="{StaticResource CaptionButtonStyle}" Content="🗖" Click="MaximizeRestore_Click" ToolTip="Maximize"/>
-                    <Button x:Name="CloseButton" Style="{StaticResource CaptionButtonStyle}" Content="×" Click="Close_Click" ToolTip="Close"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
+        <Grid Grid.Row="0" Background="#090C12" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBlock Text="Aurora" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="16,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="False"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="ToggleLeftSidebarButton" Content="☰" Style="{StaticResource CaptionButtonStyle}" Click="ToggleLeftSidebar_Click" ToolTip="Hide navigation"/>
+                <Button x:Name="ToggleRightSidebarButton" Content="◫" Style="{StaticResource CaptionButtonStyle}" Click="ToggleRightSidebar_Click" ToolTip="Hide information panel"/>
+                <Button Content="◉" Style="{StaticResource MiniButtonStyle}" Click="MiniMode_Click" ToolTip="Mini Aurora"/>
+                <Button Content="—" Style="{StaticResource CaptionButtonStyle}" Click="Minimize_Click" ToolTip="Minimize"/>
+                <Button x:Name="MaximizeRestoreButton" Content="🗖" Style="{StaticResource CaptionButtonStyle}" Click="MaximizeRestore_Click" ToolTip="Maximize"/>
+                <Button Content="✕" Style="{StaticResource CaptionButtonStyle}" Click="Close_Click" ToolTip="Close"/>
+            </StackPanel>
+        </Grid>
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition Width="*"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
-
-            <Border x:Name="LeftSidebar" Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
+            <Grid.ColumnDefinitions><ColumnDefinition x:Name="LeftSidebarColumn" Width="230"/><ColumnDefinition Width="*"/><ColumnDefinition x:Name="RightSidebarColumn" Width="350"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,18,0,0">
-                        <Button x:Name="ToggleLeftSidebarButton" Content="‹" Height="34" Background="#101620" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" Click="ToggleLeftSidebar_Click" ToolTip="Hide navigation"/>
-                    </StackPanel>
-                    <StackPanel>
-                        <Grid Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Profile" FontSize="12" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
-                            <Border Grid.Column="1" Width="34" Height="34" CornerRadius="17" Background="#171D29" BorderBrush="#2C3446" BorderThickness="1"><TextBlock Text="●" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource AccentCyanBrush}"/></Border>
-                            <StackPanel Grid.Column="2" Margin="10,0,0,0"><TextBlock Text="Adam" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
+                    <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="A" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock Text="Adam" FontWeight="SemiBold"/><TextBlock Text="Premium Plan" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
+                            <Button Grid.Column="2" Content="⌄" Width="28" Height="32" Background="Transparent" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" FontSize="18" Click="ProfileMenu_Click" ToolTip="Account menu"/>
                         </Grid>
+                    </Border>
+                    <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="6,12,0,26"><Border Width="48" Height="48" CornerRadius="24" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="2" Background="#101722"><TextBlock Text="✦" FontSize="25" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/></StackPanel>
                         <Button Tag="home" Style="{StaticResource NavButtonStyle}" Background="#251431" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Home" VerticalAlignment="Center"/></StackPanel></Button>
                         <Button Tag="chat" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="17"/><TextBlock Text="Chat" VerticalAlignment="Center"/></StackPanel></Button>
@@ -61,7 +79,6 @@
                     </StackPanel>
                 </DockPanel>
             </Border>
-
             <Grid Grid.Column="1" Background="#080B11">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,22,0,0">
@@ -69,12 +86,9 @@
                     <TextBlock Text="Aurora" FontSize="48" FontWeight="Light" HorizontalAlignment="Center" Foreground="{StaticResource AccentCyanBrush}"><TextBlock.Effect><DropShadowEffect Color="#4FD8E8" BlurRadius="22" ShadowDepth="0" Opacity="0.45"/></TextBlock.Effect></TextBlock>
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
-                <Grid Grid.Row="1">
-                    <local:Globe3D Width="560" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top" AccentColor="{Binding SelectedCompanion.Companion.AccentHex}"/>
-                </Grid>
+                <Grid Grid.Row="1"><local:Globe3D Width="560" Height="560" AccentColor="{Binding SelectedCompanion.Companion.AccentHex}" HorizontalAlignment="Center" VerticalAlignment="Top"/></Grid>
                 <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
                         <Button Grid.Column="0" Width="38" Height="38" Background="#171D29" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" Content="♩" FontSize="19" Command="{Binding SelectedCompanion.ListenCommand}" ToolTip="Voice input"/>
                         <Button Grid.Column="1" Width="40" Height="40" Margin="4,0" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="＋" FontSize="20" Click="OpenComposerMenu_Click" ToolTip="Add files, tools, and actions"/>
                         <TextBox x:Name="ComposerTextBox" Grid.Column="2" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" VerticalContentAlignment="Center" FontSize="14" Padding="12,0" ToolTip="Ask Aurora anything"/>
@@ -83,7 +97,6 @@
                     </Grid>
                 </Border>
             </Grid>
-
             <Border Grid.Column="2" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="1,0,0,0" Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                     <Border Background="#101620" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="18" Margin="0,26,0,10"><StackPanel><TextBlock Text="Aurora Status" FontSize="17" FontWeight="SemiBold"/><StackPanel Orientation="Horizontal" Margin="0,14,0,0"><Ellipse Width="10" Height="10" Fill="{StaticResource AccentGreenBrush}"/><TextBlock Text="Online" Foreground="{StaticResource AccentGreenBrush}" Margin="8,0,0,0" FontSize="14"/></StackPanel><TextBlock Text="{Binding WakeWordStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/></StackPanel></Border>
