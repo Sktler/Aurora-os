@@ -79,7 +79,14 @@ namespace Aurora.App.Services
         public static bool TryParseVersion(string? versionText, out Version version)
         {
             var normalized = NormalizeVersionString(versionText);
-            return Version.TryParse(normalized, out version);
+            if (Version.TryParse(normalized, out var parsedVersion) && parsedVersion is not null)
+            {
+                version = parsedVersion;
+                return true;
+            }
+
+            version = new Version(0, 0, 0);
+            return false;
         }
 
         public static bool IsVersionGreater(string? currentVersionText, string? candidateVersionText)
