@@ -80,7 +80,14 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _smartThingsCatalogStatus = "Not connected.";
         [ObservableProperty] private string _homeAssistantCatalogStatus = "Not connected.";
         [ObservableProperty] private string _hubitatCatalogStatus = "Not connected.";
+        [ObservableProperty] private bool _catalogIncludeNotes = App.Settings.SmartHomeCatalogIncludeRawMetadata;
         [ObservableProperty] private string _updateStatus = "";
+
+        partial void OnCatalogIncludeNotesChanged(bool value)
+        {
+            App.Settings.SmartHomeCatalogIncludeRawMetadata = value;
+            App.Settings.Save();
+        }
         [ObservableProperty] private bool _isCheckingForUpdates;
         [ObservableProperty] private bool _isDownloadingUpdate;
 
