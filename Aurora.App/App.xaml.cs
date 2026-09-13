@@ -14,6 +14,7 @@ namespace Aurora.App
         public static ImageGenClient ImageGen { get; private set; } = null!;
         public static SmartThingsClient SmartThings { get; private set; } = null!;
         public static HomeAssistantClient HomeAssistant { get; private set; } = null!;
+        public static HubitatClient Hubitat { get; private set; } = null!;
         public static VoiceService Voice { get; private set; } = null!;
         public static WakeWordService WakeWord { get; private set; } = null!;
         public static WeatherClient Weather { get; private set; } = null!;
@@ -119,6 +120,7 @@ namespace Aurora.App
                     ImageGen = BuildImageGenClient();
                     SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
                     HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
+                    Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken);
                     Voice = new VoiceService(Settings.VoiceName);
                     WakeWord = new WakeWordService();
                     WebSearch = new WebSearchClient();
@@ -151,7 +153,7 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
-        public static void RefreshIntegrationClients() { SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
+        public static void RefreshIntegrationClients() { SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
         {
             var databasePath = Settings?.DatabasePath;

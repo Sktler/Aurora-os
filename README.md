@@ -89,12 +89,12 @@ for a possible v2, not missing pieces of v1.
   `%AppData%\Aurora\aurora.db`. Each companion's conversation history and
   name persist across app restarts. Nothing here touches the network.
 - **Integrations window** (`Views/IntegrationsWindow.xaml`, gear icon in the
-  sidebar) — connect SmartThings and Home Assistant (with automatic device/
-  entity discovery, no manual per-device setup), and mark Alexa/Google as
-  connected once set up outside the app.
+  sidebar) — connect SmartThings, Home Assistant, and Hubitat (with automatic
+  device/entity discovery and one merged device catalog, no manual per-device
+  setup), and mark Alexa/Google as connected once set up outside the app.
 - **HomeTools** (`Services/HomeTools.cs`) — the tool definitions and
-  execution logic that let the Home companion list and control real devices
-  through SmartThings/Home Assistant.
+  execution logic that let the Home companion list, filter, and control real
+  devices through SmartThings/Home Assistant/Hubitat.
 
 ## Getting it running
 
@@ -177,10 +177,11 @@ All of this lives behind the **gear icon** in the sidebar (now called
   one folder via the normal Windows folder picker; that's the only place
   Sift can read from. "Clear" revokes access entirely. Text-style files
   only for now.
-- **SmartThings / Home Assistant** — paste your token (and URL, for Home
-  Assistant) and hit **Save & Test**. This makes a real API call and tells
-  you what actually happened — "Connected, found N devices" or the real
-  error if the token's wrong, not just "a token was typed in."
+- **SmartThings / Home Assistant / Hubitat** — paste your token (and URL, for
+  Home Assistant, plus Maker API URL for Hubitat) and hit **Save & Test**.
+  This makes a real API call and tells you what actually happened —
+  "Connected, found N devices" or the real error if the token's wrong, not
+  just "a token was typed in."
 - **Google (Gmail, Drive & Docs)** — does a genuine Google OAuth sign-in
   (opens your browser, you approve access, Aurora gets a token back) rather
   than a fake toggle. One real requirement here: **you need your own free
@@ -198,8 +199,8 @@ All of this lives behind the **gear icon** in the sidebar (now called
 ## Known follow-ups (out of scope for v1)
 
 v1 is done: build it, run it, chat with all five companions, rename them,
-switch chat engines, verify and connect SmartThings/Home Assistant/Google/
-Spotify, and have Home and Aurora/Scout actually act (devices, weather,
+switch chat engines, verify and connect SmartThings/Home Assistant/Hubitat/
+Google/Spotify, and have Home and Aurora/Scout actually act (devices, weather,
 search, music, volume) instead of just describing it. These are
 deliberately deferred to a possible v2, not gaps in v1:
 
@@ -256,8 +257,9 @@ Aurora.App/
                                    SpotifyClient, SpotifyAuthClient,
                                    SystemVolumeControl, MemoryStore,
                                    ImageGenClient, SmartThingsClient,
-                                   HomeAssistantClient, GoogleAuthClient,
-                                   HomeTools, SystemTools, FileTools
+                                   HomeAssistantClient, HubitatClient,
+                                   HomeTools, SmartHomeCatalogService,
+                                   GoogleAuthClient, SystemTools, FileTools
   ViewModels/                   - DashboardViewModel, CompanionViewModel,
                                    IntegrationsViewModel
   Views/                        - MainWindow.xaml, IntegrationsWindow.xaml

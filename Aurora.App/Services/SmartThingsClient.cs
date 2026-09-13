@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,7 +9,15 @@ using System.Threading.Tasks;
 
 namespace Aurora.App.Services
 {
-    public record SmartThingsDevice(string DeviceId, string Label, string Type);
+    public record SmartThingsDevice(
+        string DeviceId,
+        string Label,
+        string Type,
+        string State,
+        string Room,
+        IReadOnlyList<string> Capabilities,
+        IReadOnlyList<string> SupportedActions,
+        string RawMetadata);
 
     /// <summary>
     /// Talks to the SmartThings Cloud REST API. Generate a Personal Access Token
@@ -69,19 +78,7 @@ namespace Aurora.App.Services
             if (!response.IsSuccessStatusCode) return result;
 
             var text = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(text);
-            if (doc.RootElement.TryGetProperty("items", out var items))
-            {
-                foreach (var d in items.EnumerateArray())
-                {
-                    result.Add(new SmartThingsDevice(
-                        d.GetProperty("deviceId").GetString() ?? "",
-                        d.TryGetProperty("label", out var l) ? l.GetString() ?? "" : "",
-                        d.TryGetProperty("type", out var t) ? t.GetString() ?? "" : ""
-                    ));
-                }
-            }
-            return result;
+            return ParseDevicesPayload(text);
         }
 
         /// <summary>Sends a single-capability command, e.g. component "main", capability "switch", command "on".</summary>
@@ -107,6 +104,204 @@ namespace Aurora.App.Services
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _http.PostAsync($"{BaseUrl}/devices/{deviceId}/commands", content);
             return response.IsSuccessStatusCode;
+        }
+
+        public static List<SmartThingsDevice> ParseDevicesPayload(string payload)
+        {
+            var result = new List<SmartThingsDevice>();
+            using var doc = JsonDocument.Parse(payload);
+            if (!doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array)
+                return result;
+
+            foreach (var device in items.EnumerateArray())
+            {
+                var deviceId = GetString(device, "deviceId");
+                var label = FirstNonEmpty(GetString(device, "label"), GetString(device, "name"), deviceId);
+                var type = FirstNonEmpty(GetString(device, "deviceTypeName"), GetString(device, "type"), "device");
+                var room = FirstNonEmpty(GetString(device, "roomName"), GetString(device, "locationName"), "");
+                var capabilities = ParseCapabilities(device);
+                var actions = InferSupportedActions(capabilities);
+
+                result.Add(new SmartThingsDevice(
+                    deviceId,
+                    label,
+                    type,
+                    "",
+                    room,
+                    capabilities,
+                    actions,
+                    device.GetRawText()));
+            }
+
+            return result;
+        }
+
+        public static bool TryResolveCommand(
+            IReadOnlyList<string> capabilities,
+            string action,
+            string? value,
+            out string capability,
+            out string command,
+            out object[] args,
+            out string error)
+        {
+            capability = "";
+            command = "";
+            args = Array.Empty<object>();
+            error = "";
+
+            var normalized = (action ?? "").Trim().ToLowerInvariant();
+            var caps = new HashSet<string>(capabilities ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+
+            switch (normalized)
+            {
+                case "on":
+                case "off":
+                    if (!caps.Contains("switch"))
+                    {
+                        error = "That SmartThings device doesn't report switch support.";
+                        return false;
+                    }
+
+                    capability = "switch";
+                    command = normalized;
+                    return true;
+
+                case "lock":
+                case "unlock":
+                    if (!caps.Contains("lock"))
+                    {
+                        error = "That SmartThings device doesn't report lock support.";
+                        return false;
+                    }
+
+                    capability = "lock";
+                    command = normalized;
+                    return true;
+
+                case "open":
+                case "close":
+                    if (caps.Contains("doorControl"))
+                    {
+                        capability = "doorControl";
+                        command = normalized;
+                        return true;
+                    }
+                    if (caps.Contains("windowShade"))
+                    {
+                        capability = "windowShade";
+                        command = normalized;
+                        return true;
+                    }
+
+                    error = "That SmartThings device doesn't report open/close support.";
+                    return false;
+
+                case "stop":
+                case "pause":
+                    if (!caps.Contains("windowShade"))
+                    {
+                        error = "That SmartThings device doesn't report pause/stop support.";
+                        return false;
+                    }
+
+                    capability = "windowShade";
+                    command = "pause";
+                    return true;
+
+                case "set_level":
+                case "setlevel":
+                case "level":
+                    if (!caps.Contains("switchLevel"))
+                    {
+                        error = "That SmartThings device doesn't report level control.";
+                        return false;
+                    }
+                    if (!int.TryParse(value, out var level))
+                    {
+                        error = "Level actions need a numeric value.";
+                        return false;
+                    }
+
+                    capability = "switchLevel";
+                    command = "setLevel";
+                    args = new object[] { Math.Clamp(level, 0, 100) };
+                    return true;
+            }
+
+            error = $"Unsupported SmartThings action: {action}";
+            return false;
+        }
+
+        private static string GetString(JsonElement element, string propertyName)
+        {
+            if (!element.TryGetProperty(propertyName, out var value))
+                return "";
+
+            return value.ValueKind switch
+            {
+                JsonValueKind.String => value.GetString() ?? "",
+                JsonValueKind.Number => value.ToString(),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                _ => ""
+            };
+        }
+
+        private static string FirstNonEmpty(params string[] values) =>
+            values.FirstOrDefault(static v => !string.IsNullOrWhiteSpace(v)) ?? "";
+
+        private static List<string> ParseCapabilities(JsonElement device)
+        {
+            var capabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!device.TryGetProperty("components", out var components) || components.ValueKind != JsonValueKind.Array)
+                return capabilities.OrderBy(static x => x).ToList();
+
+            foreach (var component in components.EnumerateArray())
+            {
+                if (!component.TryGetProperty("capabilities", out var caps) || caps.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (var cap in caps.EnumerateArray())
+                {
+                    var id = GetString(cap, "id");
+                    if (!string.IsNullOrWhiteSpace(id))
+                        capabilities.Add(id);
+                }
+            }
+
+            return capabilities.OrderBy(static x => x).ToList();
+        }
+
+        private static List<string> InferSupportedActions(IReadOnlyList<string> capabilities)
+        {
+            var actions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var capability in capabilities)
+            {
+                switch ((capability ?? "").Trim().ToLowerInvariant())
+                {
+                    case "switch":
+                        actions.Add("on");
+                        actions.Add("off");
+                        break;
+                    case "switchlevel":
+                        actions.Add("set_level");
+                        break;
+                    case "lock":
+                        actions.Add("lock");
+                        actions.Add("unlock");
+                        break;
+                    case "doorcontrol":
+                    case "windowshade":
+                        actions.Add("open");
+                        actions.Add("close");
+                        actions.Add("stop");
+                        break;
+                }
+            }
+
+            return actions.OrderBy(static x => x).ToList();
         }
     }
 }
