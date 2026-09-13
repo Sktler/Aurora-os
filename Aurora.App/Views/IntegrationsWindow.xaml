@@ -120,7 +120,7 @@
                     <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.SmartHome}">
                         <StackPanel>
                             <TextBlock Text="🏠 Smart home" FontWeight="SemiBold" FontSize="14"/>
-                            <TextBlock Text="SmartThings, Home Assistant, Alexa" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="SmartThings, Home Assistant, Hubitat, Alexa" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
 
@@ -667,6 +667,36 @@
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Hubitat" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding HubitatVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="Maker API base URL (for one Hubitat app) and its access token" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
+                        <TextBox Text="{Binding HubitatUrl, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,8"
+                                 Tag="http://hubitat.local/apps/api/1234"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding HubitatToken, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                                    Command="{Binding SaveAndTestHubitatCommand}"
+                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        </Grid>
+                        <TextBlock Text="{Binding HubitatStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Amazon Alexa" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding AlexaConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
@@ -685,13 +715,37 @@
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <TextBlock Text="Discovered devices" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Unified device catalog" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <Button Content="Refresh" Margin="12,0,0,0" Padding="14,6"
                                     Command="{Binding DiscoverDevicesCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
                         <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
+
+                        <UniformGrid Columns="3" Margin="0,0,0,12">
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="SmartThings" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding SmartThingsCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{Binding SmartThingsCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Home Assistant" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding HomeAssistantCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{Binding HomeAssistantCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8">
+                                <StackPanel>
+                                    <TextBlock Text="Hubitat" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding HubitatCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{Binding HubitatCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
 
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
@@ -704,7 +758,10 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
-                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}"/>
+                                                <TextBlock Text="{Binding Id}" Style="{StaticResource MutedText}"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding CapabilitiesSummary, StringFormat=Capabilities: {0}}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding SupportedActionsSummary, StringFormat=Actions: {0}}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                             </StackPanel>
                                             <TextBlock Grid.Column="1" Text="{Binding Source}" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                                         </Grid>

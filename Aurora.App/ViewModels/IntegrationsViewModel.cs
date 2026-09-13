@@ -49,6 +49,13 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _homeAssistantStatus = "";
         [ObservableProperty] private bool _isTestingHomeAssistant;
 
+        // --- Hubitat ---
+        [ObservableProperty] private string _hubitatUrl = App.Settings.HubitatUrl;
+        [ObservableProperty] private string _hubitatToken = App.Settings.HubitatToken;
+        [ObservableProperty] private bool _hubitatVerified = App.Hubitat.IsConfigured;
+        [ObservableProperty] private string _hubitatStatus = "";
+        [ObservableProperty] private bool _isTestingHubitat;
+
         // --- Alexa (Smart Home Skill setup happens outside the app - see note in UI) ---
         [ObservableProperty] private bool _alexaConnected = App.Settings.AlexaConnected;
 
@@ -67,6 +74,12 @@ namespace Aurora.App.ViewModels
 
         [ObservableProperty] private bool _isDiscovering;
         [ObservableProperty] private string _statusMessage = "";
+        [ObservableProperty] private int _smartThingsCatalogCount;
+        [ObservableProperty] private int _homeAssistantCatalogCount;
+        [ObservableProperty] private int _hubitatCatalogCount;
+        [ObservableProperty] private string _smartThingsCatalogStatus = "Not connected.";
+        [ObservableProperty] private string _homeAssistantCatalogStatus = "Not connected.";
+        [ObservableProperty] private string _hubitatCatalogStatus = "Not connected.";
         [ObservableProperty] private string _updateStatus = "";
         [ObservableProperty] private bool _isCheckingForUpdates;
         [ObservableProperty] private bool _isDownloadingUpdate;
@@ -379,6 +392,7 @@ namespace Aurora.App.ViewModels
                 var (success, message) = await App.SmartThings.TestConnectionAsync();
                 SmartThingsVerified = success;
                 SmartThingsStatus = message;
+                SmartThingsCatalogStatus = success ? "Connection verified. Refresh the catalog to load devices." : message;
             }
             finally
             {
@@ -403,10 +417,36 @@ namespace Aurora.App.ViewModels
                 var (success, message) = await App.HomeAssistant.TestConnectionAsync();
                 HomeAssistantVerified = success;
                 HomeAssistantStatus = message;
+                HomeAssistantCatalogStatus = success ? "Connection verified. Refresh the catalog to load devices." : message;
             }
             finally
             {
                 IsTestingHomeAssistant = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task SaveAndTestHubitatAsync()
+        {
+            if (IsTestingHubitat) return;
+
+            App.Settings.HubitatUrl = HubitatUrl.Trim();
+            App.Settings.HubitatToken = HubitatToken.Trim();
+            App.Settings.Save();
+            App.RefreshIntegrationClients();
+
+            IsTestingHubitat = true;
+            HubitatStatus = "Testing connection...";
+            try
+            {
+                var (success, message) = await App.Hubitat.TestConnectionAsync();
+                HubitatVerified = success;
+                HubitatStatus = message;
+                HubitatCatalogStatus = success ? "Connection verified. Refresh the catalog to load devices." : message;
+            }
+            finally
+            {
+                IsTestingHubitat = false;
             }
         }
 
@@ -676,27 +716,27 @@ namespace Aurora.App.ViewModels
 
             try
             {
-                if (App.SmartThings.IsConfigured)
-                {
-                    var stDevices = await App.SmartThings.ListDevicesAsync();
-                    foreach (var d in stDevices)
-                        Devices.Add(new DiscoveredDevice { Source = "SmartThings", Name = d.Label, Detail = d.Type });
-                }
+                var snapshot = await SmartHomeCatalogService.DiscoverAsync();
+                foreach (var device in snapshot.Devices)
+                    Devices.Add(device);
 
-                if (App.HomeAssistant.IsConfigured)
-                {
-                    var haDevices = await App.HomeAssistant.ListDevicesAsync();
-                    foreach (var d in haDevices)
-                        Devices.Add(new DiscoveredDevice { Source = "Home Assistant", Name = d.FriendlyName, Detail = d.State });
-                }
+                SmartThingsCatalogCount = snapshot.CountFor("SmartThings");
+                HomeAssistantCatalogCount = snapshot.CountFor("Home Assistant");
+                HubitatCatalogCount = snapshot.CountFor("Hubitat");
+                SmartThingsCatalogStatus = snapshot.SourceStatuses.TryGetValue("SmartThings", out var stStatus) ? stStatus : "No status.";
+                HomeAssistantCatalogStatus = snapshot.SourceStatuses.TryGetValue("Home Assistant", out var haStatus) ? haStatus : "No status.";
+                HubitatCatalogStatus = snapshot.SourceStatuses.TryGetValue("Hubitat", out var hubitatStatus) ? hubitatStatus : "No status.";
 
                 StatusMessage = Devices.Count > 0
-                    ? $"Found {Devices.Count} device(s)."
-                    : "No devices found - connect and test SmartThings or Home Assistant above first.";
+                    ? $"Loaded {Devices.Count} catalog item(s) across the connected hubs."
+                    : "No devices found - connect and test SmartThings, Home Assistant, or Hubitat above first.";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Discovery failed: {ex.Message}";
+                SmartThingsCatalogStatus = App.SmartThings.IsConfigured ? "Discovery failed." : "Not connected.";
+                HomeAssistantCatalogStatus = App.HomeAssistant.IsConfigured ? "Discovery failed." : "Not connected.";
+                HubitatCatalogStatus = App.Hubitat.IsConfigured ? "Discovery failed." : "Not connected.";
             }
             finally
             {
