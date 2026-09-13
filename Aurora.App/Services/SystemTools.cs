@@ -74,10 +74,10 @@ namespace Aurora.App.Services
                 case "windows_list_applications": return FormatProcesses(App.WindowsAutomation.GetProcesses());
                 case "windows_launch_application": App.WindowsAutomation.Launch(input.GetProperty("target").GetString() ?? ""); return "Application launched.";
                 case "windows_open_path": App.WindowsAutomation.OpenPath(input.GetProperty("path").GetString() ?? ""); return "Opened.";
-                case "windows_read_file": return App.WindowsAutomation.ReadText(input.GetProperty("path").GetString() ?? "");
-                case "windows_write_file": App.WindowsAutomation.WriteText(input.GetProperty("path").GetString() ?? "", input.GetProperty("content").GetString() ?? ""); return "File written.";
-                case "windows_get_clipboard": return App.WindowsAutomation.GetClipboardText();
-                case "windows_set_clipboard": App.WindowsAutomation.SetClipboardText(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
+                case "windows_read_file": return await App.WindowsAutomation.ReadTextAsync(input.GetProperty("path").GetString() ?? "");
+                case "windows_write_file": await App.WindowsAutomation.WriteTextAsync(input.GetProperty("path").GetString() ?? "", input.GetProperty("content").GetString() ?? ""); return "File written.";
+                case "windows_get_clipboard": return await App.WindowsAutomation.GetClipboardTextAsync();
+                case "windows_set_clipboard": await App.WindowsAutomation.SetClipboardTextAsync(input.GetProperty("text").GetString() ?? ""); return "Clipboard updated.";
                 case "windows_run_command": { var exit = await App.WindowsAutomation.RunApprovedCommandAsync(input.GetProperty("command").GetString() ?? "", input.TryGetProperty("arguments", out var a) ? a.GetString() ?? "" : ""); return $"Command finished with exit code {exit}."; }
                 case "windows_run_powershell": return await TerminalTools.RunPowerShellAsync(input.GetProperty("script").GetString() ?? "");
                 case "windows_run_cmd": return await TerminalTools.RunCmdAsync(input.GetProperty("command").GetString() ?? "");

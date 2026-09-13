@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Aurora.App.Services
@@ -54,6 +55,44 @@ namespace Aurora.App.Services
             }
         }
 
+        public static async Task<(bool Ok, string ContentOrError)> TryReadAsTextAsync(
+            string fullPath,
+            CancellationToken cancellationToken = default)
+        {
+            if (!File.Exists(fullPath)) return (false, "That file doesn't exist.");
+
+            var extension = Path.GetExtension(fullPath);
+            if (!TextExtensions.Contains(extension))
+                return (false, $"\"{Path.GetFileName(fullPath)}\" is a {extension} file - that format isn't " +
+                                "readable yet (only plain-text-style formats are supported so far: txt, md, csv, json, code files, etc.).");
+
+            try
+            {
+                var info = new FileInfo(fullPath);
+                if (info.Length > MaxReadBytes)
+                    return (false, $"\"{info.Name}\" is {FormatSize(info.Length)}, too large to read in full " +
+                                    $"(limit is {FormatSize(MaxReadBytes)}).");
+
+                await using var stream = new FileStream(
+                    fullPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: 4096,
+                    options: FileOptions.Asynchronous | FileOptions.SequentialScan);
+                using var reader = new StreamReader(stream);
+                return (true, await reader.ReadToEndAsync(cancellationToken));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Couldn't read the file: {ex.Message}");
+            }
+        }
+
         public static List<object> Definitions => new()
         {
             new
@@ -81,12 +120,18 @@ namespace Aurora.App.Services
             }
         };
 
-        public static Task<string> ExecuteAsync(string toolName, JsonElement input) => toolName switch
+        public static async Task<string> ExecuteAsync(
+            string toolName,
+            JsonElement input,
+            CancellationToken cancellationToken = default)
         {
-            "list_documents" => Task.FromResult(ListDocuments()),
-            "read_document" => Task.FromResult(ReadDocument(input)),
-            _ => Task.FromResult($"Unknown tool: {toolName}")
-        };
+            return toolName switch
+            {
+                "list_documents" => await ListDocumentsAsync(cancellationToken),
+                "read_document" => await ReadDocumentAsync(input, cancellationToken),
+                _ => $"Unknown tool: {toolName}"
+            };
+        }
 
         private static string ListDocuments()
         {
@@ -115,6 +160,9 @@ namespace Aurora.App.Services
                 return $"Couldn't list the folder: {ex.Message}";
             }
         }
+
+        private static Task<string> ListDocumentsAsync(CancellationToken cancellationToken)
+            => Task.Run(ListDocuments, cancellationToken);
 
         private static string ReadDocument(JsonElement input)
         {
@@ -147,6 +195,37 @@ namespace Aurora.App.Services
                 return $"No file named \"{fileName}\" in the designated folder.";
 
             var (ok, contentOrError) = TryReadAsText(fullPath);
+            return ok ? $"Contents of {fileName}:\n\n{contentOrError}" : contentOrError;
+        }
+
+        private static async Task<string> ReadDocumentAsync(JsonElement input, CancellationToken cancellationToken)
+        {
+            var folder = App.Settings.TrustedFolderPath;
+            if (string.IsNullOrWhiteSpace(folder))
+                return "No documents folder has been set up yet - add one in Settings.";
+
+            var fileName = input.TryGetProperty("file_name", out var f) ? f.GetString() ?? "" : "";
+            if (string.IsNullOrWhiteSpace(fileName))
+                return "No file name given.";
+
+            string fullPath, folderFull;
+            try
+            {
+                folderFull = Path.GetFullPath(folder);
+                fullPath = Path.GetFullPath(Path.Combine(folderFull, fileName));
+            }
+            catch (Exception ex)
+            {
+                return $"Invalid file name: {ex.Message}";
+            }
+
+            if (!fullPath.StartsWith(folderFull, StringComparison.OrdinalIgnoreCase))
+                return "That file is outside the designated folder, so it can't be read.";
+
+            if (!File.Exists(fullPath))
+                return $"No file named \"{fileName}\" in the designated folder.";
+
+            var (ok, contentOrError) = await TryReadAsTextAsync(fullPath, cancellationToken);
             return ok ? $"Contents of {fileName}:\n\n{contentOrError}" : contentOrError;
         }
 

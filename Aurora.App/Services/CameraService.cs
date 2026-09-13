@@ -35,7 +35,10 @@ namespace Aurora.App.Services
 
         public event EventHandler<CameraFrameEventArgs>? FrameReady;
 
-        public Task<IReadOnlyList<CameraDeviceInfo>> RefreshDevicesAsync()
+        public Task<IReadOnlyList<CameraDeviceInfo>> RefreshDevicesAsync(CancellationToken cancellationToken = default)
+            => Task.Run(RefreshDevices, cancellationToken);
+
+        private IReadOnlyList<CameraDeviceInfo> RefreshDevices()
         {
             var devices = new List<CameraDeviceInfo>();
             for (var index = 0; index < 10; index++)
@@ -58,7 +61,7 @@ namespace Aurora.App.Services
             if (!Devices.Any(d => d.Id == _selectedIndex.ToString()))
                 _selectedIndex = devices.Count == 0 ? 0 : int.Parse(devices[0].Id);
 
-            return Task.FromResult<IReadOnlyList<CameraDeviceInfo>>(Devices);
+            return Devices;
         }
 
         public async Task<CameraPermissionResult> CheckPermissionAsync()
@@ -83,13 +86,13 @@ namespace Aurora.App.Services
             }
         }
 
-        public async Task InitializeAsync(string? deviceId = null)
+        public async Task InitializeAsync(string? deviceId = null, CancellationToken cancellationToken = default)
         {
-            await _gate.WaitAsync();
+            await _gate.WaitAsync(cancellationToken);
             try
             {
                 if (Devices.Count == 0)
-                    await RefreshDevicesAsync();
+                    await RefreshDevicesAsync(cancellationToken);
 
                 if (!string.IsNullOrWhiteSpace(deviceId) && int.TryParse(deviceId, out var requested))
                     _selectedIndex = requested;
@@ -120,10 +123,10 @@ namespace Aurora.App.Services
         }
 
         /// <summary>Starts the persistent webcam capture loop. Calling it again is harmless.</summary>
-        public async Task StartPreviewAsync()
+        public async Task StartPreviewAsync(CancellationToken cancellationToken = default)
         {
             if (!IsInitialized)
-                await InitializeAsync();
+                await InitializeAsync(cancellationToken: cancellationToken);
             if (IsActive)
                 return;
 
@@ -171,12 +174,14 @@ namespace Aurora.App.Services
             });
         }
 
-        public async Task<StorageFileResult> CapturePhotoAsync(string? destinationFolder = null)
+        public async Task<StorageFileResult> CapturePhotoAsync(
+            string? destinationFolder = null,
+            CancellationToken cancellationToken = default)
         {
             if (!IsInitialized)
-                await InitializeAsync();
+                await InitializeAsync(cancellationToken: cancellationToken);
             if (!IsActive)
-                await StartPreviewAsync();
+                await StartPreviewAsync(cancellationToken);
 
             Mat frame;
             lock (_captureSync)
@@ -192,38 +197,49 @@ namespace Aurora.App.Services
 
             using (frame)
             {
-                var folder = string.IsNullOrWhiteSpace(destinationFolder)
-                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera")
-                    : destinationFolder;
+                var path = await Task.Run(() =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var folder = string.IsNullOrWhiteSpace(destinationFolder)
+                        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Aurora Camera")
+                        : destinationFolder;
 
-                Directory.CreateDirectory(folder);
-                var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.jpg");
-                Cv2.ImWrite(path, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
+                    Directory.CreateDirectory(folder);
+                    var outputPath = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.jpg");
+                    Cv2.ImWrite(outputPath, frame, new ImageEncodingParam(ImwriteFlags.JpegQuality, 95));
+                    return outputPath;
+                }, cancellationToken);
                 return new StorageFileResult(path);
             }
         }
 
         /// <summary>Starts recording the same continuous capture stream to an MP4 file.</summary>
-        public async Task<StorageFileResult> StartRecordingAsync(string? destinationFolder = null)
+        public async Task<StorageFileResult> StartRecordingAsync(
+            string? destinationFolder = null,
+            CancellationToken cancellationToken = default)
         {
             if (!IsInitialized)
-                await InitializeAsync();
+                await InitializeAsync(cancellationToken: cancellationToken);
             if (!IsActive)
-                await StartPreviewAsync();
+                await StartPreviewAsync(cancellationToken);
             if (IsRecording)
                 throw new InvalidOperationException("Camera video recording is already active.");
 
-            var folder = string.IsNullOrWhiteSpace(destinationFolder)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Aurora Camera")
-                : destinationFolder;
-            Directory.CreateDirectory(folder);
+            var (path, writer) = await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var folder = string.IsNullOrWhiteSpace(destinationFolder)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Aurora Camera")
+                    : destinationFolder;
+                Directory.CreateDirectory(folder);
 
-            var path = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.mp4");
-            var writer = new VideoWriter(
-                path,
-                FourCC.MP4V,
-                30,
-                new OpenCvSharp.Size(1280, 720));
+                var outputPath = Path.Combine(folder, $"aurora-camera-{DateTime.Now:yyyyMMdd-HHmmss-fff}.mp4");
+                return (outputPath, new VideoWriter(
+                    outputPath,
+                    FourCC.MP4V,
+                    30,
+                    new OpenCvSharp.Size(1280, 720)));
+            }, cancellationToken);
 
             if (!writer.IsOpened())
             {
@@ -312,7 +328,7 @@ namespace Aurora.App.Services
                         }
                     }
 
-                    Thread.Sleep(15);
+                    token.WaitHandle.WaitOne(15);
                 }
                 catch (OperationCanceledException)
                 {
@@ -320,7 +336,7 @@ namespace Aurora.App.Services
                 }
                 catch
                 {
-                    Thread.Sleep(100);
+                    token.WaitHandle.WaitOne(100);
                 }
             }
         }

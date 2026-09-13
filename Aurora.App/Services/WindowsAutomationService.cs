@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -64,28 +65,34 @@ namespace Aurora.App.Services
             Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
         }
 
-        public string ReadText(string path)
+        public async Task<string> ReadTextAsync(string path, CancellationToken cancellationToken = default)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
-            return File.ReadAllText(path);
+            return await File.ReadAllTextAsync(path, cancellationToken);
         }
 
-        public void WriteText(string path, string content)
+        public async Task WriteTextAsync(string path, string content, CancellationToken cancellationToken = default)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
-            File.WriteAllText(path, content ?? string.Empty);
+            await File.WriteAllTextAsync(path, content ?? string.Empty, cancellationToken);
         }
 
-        public string GetClipboardText()
+        public async Task<string> GetClipboardTextAsync(CancellationToken cancellationToken = default)
         {
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
-            return Application.Current.Dispatcher.Invoke(() => Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty);
+            return await Application.Current.Dispatcher.InvokeAsync(
+                () => Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty,
+                System.Windows.Threading.DispatcherPriority.Normal,
+                cancellationToken);
         }
 
-        public void SetClipboardText(string text)
+        public async Task SetClipboardTextAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
-            Application.Current.Dispatcher.Invoke(() => Clipboard.SetText(text ?? string.Empty));
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => Clipboard.SetText(text ?? string.Empty),
+                System.Windows.Threading.DispatcherPriority.Normal,
+                cancellationToken);
         }
 
         public BitmapSource CaptureScreen()
@@ -102,16 +109,58 @@ namespace Aurora.App.Services
             return image;
         }
 
-        public Task<int> RunApprovedCommandAsync(string fileName, string arguments)
+        public async Task<int> RunApprovedCommandAsync(
+            string fileName,
+            string arguments,
+            CancellationToken cancellationToken = default)
         {
             if (!TerminalEnabled) throw new UnauthorizedAccessException("Terminal access is disabled.");
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("A command is required.");
-            var tcs = new TaskCompletionSource<int>();
-            var process = new Process { StartInfo = new ProcessStartInfo { FileName = fileName, Arguments = arguments ?? string.Empty, UseShellExecute = false, CreateNoWindow = true } };
+            var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments ?? string.Empty,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            void CompleteProcess()
+            {
+                try { tcs.TrySetResult(process.ExitCode); }
+                catch (InvalidOperationException) { tcs.TrySetResult(-1); }
+            }
+
             process.EnableRaisingEvents = true;
-            process.Exited += (_, _) => tcs.TrySetResult(process.ExitCode);
-            process.Start();
-            return tcs.Task;
+            EventHandler processExited = (_, _) => CompleteProcess();
+            process.Exited += processExited;
+            try
+            {
+                if (!process.Start())
+                    throw new InvalidOperationException("The command could not be started.");
+
+                using var cancellationRegistration = cancellationToken.Register(() =>
+                {
+                    try
+                    {
+                        if (!process.HasExited)
+                            process.Kill(entireProcessTree: true);
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+
+                    tcs.TrySetCanceled(cancellationToken);
+                });
+
+                return await tcs.Task;
+            }
+            finally
+            {
+                process.Exited -= processExited;
+            }
         }
 
         private static string SafeMainWindowTitle(Process process) { try { return process.MainWindowTitle ?? string.Empty; } catch { return string.Empty; } }

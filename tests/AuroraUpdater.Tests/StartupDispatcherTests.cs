@@ -41,7 +41,7 @@ public sealed class StartupDispatcherTests
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
 
-        Assert.True(completed.Wait(TimeSpan.FromSeconds(5)), "The dispatcher did not complete.");
+        Assert.True(completed.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken), "The dispatcher did not complete.");
         thread.Join(TimeSpan.FromSeconds(1));
 
         Assert.Null(failure);

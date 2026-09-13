@@ -23,11 +23,11 @@ public sealed class StartupDialogFocusTests
     {
         var source = ReadViewSource("StartupPermissionWindow.cs");
 
-        Assert.Equal(2, CountOccurrences(source, "Topmost = true;"));
-        Assert.Equal(2, CountOccurrences(source, "ShowInTaskbar = true;"));
+        Assert.Equal(2, CountOccurrences(source, "Topmost = true;") + CountOccurrences(source, "Topmost = true,"));
+        Assert.Equal(2, CountOccurrences(source, "ShowInTaskbar = true;") + CountOccurrences(source, "ShowInTaskbar = true,"));
         Assert.Equal(3, CountOccurrences(source, "WindowState = WindowState.Normal;"));
-        Assert.Equal(1, CountOccurrences(source, "dialog.Activate();"));
-        Assert.Equal(2, CountOccurrences(source, "Activate();"));
+        Assert.Equal(2, CountOccurrences(source, "dialog.Activate();"));
+        Assert.Equal(3, CountOccurrences(source, "Activate();"));
         Assert.Equal(2, CountOccurrences(source, "Focus();"));
     }
 

@@ -114,7 +114,7 @@ namespace Aurora.App.ViewModels
 
         private void OnMetricsUpdated(SystemMetrics metrics)
         {
-            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            _ = DispatchToUiAsync(() =>
             {
                 CpuUsage = FormatPercent(metrics.CpuPercent);
                 RamUsage = FormatPercent(metrics.RamPercent);
@@ -126,22 +126,31 @@ namespace Aurora.App.ViewModels
 
         private static string FormatPercent(double value) => value < 0 ? "N/A" : $"{value:0}%";
 
-        private async void OnWakeWordDetected()
+        private void OnWakeWordDetected() => _ = HandleWakeWordDetectedAsync();
+
+        private async System.Threading.Tasks.Task HandleWakeWordDetectedAsync()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            try
             {
-                WakeWordStatus = "What can I do for you?";
-                WakeWordFlash = true;
-                OnPropertyChanged(nameof(WakeWordFlash));
-                await System.Threading.Tasks.Task.Delay(450);
-                WakeWordFlash = false;
-                OnPropertyChanged(nameof(WakeWordFlash));
-            });
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
+                    WakeWordStatus = "What can I do for you?";
+                    WakeWordFlash = true;
+                    OnPropertyChanged(nameof(WakeWordFlash));
+                    await System.Threading.Tasks.Task.Delay(450);
+                    WakeWordFlash = false;
+                    OnPropertyChanged(nameof(WakeWordFlash));
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] Wake-word UI update failed: {ex}");
+            }
         }
 
         private void OnWakeCommandRecognized(string command)
         {
-            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            _ = DispatchToUiAsync(() =>
             {
                 var target = SelectedCompanion;
                 if (target != null) target.SubmitVoiceUtterance(command);
@@ -150,7 +159,23 @@ namespace Aurora.App.ViewModels
 
         private void OnWakeStatusChanged(string status)
         {
-            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => WakeWordStatus = status);
+            _ = DispatchToUiAsync(() => WakeWordStatus = status);
+        }
+
+        private static async System.Threading.Tasks.Task DispatchToUiAsync(Action action)
+        {
+            try
+            {
+                var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                if (dispatcher == null)
+                    return;
+
+                await dispatcher.InvokeAsync(action);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] UI dispatch failed: {ex}");
+            }
         }
 
         [RelayCommand] private void Select(CompanionViewModel vm) => SelectedCompanion = vm;

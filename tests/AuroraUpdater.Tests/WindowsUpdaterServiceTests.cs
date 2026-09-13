@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Xunit;
@@ -12,6 +13,38 @@ namespace AuroraUpdater.Tests;
 
 public class WindowsUpdaterServiceTests
 {
+    [Fact]
+    public async Task FileTools_TryReadAsTextAsync_ReadsSupportedTextFiles()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"aurora-file-tools-{Guid.NewGuid():N}.txt");
+        await File.WriteAllTextAsync(path, "Aurora", TestContext.Current.CancellationToken);
+
+        try
+        {
+            var result = await FileTools.TryReadAsTextAsync(path, TestContext.Current.CancellationToken);
+
+            Assert.True(result.Ok);
+            Assert.Equal("Aurora", result.ContentOrError);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task WindowsAutomationService_RunApprovedCommandAsync_ReturnsExitCode()
+    {
+        var service = new WindowsAutomationService { TerminalEnabled = true };
+
+        var exitCode = await service.RunApprovedCommandAsync(
+            "cmd.exe",
+            "/c exit 7",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(7, exitCode);
+    }
+
     [Fact]
     public void ResetAll_RemovesExternalDatabaseAndSqliteSidecars()
     {
@@ -70,11 +103,11 @@ public class WindowsUpdaterServiceTests
     }
 
     [Fact]
-    public void WindowsAutomationService_RejectsClipboardAndApplicationAccessWhenDisabled()
+    public async Task WindowsAutomationService_RejectsClipboardAndApplicationAccessWhenDisabled()
     {
         var service = new WindowsAutomationService();
 
-        Assert.Throws<UnauthorizedAccessException>(() => service.GetClipboardText());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetClipboardTextAsync(TestContext.Current.CancellationToken));
         Assert.Throws<UnauthorizedAccessException>(() => service.GetProcesses());
     }
 
@@ -242,13 +275,13 @@ public class WindowsUpdaterServiceTests
     {
         var packagePath = Path.Combine(Path.GetTempPath(), $"aurora-{Guid.NewGuid():N}.bin");
         var contents = System.Text.Encoding.UTF8.GetBytes("aurora update");
-        await File.WriteAllBytesAsync(packagePath, contents);
+        await File.WriteAllBytesAsync(packagePath, contents, TestContext.Current.CancellationToken);
 
         try
         {
             var hash = Convert.ToHexString(SHA256.HashData(contents));
-            Assert.True(await WindowsUpdaterService.VerifySha256Async(packagePath, hash));
-            Assert.False(await WindowsUpdaterService.VerifySha256Async(packagePath, new string('0', 64)));
+            Assert.True(await WindowsUpdaterService.VerifySha256Async(packagePath, hash, TestContext.Current.CancellationToken));
+            Assert.False(await WindowsUpdaterService.VerifySha256Async(packagePath, new string('0', 64), TestContext.Current.CancellationToken));
         }
         finally
         {
