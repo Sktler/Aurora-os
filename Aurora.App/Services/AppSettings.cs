@@ -23,6 +23,7 @@ namespace Aurora.App.Services
         public string HomeAssistantToken { get; set; } = "";
         public string HubitatUrl { get; set; } = "";
         public string HubitatToken { get; set; } = "";
+        public bool SmartHomeCatalogIncludeRawMetadata { get; set; } = false;
         public bool AlexaConnected { get; set; } = false;
         public string GoogleClientId { get; set; } = "";
         public string GoogleClientSecret { get; set; } = "";

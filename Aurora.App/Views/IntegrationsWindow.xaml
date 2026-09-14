@@ -716,12 +716,19 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Unified device catalog" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <Button Content="Refresh" Margin="12,0,0,0" Padding="14,6"
+                            <Button Content="Get devices" Margin="12,0,0,0" Padding="14,6"
                                     Command="{Binding DiscoverDevicesCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
                         <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
+
+                        <CheckBox IsChecked="{Binding CatalogIncludeNotes, Mode=TwoWay}"
+                                  Content="Include notes / raw metadata in catalog"
+                                  Margin="0,0,0,10"
+                                  Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="Turn this on to show each device's raw hub metadata alongside the normalized catalog fields."
+                                   Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                         <UniformGrid Columns="3" Margin="0,0,0,12">
                             <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">

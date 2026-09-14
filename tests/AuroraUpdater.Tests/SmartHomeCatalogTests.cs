@@ -95,6 +95,27 @@ public class SmartHomeCatalogTests
     }
 
     [Fact]
+    public void Format_IncludesRawMetadata_WhenRequested()
+    {
+        var device = new DiscoveredDevice
+        {
+            Source = "Hubitat",
+            Id = "17",
+            Name = "Hall Lamp",
+            Type = "dimmer",
+            State = "off",
+            Room = "Hallway",
+            Capabilities = new List<string> { "Switch" },
+            SupportedActions = new List<string> { "setLevel" },
+            RawMetadata = "{\"note\":\"bedside lamp\"}"
+        };
+
+        var formatted = SmartHomeCatalogService.Format(new[] { device }, includeRawMetadata: true);
+
+        Assert.Contains("raw: {\"note\":\"bedside lamp\"}", formatted);
+    }
+
+    [Fact]
     public void SmartThings_TryResolveCommand_MapsSetLevel()
     {
         var ok = SmartThingsClient.TryResolveCommand(

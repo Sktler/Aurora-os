@@ -84,8 +84,9 @@ namespace Aurora.App.Services
             var room = input.TryGetProperty("room", out var roomValue) ? roomValue.GetString() ?? "" : "";
             var type = input.TryGetProperty("type", out var typeValue) ? typeValue.GetString() ?? "" : "";
             var capability = input.TryGetProperty("capability", out var capabilityValue) ? capabilityValue.GetString() ?? "" : "";
-            var includeRawMetadata = input.TryGetProperty("include_raw_metadata", out var rawValue) &&
-                                     rawValue.ValueKind == JsonValueKind.True;
+            var includeRawMetadata = App.Settings.SmartHomeCatalogIncludeRawMetadata ||
+                                     (input.TryGetProperty("include_raw_metadata", out var rawValue) &&
+                                     rawValue.ValueKind == JsonValueKind.True);
 
             var filtered = SmartHomeCatalogService.Filter(snapshot.Devices, source, room, type, capability);
             var sb = new StringBuilder();
