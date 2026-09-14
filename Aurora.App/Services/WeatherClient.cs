@@ -47,11 +47,11 @@ namespace Aurora.App.Services
             if (observation.HasValue)
             {
                 var wind = string.IsNullOrWhiteSpace(observation.Value.WindDirection) ? observation.Value.WindSpeed : $"{observation.Value.WindSpeed} {observation.Value.WindDirection}";
-                return new WeatherSnapshot(location, observation.Value.TemperatureF, string.IsNullOrWhiteSpace(observation.Value.Condition) ? forecastCondition : observation.Value.Condition, wind, pop, true, alerts.Count, alerts.Summary);
+                return new WeatherSnapshot(location, observation.Value.TemperatureF, string.IsNullOrWhiteSpace(observation.Value.Condition) ? forecastCondition : observation.Value.Condition, wind, pop, true, alerts.Items.Count, alerts.Summary);
             }
 
             var forecastWindText = string.IsNullOrWhiteSpace(forecastDirection) ? forecastWind : $"{forecastWind} {forecastDirection}";
-            return new WeatherSnapshot(location, forecastTemp, forecastCondition, forecastWindText, pop, false, alerts.Count, alerts.Summary);
+            return new WeatherSnapshot(location, forecastTemp, forecastCondition, forecastWindText, pop, false, alerts.Items.Count, alerts.Summary);
         }
 
         public async Task<string> GetCurrentWeatherAsync(string place)
@@ -68,6 +68,21 @@ namespace Aurora.App.Services
             catch (HttpRequestException ex) { return $"Couldn't reach the National Weather Service: {ex.Message}"; }
             catch (TaskCanceledException) { return "The National Weather Service request timed out."; }
             catch (Exception ex) { return $"Couldn't get NWS weather: {ex.Message}"; }
+        }
+
+        public async Task<string> GetActiveAlertsAsync(string place)
+        {
+            if (string.IsNullOrWhiteSpace(place)) return "No location given.";
+
+            try
+            {
+                var (lat, lon) = await ResolveLocationAsync(place);
+                var alerts = await GetActiveAlertsAsync(lat, lon);
+                return $"{alerts.Summary}{Environment.NewLine}{FormatAlertDetails(alerts.Items)} Source: National Weather Service.";
+            }
+            catch (HttpRequestException ex) { return $"Couldn't reach the National Weather Service: {ex.Message}"; }
+            catch (TaskCanceledException) { return "The National Weather Service request timed out."; }
+            catch (Exception ex) { return $"Couldn't get NWS alerts: {ex.Message}"; }
         }
 
         private async Task<(double Lat, double Lon)> ResolveLocationAsync(string place)
@@ -91,7 +106,7 @@ namespace Aurora.App.Services
                 // approach, which can miss county alerts.
                 using var alerts = await GetJsonAsync($"/alerts/active?point={latitude.ToString(CultureInfo.InvariantCulture)},{longitude.ToString(CultureInfo.InvariantCulture)}");
                 if (!alerts.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
-                    return new ActiveAlerts(0, "No active NWS alerts.");
+                    return new ActiveAlerts(Array.Empty<ActiveAlert>(), "No active NWS alerts.");
 
                 var items = features.EnumerateArray()
                     .Select(feature => feature.TryGetProperty("properties", out var properties) ? properties : default)
@@ -100,14 +115,18 @@ namespace Aurora.App.Services
                     {
                         Event = properties.TryGetProperty("event", out var eventValue) ? eventValue.GetString() : null,
                         Headline = properties.TryGetProperty("headline", out var headlineValue) ? headlineValue.GetString() : null,
-                        Severity = properties.TryGetProperty("severity", out var severityValue) ? severityValue.GetString() : null
+                        Severity = properties.TryGetProperty("severity", out var severityValue) ? severityValue.GetString() : null,
+                        Area = properties.TryGetProperty("areaDesc", out var areaValue) ? areaValue.GetString() : null,
+                        Description = properties.TryGetProperty("description", out var descriptionValue) ? descriptionValue.GetString() : null,
+                        Instruction = properties.TryGetProperty("instruction", out var instructionValue) ? instructionValue.GetString() : null
                     })
                     .Where(x => !string.IsNullOrWhiteSpace(x.Event) || !string.IsNullOrWhiteSpace(x.Headline))
-                    .GroupBy(x => $"{x.Event}|{x.Headline}", StringComparer.OrdinalIgnoreCase)
+                    .GroupBy(x => $"{x.Event}|{x.Headline}|{x.Area}", StringComparer.OrdinalIgnoreCase)
                     .Select(g => g.First())
+                    .Select(x => new ActiveAlert(x.Event, x.Headline, x.Severity, x.Area, x.Description, x.Instruction))
                     .ToList();
 
-                if (items.Count == 0) return new ActiveAlerts(0, "No active NWS alerts.");
+                if (items.Count == 0) return new ActiveAlerts(Array.Empty<ActiveAlert>(), "No active NWS alerts.");
 
                 var descriptions = items.Take(3).Select(x =>
                 {
@@ -115,20 +134,42 @@ namespace Aurora.App.Services
                     return string.IsNullOrWhiteSpace(x.Severity) ? title : $"{title} ({x.Severity})";
                 });
                 var suffix = items.Count > 3 ? $"; plus {items.Count - 3} more" : "";
-                return new ActiveAlerts(items.Count, $"Active NWS alerts ({items.Count}): {string.Join("; ", descriptions)}{suffix}.");
+                return new ActiveAlerts(items, $"Active NWS alerts ({items.Count}): {string.Join("; ", descriptions)}{suffix}.");
             }
             catch (HttpRequestException)
             {
-                return new ActiveAlerts(0, "NWS alerts unavailable.");
+                return new ActiveAlerts(Array.Empty<ActiveAlert>(), "NWS alerts unavailable.");
             }
             catch (TaskCanceledException)
             {
-                return new ActiveAlerts(0, "NWS alerts request timed out.");
+                return new ActiveAlerts(Array.Empty<ActiveAlert>(), "NWS alerts request timed out.");
             }
             catch
             {
-                return new ActiveAlerts(0, "NWS alerts unavailable.");
+                return new ActiveAlerts(Array.Empty<ActiveAlert>(), "NWS alerts unavailable.");
             }
+        }
+
+        private static string FormatAlertDetails(System.Collections.Generic.IReadOnlyList<ActiveAlert> alerts)
+        {
+            if (alerts.Count == 0) return "No active NWS alerts.";
+
+            return string.Join(
+                Environment.NewLine + Environment.NewLine,
+                alerts.Select((alert, index) =>
+                {
+                    var lines = new System.Collections.Generic.List<string>
+                    {
+                        $"Alert {index + 1}: {alert.Headline ?? alert.Event ?? "NWS alert"}"
+                    };
+                    if (!string.IsNullOrWhiteSpace(alert.Event) && !string.Equals(alert.Event, alert.Headline, StringComparison.OrdinalIgnoreCase))
+                        lines.Add($"Event: {alert.Event}");
+                    if (!string.IsNullOrWhiteSpace(alert.Severity)) lines.Add($"Severity: {alert.Severity}");
+                    if (!string.IsNullOrWhiteSpace(alert.Area)) lines.Add($"Affected areas: {alert.Area}");
+                    if (!string.IsNullOrWhiteSpace(alert.Description)) lines.Add($"Description: {alert.Description}");
+                    if (!string.IsNullOrWhiteSpace(alert.Instruction)) lines.Add($"Instructions: {alert.Instruction}");
+                    return string.Join(Environment.NewLine, lines);
+                }));
         }
 
         private async Task<Observation?> TryGetLatestObservationAsync(string? stationsUrl)
@@ -174,6 +215,7 @@ namespace Aurora.App.Services
 
         private static double CelsiusToFahrenheit(double celsius) => celsius * 9.0 / 5.0 + 32.0;
         private readonly record struct Observation(double TemperatureF, string Condition, string WindSpeed, string WindDirection);
-        private readonly record struct ActiveAlerts(int Count, string Summary);
+        private readonly record struct ActiveAlert(string? Event, string? Headline, string? Severity, string? Area, string? Description, string? Instruction);
+        private readonly record struct ActiveAlerts(System.Collections.Generic.IReadOnlyList<ActiveAlert> Items, string Summary);
     }
 }
