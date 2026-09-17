@@ -43,6 +43,8 @@ public sealed class ParticleOrbTests
         Assert.Contains("MouthScale", xaml);
         Assert.Contains("LeftEyeScale.ScaleY", code);
         Assert.Contains("MouthScale.ScaleY", code);
+        Assert.Contains("IsRespondingProperty", code);
+        Assert.Contains("MouthScale.ScaleY = IsResponding", code);
         Assert.DoesNotContain("RotationSpeed", code);
         Assert.DoesNotContain("OrbScale", code);
     }
