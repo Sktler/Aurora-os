@@ -5,11 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Speech.AudioFormat;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using NAudio.Wave;
 
 namespace Aurora.App.Services
 {
@@ -46,6 +48,8 @@ namespace Aurora.App.Services
         private readonly bool _synthAvailable;
         private readonly HttpClient _http = new();
         private SpeechRecognitionEngine? _continuousRecognizer;
+        private WaveInEvent? _micCapture;
+        private LiveMicrophoneStream? _micStream;
         private Action? _onStoppedExternally;
 
         private const int MaxRecentTranscripts = 50;
@@ -341,16 +345,30 @@ namespace Aurora.App.Services
 
         private static async Task PlayWavAsync(byte[] wavBytes, Action<bool>? onSpeechActivityChanged)
         {
+            // Only the cloud voices (OpenAI/ElevenLabs/Azure) go through here, so the
+            // user's chosen speaker device applies to all three uniformly - the offline
+            // Windows voice below always uses the system default output instead, since
+            // System.Speech has no API to target a specific playback device.
+            var deviceNumber = AudioDeviceCatalog.ResolveOutputDeviceNumber(App.Settings.SpeakerDeviceName);
+
             using var stream = new MemoryStream(wavBytes);
-            var player = new System.Media.SoundPlayer(stream);
-            player.Load();
+            using var reader = new WaveFileReader(stream);
+            using var output = deviceNumber >= 0 ? new WaveOutEvent { DeviceNumber = deviceNumber } : new WaveOutEvent();
+            output.Init(reader);
+
+            var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OnPlaybackStopped(object? _, StoppedEventArgs __) => completed.TrySetResult();
+            output.PlaybackStopped += OnPlaybackStopped;
+
             onSpeechActivityChanged?.Invoke(true);
             try
             {
-                await Task.Run(player.PlaySync).ConfigureAwait(false);
+                output.Play();
+                await completed.Task.ConfigureAwait(false);
             }
             finally
             {
+                output.PlaybackStopped -= OnPlaybackStopped;
                 onSpeechActivityChanged?.Invoke(false);
             }
         }
@@ -411,7 +429,32 @@ namespace Aurora.App.Services
             try
             {
                 var recognizer = new SpeechRecognitionEngine(CultureInfo.CurrentCulture);
-                recognizer.SetInputToDefaultAudioDevice();
+
+                var micDeviceNumber = AudioDeviceCatalog.ResolveInputDeviceNumber(App.Settings.MicrophoneDeviceName);
+                WaveInEvent? micCapture = null;
+                LiveMicrophoneStream? micStream = null;
+                if (micDeviceNumber >= 0)
+                {
+                    // A specific microphone was chosen - System.Speech itself has no API to
+                    // pick a capture device, so NAudio captures from it directly and the
+                    // recognizer reads that audio through a small bridging stream instead.
+                    micStream = new LiveMicrophoneStream();
+                    micCapture = new WaveInEvent { DeviceNumber = micDeviceNumber, WaveFormat = new WaveFormat(16000, 16, 1) };
+                    micCapture.DataAvailable += (_, e) =>
+                    {
+                        if (e.BytesRecorded <= 0) return;
+                        var chunk = new byte[e.BytesRecorded];
+                        Array.Copy(e.Buffer, chunk, e.BytesRecorded);
+                        micStream.Push(chunk);
+                    };
+                    recognizer.SetInputToAudioStream(micStream,
+                        new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, AudioBitsPerSample.Sixteen, AudioChannel.Mono, 32000, 2, null));
+                }
+                else
+                {
+                    recognizer.SetInputToDefaultAudioDevice();
+                }
+
                 recognizer.LoadGrammar(new DictationGrammar());
                 recognizer.SpeechRecognized += (s, e) =>
                 {
@@ -436,8 +479,11 @@ namespace Aurora.App.Services
                     // background noise or a false start, not something worth interrupting for.
                 };
                 recognizer.RecognizeAsync(RecognizeMode.Multiple);
+                micCapture?.StartRecording();
 
                 _continuousRecognizer = recognizer;
+                _micCapture = micCapture;
+                _micStream = micStream;
                 _onStoppedExternally = onStoppedByAnotherListener;
                 return true;
             }
@@ -445,6 +491,10 @@ namespace Aurora.App.Services
             {
                 // No recognizer installed for this culture, or no microphone available.
                 _continuousRecognizer = null;
+                _micCapture?.Dispose();
+                _micCapture = null;
+                _micStream?.Dispose();
+                _micStream = null;
                 _onStoppedExternally = null;
                 return false;
             }
@@ -464,6 +514,13 @@ namespace Aurora.App.Services
             _continuousRecognizer = null;
             try { recognizer.RecognizeAsyncStop(); } catch { /* ignore */ }
             recognizer.Dispose();
+
+            try { _micCapture?.StopRecording(); } catch { /* ignore */ }
+            _micCapture?.Dispose();
+            _micCapture = null;
+            _micStream?.Complete();
+            _micStream?.Dispose();
+            _micStream = null;
         }
 
         private void RecordTranscript(string rawText, double confidence, bool accepted)

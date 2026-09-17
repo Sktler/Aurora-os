@@ -40,6 +40,15 @@ namespace Aurora.App.Services
         public bool JamendoConnected { get; set; } = false;
         public string DatabasePath { get; set; } = "";
         public string VoiceName { get; set; } = "";
+        /// <summary>Name of the microphone to capture from; empty means "use whatever
+        /// Windows currently has set as the system default recording device".</summary>
+        public string MicrophoneDeviceName { get; set; } = AudioDeviceCatalog.SystemDefaultDeviceName;
+        /// <summary>Name of the speaker/output device to play cloud TTS audio through; empty
+        /// means "use whatever Windows currently has set as the system default playback
+        /// device". Only applies to the OpenAI/ElevenLabs/Azure voices - the offline Windows
+        /// voice always uses the system default output, since System.Speech has no API to
+        /// target a specific playback device.</summary>
+        public string SpeakerDeviceName { get; set; } = AudioDeviceCatalog.SystemDefaultDeviceName;
         public string TtsProvider { get; set; } = "openai";
         public string OpenAiTtsApiKey { get; set; } = "";
         public string OpenAiTtsVoice { get; set; } = "alloy";
