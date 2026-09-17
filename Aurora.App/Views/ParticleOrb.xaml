@@ -20,6 +20,26 @@
             <Image Source="/Aurora;component/Assets/AuroraFace.png"
                    Stretch="Uniform"
                    Opacity="0.96"/>
+            <Viewbox Stretch="Uniform"
+                     IsHitTestVisible="False">
+                <Canvas Width="180" Height="100">
+                    <Ellipse Width="13" Height="5" Canvas.Left="68" Canvas.Top="40" Fill="#B8F8FF" Opacity="0.88">
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="LeftEyeScale" CenterX="6.5" CenterY="2.5"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Ellipse Width="13" Height="5" Canvas.Left="98" Canvas.Top="40" Fill="#B8F8FF" Opacity="0.88">
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="RightEyeScale" CenterX="6.5" CenterY="2.5"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Border Width="18" Height="7" Canvas.Left="81" Canvas.Top="64" CornerRadius="0,0,9,9" Background="#9CF5FF" Opacity="0.8">
+                        <Border.RenderTransform>
+                            <ScaleTransform x:Name="MouthScale" CenterX="9" CenterY="0"/>
+                        </Border.RenderTransform>
+                    </Border>
+                </Canvas>
+            </Viewbox>
         </Grid>
     </Grid>
 </UserControl>

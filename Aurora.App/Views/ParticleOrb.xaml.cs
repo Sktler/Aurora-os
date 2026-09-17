@@ -6,7 +6,7 @@ namespace Aurora.App.Views
 {
     /// <summary>
     /// Displays the supplied Aurora artwork with a lightweight, frame-rate-independent
-    /// gentle nodding and two-axis movement. The original facial features move with the artwork.
+    /// gentle nodding, two-axis movement, and expressive eye and mouth overlays.
     /// </summary>
     public partial class ParticleOrb : UserControl
     {
@@ -51,6 +51,14 @@ namespace Aurora.App.Views
             OrbNod.Angle = Math.Sin(motion * 0.65) * NodAmount;
             OrbTranslation.X = Math.Sin(motion) * DriftAmount;
             OrbTranslation.Y = Math.Cos(motion * 0.8) * DriftAmount;
+
+            double blinkProgress = t % 3.5;
+            double eyeScale = blinkProgress < 0.22
+                ? 0.12 + 0.88 * Math.Abs(blinkProgress - 0.11) / 0.11
+                : 1;
+            LeftEyeScale.ScaleY = eyeScale;
+            RightEyeScale.ScaleY = eyeScale;
+            MouthScale.ScaleY = 0.45 + (Math.Sin(motion * 2.4) + 1) * 0.45;
         }
     }
 }
