@@ -51,7 +51,6 @@ namespace Aurora.App.Views
             OrbNod.Angle = Math.Sin(motion * 0.65) * NodAmount;
             OrbTranslation.X = Math.Sin(motion) * DriftAmount;
             OrbTranslation.Y = Math.Cos(motion * 0.8) * DriftAmount;
-
             double blinkProgress = t % 3.5;
             double eyeScale = blinkProgress < 0.22
                 ? 0.12 + 0.88 * Math.Abs(blinkProgress - 0.11) / 0.11
