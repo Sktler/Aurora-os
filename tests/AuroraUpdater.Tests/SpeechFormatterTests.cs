@@ -34,7 +34,7 @@ public class SpeechFormatterTests
     public void BuildAzureSsml_preserves_every_word_and_adds_pacing_markup_only()
     {
         var text = "Sure, I can help with that. Give me one moment.";
-        var ssml = SpeechFormatter.BuildAzureSsml(text, "en-US-JennyNeural");
+        var ssml = SpeechFormatter.BuildAzureSsml(text, "en-US-JennyNeural", SpeechFormatter.TargetWordsPerMinute);
 
         // The reply's actual words are untouched - never rewritten or corrected.
         Assert.Contains("Sure", ssml);
@@ -43,7 +43,7 @@ public class SpeechFormatterTests
 
         // Pacing/pause hints are added, not the wording itself.
         Assert.Contains("en-US-JennyNeural", ssml);
-        Assert.Contains("<prosody rate='-10%'>", ssml);
+        Assert.Contains("<prosody rate=", ssml);
         Assert.Contains("<break time=\"150ms\"/>", ssml); // comma pause
         Assert.Contains("<break time=\"350ms\"/>", ssml); // sentence pause
     }
@@ -51,18 +51,45 @@ public class SpeechFormatterTests
     [Fact]
     public void BuildAzureSsml_escapes_voice_name_and_text_for_xml_safety()
     {
-        var ssml = SpeechFormatter.BuildAzureSsml("Tom & Jerry said \"hi\"", "en-US-JennyNeural");
+        var ssml = SpeechFormatter.BuildAzureSsml("Tom & Jerry said \"hi\"", "en-US-JennyNeural", SpeechFormatter.TargetWordsPerMinute);
 
         Assert.DoesNotContain("Tom & Jerry", ssml);
         Assert.Contains("Tom &amp; Jerry", ssml);
     }
 
-    [Fact]
-    public void Windows_and_openai_pacing_hints_target_a_slightly_slower_than_default_pace()
+    [Theory]
+    [InlineData(90)]
+    [InlineData(160)]
+    [InlineData(220)]
+    public void Pace_conversions_stay_within_each_providers_valid_range_across_the_whole_wpm_range(double wpm)
     {
-        // Both nudge speed down from each engine's own default rather than leaving it
-        // unset, aiming for the requested 150-170 wpm natural pace.
-        Assert.True(SpeechFormatter.WindowsSapiRate < 0);
-        Assert.InRange(SpeechFormatter.OpenAiSpeechSpeed, 0.25, 1.0);
+        Assert.InRange(SpeechFormatter.WindowsSapiRateFor(wpm), -10, 10);
+        Assert.InRange(SpeechFormatter.OpenAiSpeechSpeedFor(wpm), 0.25, 4.0);
+        Assert.Matches(@"^[+-]\d+%$", SpeechFormatter.AzureProsodyRateFor(wpm));
+    }
+
+    [Fact]
+    public void Faster_wpm_target_never_produces_a_slower_pace_conversion()
+    {
+        var slow = SpeechFormatter.WindowsSapiRateFor(100);
+        var fast = SpeechFormatter.WindowsSapiRateFor(200);
+        Assert.True(fast > slow);
+
+        Assert.True(SpeechFormatter.OpenAiSpeechSpeedFor(200) > SpeechFormatter.OpenAiSpeechSpeedFor(100));
+    }
+
+    [Fact]
+    public void ClampWordsPerMinute_keeps_out_of_range_values_within_bounds()
+    {
+        Assert.Equal(SpeechFormatter.MinWordsPerMinute, SpeechFormatter.ClampWordsPerMinute(0));
+        Assert.Equal(SpeechFormatter.MaxWordsPerMinute, SpeechFormatter.ClampWordsPerMinute(9999));
+        Assert.Equal(160, SpeechFormatter.ClampWordsPerMinute(160));
+    }
+
+    [Fact]
+    public void AppSettings_defaults_the_speech_pace_to_the_natural_target()
+    {
+        var settings = new AppSettings();
+        Assert.Equal(SpeechFormatter.TargetWordsPerMinute, settings.SpeechPaceWpm);
     }
 }

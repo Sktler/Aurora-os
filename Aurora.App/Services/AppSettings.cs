@@ -40,6 +40,15 @@ namespace Aurora.App.Services
         public bool JamendoConnected { get; set; } = false;
         public string DatabasePath { get; set; } = "";
         public string VoiceName { get; set; } = "";
+        /// <summary>Name of the microphone to capture from; empty means "use whatever
+        /// Windows currently has set as the system default recording device".</summary>
+        public string MicrophoneDeviceName { get; set; } = AudioDeviceCatalog.SystemDefaultDeviceName;
+        /// <summary>Name of the speaker/output device to play cloud TTS audio through; empty
+        /// means "use whatever Windows currently has set as the system default playback
+        /// device". Only applies to the OpenAI/ElevenLabs/Azure voices - the offline Windows
+        /// voice always uses the system default output, since System.Speech has no API to
+        /// target a specific playback device.</summary>
+        public string SpeakerDeviceName { get; set; } = AudioDeviceCatalog.SystemDefaultDeviceName;
         public string TtsProvider { get; set; } = "openai";
         public string OpenAiTtsApiKey { get; set; } = "";
         public string OpenAiTtsVoice { get; set; } = "alloy";
@@ -54,6 +63,11 @@ namespace Aurora.App.Services
         /// rather than a real (if imperfectly transcribed) request. Starting point requested
         /// for Aurora's voice pipeline; tune up for a noisy room or down for a quiet one.</summary>
         public double VoiceConfidenceThreshold { get; set; } = Aurora.App.Services.VoiceTranscriptFilter.DefaultConfidenceThreshold;
+        /// <summary>Target speaking pace in words per minute for replies, applied to whichever
+        /// TTS provider is active (see <see cref="Aurora.App.Services.SpeechFormatter"/>).
+        /// Natural conversational pace is roughly 150-170 wpm; adjustable per user preference
+        /// without changing the wording spoken.</summary>
+        public double SpeechPaceWpm { get; set; } = Aurora.App.Services.SpeechFormatter.TargetWordsPerMinute;
         public bool SpeakRepliesByDefault { get; set; } = true;
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";

@@ -49,6 +49,22 @@ public sealed class VoicePipelineTests
         Assert.DoesNotContain("Dictionary", code);
     }
 
+    [Fact]
+    public void Settings_ui_exposes_adjustable_voice_confidence_and_speaking_pace()
+    {
+        var repoRoot = FindRepositoryRoot();
+        var viewModel = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "ViewModels", "IntegrationsViewModel.cs"));
+        var xaml = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "Views", "IntegrationsWindow.xaml"));
+
+        Assert.Contains("_voiceConfidenceThreshold = App.Settings.VoiceConfidenceThreshold", viewModel);
+        Assert.Contains("_speechPaceWpm = App.Settings.SpeechPaceWpm", viewModel);
+        Assert.Contains("App.Settings.VoiceConfidenceThreshold = Services.VoiceTranscriptFilter", viewModel);
+        Assert.Contains("App.Settings.SpeechPaceWpm = SpeechFormatter.ClampWordsPerMinute(SpeechPaceWpm)", viewModel);
+
+        Assert.Contains("Binding VoiceConfidenceThreshold", xaml);
+        Assert.Contains("Binding SpeechPaceWpm", xaml);
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
