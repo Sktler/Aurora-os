@@ -31,8 +31,15 @@ provider picker in Setup/Settings is now a dropdown covering all four, each
 with its own free-text model field. Worth repeating the v1.1 trade-off
 directly: **Gemini and Groq are genuinely free; ChatGPT and Claude are not.**
 OpenAI and Anthropic are metered, pay-as-you-go APIs with no permanent free
-tier — picking either means adding a card to that provider's account. Nothing
-about Gemini/Groq changes if you never touch the new options. What's listed
+tier — picking either means adding a card to that provider's account. v1.9
+added an experimental fifth option, **GitHub Copilot** — but unlike the
+other four, this one is *unofficial*: GitHub doesn't publish a public chat
+API for Copilot, so this integration works by exchanging your GitHub token
+through the same internal, undocumented endpoint the official editor
+extensions use. It requires an account with an active Copilot subscription,
+is not sanctioned by GitHub, and could stop working or be blocked at any
+time — the setup window and provider catalog both call this out plainly.
+Nothing about Gemini/Groq changes if you never touch the new options. What's listed
 under "Known follow-ups" below is out of scope for this release — tracked
 for a possible v2, not missing pieces of v1.
 

@@ -101,17 +101,17 @@ namespace Aurora.App.Services
             new()
             {
                 Key = "copilot",
-                DisplayName = "GitHub Copilot",
+                DisplayName = "GitHub Copilot (unofficial)",
                 DefaultModel = "gpt-4o",
                 ModelExamples = "gpt-4o, claude-sonnet-4, o3-mini, gemini-2.5-pro",
-                KeyHint = "Use a GitHub personal access token or Copilot-enabled token from your GitHub account settings.",
+                KeyHint = "Paste a GitHub personal access token for an account with an active Copilot subscription. This uses GitHub's internal, undocumented Copilot API (the same one editor extensions use) - it is unofficial, unsupported, and may break or be blocked without notice.",
                 GetKeyUrl = "https://github.com/settings/tokens/new",
                 GetKeyButtonText = "Get a token",
                 DocsUrl = "https://docs.github.com/en/copilot/customizing-copilot/using-github-copilot-in-your-ide",
                 RateLimitsUrl = "https://docs.github.com/en/billing/managing-billing-for-github-copilot/about-billing-for-github-copilot",
                 ModelsUrl = "https://github.com/features/copilot",
                 PricingUrl = "https://github.com/features/copilot#pricing",
-                CostNote = "GitHub Copilot is a paid subscription service for GitHub users. If you already have a Copilot plan, this lets Aurora use the same model family you use in the IDE.",
+                CostNote = "GitHub Copilot is a paid subscription service. This integration is unofficial - it works by exchanging your token through GitHub's internal Copilot endpoint, which is not a publicly documented or supported API and may violate GitHub's Copilot terms of use. Use at your own risk.",
                 BundlesImageGen = false,
                 KeyShapePrefix = "ghp_"
             }

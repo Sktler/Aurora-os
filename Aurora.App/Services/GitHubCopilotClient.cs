@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Aurora.App.Models;
 
@@ -11,38 +12,106 @@ namespace Aurora.App.Services
 {
     /// <summary>
     /// Thin wrapper around GitHub Copilot's chat completions API. It speaks the same
-    /// OpenAI-shaped JSON payload as the other hosted chat providers, but uses
-    /// GitHub's Copilot host and a GitHub bearer token instead of an OpenAI key.
+    /// OpenAI-shaped JSON payload as the other hosted chat providers, but authentication
+    /// is not a simple bearer key: api.githubcopilot.com only accepts a short-lived
+    /// Copilot session token, not a raw GitHub personal access token. That session token
+    /// is obtained by exchanging the configured GitHub token against GitHub's internal
+    /// (undocumented) token endpoint, the same mechanism official editor extensions use.
+    /// This is unofficial and unsupported - GitHub can change or block it at any time,
+    /// and it only works for accounts with an active Copilot subscription/entitlement.
     /// </summary>
     public class GitHubCopilotClient : IChatEngine
     {
         private readonly HttpClient _http;
         private readonly string _model;
-        private readonly string _apiKey;
+        private readonly string _apiKey; // GitHub token supplied by the user; exchanged for a session token below.
         private const string Endpoint = "https://api.githubcopilot.com/chat/completions";
         private const string ModelsEndpoint = "https://api.githubcopilot.com/models";
+        private const string TokenExchangeEndpoint = "https://api.github.com/copilot_internal/v2/token";
+
+        // Spoofed client identification - api.githubcopilot.com and the token-exchange
+        // endpoint both reject requests that don't look like they came from a real editor.
+        private const string EditorVersion = "vscode/1.85.1";
+        private const string EditorPluginVersion = "copilot-chat/0.11.1";
+        private const string CopilotUserAgent = "GithubCopilot/1.155.0";
+        private const string IntegrationId = "vscode-chat";
+
+        private readonly SemaphoreSlim _tokenLock = new(1, 1);
+        private string? _sessionToken;
+        private DateTimeOffset _sessionTokenExpiresAt = DateTimeOffset.MinValue;
 
         public GitHubCopilotClient(string apiKey, string model)
         {
             _apiKey = apiKey ?? "";
             _model = string.IsNullOrWhiteSpace(model) ? "gpt-4o" : model;
-
             _http = new HttpClient();
-            if (!string.IsNullOrWhiteSpace(_apiKey))
-            {
-                _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-                _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                _http.DefaultRequestHeaders.UserAgent.ParseAdd("Aurora/1.0");
-            }
         }
 
         public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+
+        /// <summary>Exchanges the configured GitHub token for a short-lived Copilot session
+        /// token (valid ~25 minutes), refreshing a minute before expiry. Throws if the
+        /// exchange fails, e.g. the token lacks Copilot access.</summary>
+        private async Task<string> GetSessionTokenAsync()
+        {
+            if (_sessionToken != null && DateTimeOffset.UtcNow < _sessionTokenExpiresAt.AddMinutes(-1))
+                return _sessionToken;
+
+            await _tokenLock.WaitAsync();
+            try
+            {
+                if (_sessionToken != null && DateTimeOffset.UtcNow < _sessionTokenExpiresAt.AddMinutes(-1))
+                    return _sessionToken;
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, TokenExchangeEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("token", _apiKey);
+                request.Headers.TryAddWithoutValidation("Editor-Version", EditorVersion);
+                request.Headers.TryAddWithoutValidation("Editor-Plugin-Version", EditorPluginVersion);
+                request.Headers.UserAgent.ParseAdd(CopilotUserAgent);
+
+                var response = await _http.SendAsync(request);
+                var text = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                    throw new InvalidOperationException($"GitHub Copilot token exchange failed ({(int)response.StatusCode}): {text}. This account may not have an active Copilot subscription.");
+
+                using var doc = JsonDocument.Parse(text);
+                var token = doc.RootElement.GetProperty("token").GetString()
+                    ?? throw new InvalidOperationException("GitHub Copilot token exchange response had no token.");
+                var expiresAtUnix = doc.RootElement.TryGetProperty("expires_at", out var expEl) && expEl.TryGetInt64(out var exp)
+                    ? exp
+                    : DateTimeOffset.UtcNow.AddMinutes(20).ToUnixTimeSeconds();
+
+                _sessionToken = token;
+                _sessionTokenExpiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresAtUnix);
+                return _sessionToken;
+            }
+            finally
+            {
+                _tokenLock.Release();
+            }
+        }
+
+        /// <summary>Builds a request against api.githubcopilot.com carrying a fresh session
+        /// token and the editor-identification headers it requires.</summary>
+        private async Task<HttpRequestMessage> BuildCopilotRequestAsync(HttpMethod method, string url, HttpContent? content = null)
+        {
+            var sessionToken = await GetSessionTokenAsync();
+            var request = new HttpRequestMessage(method, url) { Content = content };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", sessionToken);
+            request.Headers.TryAddWithoutValidation("Editor-Version", EditorVersion);
+            request.Headers.TryAddWithoutValidation("Editor-Plugin-Version", EditorPluginVersion);
+            request.Headers.TryAddWithoutValidation("Copilot-Integration-Id", IntegrationId);
+            request.Headers.TryAddWithoutValidation("OpenAI-Intent", "conversation-panel");
+            request.Headers.UserAgent.ParseAdd(CopilotUserAgent);
+            return request;
+        }
 
         public async Task<List<string>> ListModelsAsync()
         {
             if (!IsConfigured) return new List<string>();
 
-            var response = await _http.GetAsync(ModelsEndpoint);
+            using var request = await BuildCopilotRequestAsync(HttpMethod.Get, ModelsEndpoint);
+            var response = await _http.SendAsync(request);
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
                 throw new InvalidOperationException($"GitHub Copilot returned {(int)response.StatusCode}: {text}");
@@ -75,11 +144,12 @@ namespace Aurora.App.Services
 
             var body = new { model = _model, messages = BuildMessages(systemPrompt, history, newUserMessage) };
             var json = JsonSerializer.Serialize(body);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             try
             {
-                var response = await _http.PostAsync(Endpoint, content);
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                using var request = await BuildCopilotRequestAsync(HttpMethod.Post, Endpoint, content);
+                var response = await _http.SendAsync(request);
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -137,13 +207,14 @@ namespace Aurora.App.Services
             {
                 var body = new { model = _model, messages, tools };
                 var json = JsonSerializer.Serialize(body);
-                using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 string responseText;
                 HttpResponseMessage response;
                 try
                 {
-                    response = await _http.PostAsync(Endpoint, content);
+                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    using var request = await BuildCopilotRequestAsync(HttpMethod.Post, Endpoint, content);
+                    response = await _http.SendAsync(request);
                     responseText = await response.Content.ReadAsStringAsync();
                 }
                 catch (Exception ex)
