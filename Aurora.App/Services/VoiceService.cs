@@ -448,7 +448,7 @@ namespace Aurora.App.Services
                         micStream.Push(chunk);
                     };
                     recognizer.SetInputToAudioStream(micStream,
-                        new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, AudioBitsPerSample.Sixteen, AudioChannel.Mono, 32000, 2, null));
+                        new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, 16, 1, 32000, 2, null));
                 }
                 else
                 {
