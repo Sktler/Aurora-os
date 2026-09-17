@@ -48,11 +48,9 @@ namespace Aurora.App.Views
         {
             double t = (DateTime.UtcNow - _startTime).TotalSeconds;
             double motion = t * DriftSpeed * Math.PI;
-
             OrbNod.Angle = Math.Sin(motion * 0.65) * NodAmount;
             OrbTranslation.X = Math.Sin(motion) * DriftAmount;
             OrbTranslation.Y = Math.Cos(motion * 0.8) * DriftAmount;
-
         }
     }
 }
