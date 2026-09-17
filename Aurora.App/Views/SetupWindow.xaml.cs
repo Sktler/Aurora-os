@@ -30,7 +30,8 @@ namespace Aurora.App.Views
             var alreadyConfigured = !string.IsNullOrWhiteSpace(App.Settings.GeminiApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.GroqApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.OpenAIApiKey) ||
-                                     !string.IsNullOrWhiteSpace(App.Settings.ClaudeApiKey);
+                                     !string.IsNullOrWhiteSpace(App.Settings.ClaudeApiKey) ||
+                                     !string.IsNullOrWhiteSpace(App.Settings.GitHubCopilotApiKey);
             if (alreadyConfigured)
                 HeaderText.Text = "Aurora Setup";
         }
@@ -49,6 +50,7 @@ namespace Aurora.App.Views
             "groq" => App.Settings.GroqApiKey,
             "openai" => App.Settings.OpenAIApiKey,
             "claude" => App.Settings.ClaudeApiKey,
+            "copilot" => App.Settings.GitHubCopilotApiKey,
             _ => App.Settings.GeminiApiKey
         };
 
@@ -57,6 +59,7 @@ namespace Aurora.App.Views
             "groq" => App.Settings.GroqModel,
             "openai" => App.Settings.OpenAIModel,
             "claude" => App.Settings.ClaudeModel,
+            "copilot" => App.Settings.GitHubCopilotModel,
             _ => App.Settings.GeminiModel
         };
 
@@ -160,6 +163,7 @@ namespace Aurora.App.Views
                     "groq" => new GroqClient(key, p.DefaultModel),
                     "openai" => new OpenAIClient(key, p.DefaultModel),
                     "claude" => new ClaudeClient(key, p.DefaultModel),
+                    "copilot" => new GitHubCopilotClient(key, p.DefaultModel),
                     _ => new GeminiClient(key, p.DefaultModel)
                 };
                 var models = await client.ListModelsAsync();
@@ -213,6 +217,10 @@ namespace Aurora.App.Views
                 case "claude":
                     App.Settings.ClaudeApiKey = apiKey;
                     App.Settings.ClaudeModel = model;
+                    break;
+                case "copilot":
+                    App.Settings.GitHubCopilotApiKey = apiKey;
+                    App.Settings.GitHubCopilotModel = model;
                     break;
                 default:
                     App.Settings.GeminiApiKey = apiKey;

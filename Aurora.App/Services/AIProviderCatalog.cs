@@ -97,6 +97,23 @@ namespace Aurora.App.Services
                 CostNote = "This is a paid, metered API - Anthropic doesn't offer a permanent free tier (new accounts sometimes get a small trial credit that expires). You'll need a card on file for ongoing use.",
                 BundlesImageGen = false,
                 KeyShapePrefix = "sk-ant-"
+            },
+            new()
+            {
+                Key = "copilot",
+                DisplayName = "GitHub Copilot",
+                DefaultModel = "gpt-4o",
+                ModelExamples = "gpt-4o, claude-sonnet-4, o3-mini, gemini-2.5-pro",
+                KeyHint = "Use a GitHub personal access token or Copilot-enabled token from your GitHub account settings.",
+                GetKeyUrl = "https://github.com/settings/tokens/new",
+                GetKeyButtonText = "Get a token",
+                DocsUrl = "https://docs.github.com/en/copilot/customizing-copilot/using-github-copilot-in-your-ide",
+                RateLimitsUrl = "https://docs.github.com/en/billing/managing-billing-for-github-copilot/about-billing-for-github-copilot",
+                ModelsUrl = "https://github.com/features/copilot",
+                PricingUrl = "https://github.com/features/copilot#pricing",
+                CostNote = "GitHub Copilot is a paid subscription service for GitHub users. If you already have a Copilot plan, this lets Aurora use the same model family you use in the IDE.",
+                BundlesImageGen = false,
+                KeyShapePrefix = "ghp_"
             }
         };
 

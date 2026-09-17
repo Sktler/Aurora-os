@@ -2,9 +2,10 @@
 
 A Windows desktop app in the spirit of Zoey OS — a dashboard of specialized AI
 "companions," each with its own persona, powered by a chat engine you pick
-from a dropdown (Gemini, Groq, ChatGPT, or Claude), with home automation,
-real-time weather and web search, Spotify control, system volume control,
-scoped local file access, voice input/output, and free image generation.
+from a dropdown (Gemini, Groq, ChatGPT, Claude, or GitHub Copilot), with
+home automation, real-time weather and web search, Spotify control, system
+volume control, scoped local file access, voice input/output, and free image
+generation.
 
 **v1 is complete and closed out.** v1.1 swapped the engine from Anthropic's
 Claude (paid-only) to a free provider so the app costs nothing to run

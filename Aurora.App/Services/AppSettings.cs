@@ -16,6 +16,8 @@ namespace Aurora.App.Services
         public string OpenAIModel { get; set; } = "gpt-4o-mini";
         public string ClaudeApiKey { get; set; } = "";
         public string ClaudeModel { get; set; } = "claude-sonnet-5";
+        public string GitHubCopilotApiKey { get; set; } = "";
+        public string GitHubCopilotModel { get; set; } = "gpt-4o";
         public string ImageProvider { get; set; } = "gemini";
         public string ImageProviderApiKey { get; set; } = "";
         public string SmartThingsToken { get; set; } = "";
@@ -81,6 +83,7 @@ namespace Aurora.App.Services
                                "groq" => !string.IsNullOrWhiteSpace(settings.GroqApiKey),
                                "openai" => !string.IsNullOrWhiteSpace(settings.OpenAIApiKey),
                                "claude" => !string.IsNullOrWhiteSpace(settings.ClaudeApiKey),
+                               "copilot" => !string.IsNullOrWhiteSpace(settings.GitHubCopilotApiKey),
                                _ => !string.IsNullOrWhiteSpace(settings.GeminiApiKey)
                            });
                 }
