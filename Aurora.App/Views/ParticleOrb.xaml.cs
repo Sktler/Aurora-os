@@ -1,22 +1,18 @@
 using System;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 
 namespace Aurora.App.Views
 {
     /// <summary>
     /// Displays the supplied Aurora artwork with a lightweight, frame-rate-independent
-    /// breathing and rotation animation. Only animates while visible.
+    /// gentle nodding, two-axis movement, and animated facial features. Only animates while visible.
     /// </summary>
     public partial class ParticleOrb : UserControl
     {
-        private const double RotationSpeed = 7.5;
-        private const double BreathSpeed = 1.4;
-        private const double BreathAmount = 0.035;
+        private const double DriftSpeed = 1.4;
         private const double DriftAmount = 3.0;
+        private const double NodAmount = 2.5;
 
         private DateTime _startTime;
         private bool _animating;
@@ -51,14 +47,19 @@ namespace Aurora.App.Views
         private void OnRendering(object? sender, EventArgs e)
         {
             double t = (DateTime.UtcNow - _startTime).TotalSeconds;
-            double breath = Math.Sin(t * BreathSpeed * Math.PI * 2);
+            double motion = t * DriftSpeed * Math.PI;
 
-            OrbScale.ScaleX = 1 + breath * BreathAmount;
-            OrbScale.ScaleY = 1 + breath * BreathAmount;
-            OrbRotation.Angle = t * RotationSpeed;
-            OrbTranslation.X = Math.Sin(t * BreathSpeed * Math.PI) * DriftAmount;
-            OrbTranslation.Y = Math.Cos(t * BreathSpeed * Math.PI * 0.8) * DriftAmount;
-            OrbImage.Opacity = 0.91 + (breath + 1) * 0.045;
+            OrbNod.Angle = Math.Sin(motion * 0.65) * NodAmount;
+            OrbTranslation.X = Math.Sin(motion) * DriftAmount;
+            OrbTranslation.Y = Math.Cos(motion * 0.8) * DriftAmount;
+
+            double blinkProgress = t % 4.0;
+            double eyeScale = blinkProgress < 0.16
+                ? 0.18 + 0.82 * Math.Abs(blinkProgress - 0.08) / 0.08
+                : 1;
+            LeftEyeScale.ScaleY = eyeScale;
+            RightEyeScale.ScaleY = eyeScale;
+            MouthScale.ScaleY = 0.82 + (Math.Sin(motion * 2) + 1) * 0.18;
         }
     }
 }

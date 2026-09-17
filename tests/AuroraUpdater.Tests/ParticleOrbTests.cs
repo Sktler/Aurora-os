@@ -27,7 +27,7 @@ public sealed class ParticleOrbTests
     }
 
     [Fact]
-    public void Particle_orb_uses_the_provided_artwork_and_smooth_transforms()
+    public void Particle_orb_uses_the_provided_artwork_with_a_face_and_nodding_motion()
     {
         var repoRoot = FindRepositoryRoot();
         var xaml = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "Views", "ParticleOrb.xaml"));
@@ -35,9 +35,16 @@ public sealed class ParticleOrbTests
 
         Assert.Contains("AuroraOrb.png", xaml);
         Assert.Contains("RenderTransformOrigin", xaml);
-        Assert.Contains("OrbScale.ScaleX", code);
-        Assert.Contains("OrbRotation.Angle", code);
         Assert.Contains("OrbTranslation.X", code);
+        Assert.Contains("OrbNod", xaml);
+        Assert.Contains("LeftEyeScale", xaml);
+        Assert.Contains("RightEyeScale", xaml);
+        Assert.Contains("MouthScale", xaml);
+        Assert.Contains("OrbNod.Angle", code);
+        Assert.Contains("LeftEyeScale.ScaleY", code);
+        Assert.Contains("MouthScale.ScaleY", code);
+        Assert.DoesNotContain("RotationSpeed", code);
+        Assert.DoesNotContain("OrbScale", code);
     }
 
     private static string FindRepositoryRoot()
