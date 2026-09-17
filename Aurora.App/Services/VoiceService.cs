@@ -114,7 +114,7 @@ namespace Aurora.App.Services
         /// <summary>Speaks through the configured provider, falling back to the local
         /// Windows voice on any failure (missing/invalid key, network error, rate limit) so
         /// a reply is never silently unspoken.</summary>
-        public async Task SpeakAsync(string text)
+        public async Task SpeakAsync(string text, Action<bool>? onSpeechActivityChanged = null)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
 
@@ -123,34 +123,64 @@ namespace Aurora.App.Services
             {
                 switch (provider)
                 {
-                    case "openai": await SpeakOpenAiAsync(text); break;
-                    case "elevenlabs": await SpeakElevenLabsAsync(text); break;
-                    case "azure": await SpeakAzureAsync(text); break;
-                    default: SpeakWindows(text); break; // "windows" or unrecognized
+                    case "openai": await SpeakOpenAiAsync(text, onSpeechActivityChanged); break;
+                    case "elevenlabs": await SpeakElevenLabsAsync(text, onSpeechActivityChanged); break;
+                    case "azure": await SpeakAzureAsync(text, onSpeechActivityChanged); break;
+                    default: await SpeakWindowsAsync(text, onSpeechActivityChanged); break; // "windows" or unrecognized
                 }
             }
             catch
             {
                 // Cloud call failed - fall back to the local voice rather than stay silent.
-                SpeakWindows(text);
+                await SpeakWindowsAsync(text, onSpeechActivityChanged);
             }
         }
 
-        private void SpeakWindows(string text)
+        private Task SpeakWindowsAsync(string text, Action<bool>? onSpeechActivityChanged)
         {
-            if (!_synthAvailable || string.IsNullOrWhiteSpace(text)) return;
+            if (!_synthAvailable || string.IsNullOrWhiteSpace(text)) return Task.CompletedTask;
+
+            var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var isPaused = false;
+
+            void ReportSpeechProgress(object? _, SpeakProgressEventArgs e)
+            {
+                var previousCharacter = e.CharacterPosition > 0 ? text[e.CharacterPosition - 1] : '\0';
+                var shouldPause = previousCharacter is '.' or '!' or '?' or ',' or ';' or ':';
+                if (shouldPause == isPaused) return;
+
+                isPaused = shouldPause;
+                onSpeechActivityChanged?.Invoke(!isPaused);
+            }
+
+            void CompleteSpeech(object? _, SpeakCompletedEventArgs __)
+            {
+                _synth!.SpeakProgress -= ReportSpeechProgress;
+                _synth.SpeakCompleted -= CompleteSpeech;
+                onSpeechActivityChanged?.Invoke(false);
+                completed.TrySetResult();
+            }
+
             try
             {
                 _synth!.SpeakAsyncCancelAll();
+                _synth.SpeakProgress += ReportSpeechProgress;
+                _synth.SpeakCompleted += CompleteSpeech;
+                onSpeechActivityChanged?.Invoke(true);
                 _synth.SpeakAsync(text);
             }
             catch
             {
-                // A speech engine hiccup shouldn't take down a chat reply - just skip the audio.
+                _synth!.SpeakProgress -= ReportSpeechProgress;
+                _synth.SpeakCompleted -= CompleteSpeech;
+                onSpeechActivityChanged?.Invoke(false);
+                completed.TrySetResult();
             }
+
+            return completed.Task;
         }
 
-        private async Task SpeakOpenAiAsync(string text)
+        private async Task SpeakOpenAiAsync(string text, Action<bool>? onSpeechActivityChanged)
         {
             // Falls back to the chat-provider OpenAI key if a separate TTS key was never
             // entered - a nice-to-have for anyone already using OpenAI for chat, without
@@ -158,7 +188,7 @@ namespace Aurora.App.Services
             var key = string.IsNullOrWhiteSpace(App.Settings.OpenAiTtsApiKey)
                 ? App.Settings.OpenAIApiKey
                 : App.Settings.OpenAiTtsApiKey;
-            if (string.IsNullOrWhiteSpace(key)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key)) { await SpeakWindowsAsync(text, onSpeechActivityChanged); return; }
 
             var voice = string.IsNullOrWhiteSpace(App.Settings.OpenAiTtsVoice) ? "alloy" : App.Settings.OpenAiTtsVoice;
             var payload = JsonSerializer.Serialize(new { model = "tts-1", input = text, voice, response_format = "wav" });
@@ -171,14 +201,14 @@ namespace Aurora.App.Services
             if (!response.IsSuccessStatusCode)
                 throw new InvalidOperationException($"OpenAI TTS returned {(int)response.StatusCode}");
 
-            PlayWav(await response.Content.ReadAsByteArrayAsync());
+            await PlayWavAsync(await response.Content.ReadAsByteArrayAsync(), onSpeechActivityChanged);
         }
 
-        private async Task SpeakElevenLabsAsync(string text)
+        private async Task SpeakElevenLabsAsync(string text, Action<bool>? onSpeechActivityChanged)
         {
             var key = App.Settings.ElevenLabsApiKey;
             var voiceId = App.Settings.ElevenLabsVoiceId;
-            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(voiceId)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(voiceId)) { await SpeakWindowsAsync(text, onSpeechActivityChanged); return; }
 
             var payload = JsonSerializer.Serialize(new { text, model_id = "eleven_multilingual_v2" });
             using var req = new HttpRequestMessage(HttpMethod.Post,
@@ -193,14 +223,14 @@ namespace Aurora.App.Services
             // ElevenLabs returns raw headerless PCM at this output_format - wrap it in a
             // WAV header ourselves so it can play through the same SoundPlayer as the others.
             var pcm = await response.Content.ReadAsByteArrayAsync();
-            PlayWav(WrapPcmAsWav(pcm, sampleRate: 24000, bitsPerSample: 16, channels: 1));
+            await PlayWavAsync(WrapPcmAsWav(pcm, sampleRate: 24000, bitsPerSample: 16, channels: 1), onSpeechActivityChanged);
         }
 
-        private async Task SpeakAzureAsync(string text)
+        private async Task SpeakAzureAsync(string text, Action<bool>? onSpeechActivityChanged)
         {
             var key = App.Settings.AzureSpeechKey;
             var region = App.Settings.AzureSpeechRegion;
-            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(region)) { SpeakWindows(text); return; }
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(region)) { await SpeakWindowsAsync(text, onSpeechActivityChanged); return; }
 
             var voiceName = string.IsNullOrWhiteSpace(App.Settings.AzureVoiceName) ? "en-US-JennyNeural" : App.Settings.AzureVoiceName;
             var ssml = "<speak version='1.0' xml:lang='en-US'><voice name='" + voiceName + "'>" +
@@ -217,7 +247,7 @@ namespace Aurora.App.Services
 
             // Azure's riff-* output formats are already a complete WAV file, unlike ElevenLabs'
             // raw PCM option above - no header-wrapping needed here.
-            PlayWav(await response.Content.ReadAsByteArrayAsync());
+            await PlayWavAsync(await response.Content.ReadAsByteArrayAsync(), onSpeechActivityChanged);
         }
 
         /// <summary>Live voice catalog from ElevenLabs' own account - includes any custom or
@@ -277,13 +307,20 @@ namespace Aurora.App.Services
             return result.OrderBy(v => v.Locale).ThenBy(v => v.ShortName).ToList();
         }
 
-        private static void PlayWav(byte[] wavBytes)
+        private static async Task PlayWavAsync(byte[] wavBytes, Action<bool>? onSpeechActivityChanged)
         {
-            var stream = new MemoryStream(wavBytes);
+            using var stream = new MemoryStream(wavBytes);
             var player = new System.Media.SoundPlayer(stream);
-            player.Load(); // reads the full stream into the player synchronously first...
-            player.Play(); // ...so it's safe to let the stream go out of scope once playback
-                            // (which runs on its own background thread) has started.
+            player.Load();
+            onSpeechActivityChanged?.Invoke(true);
+            try
+            {
+                await Task.Run(player.PlaySync).ConfigureAwait(false);
+            }
+            finally
+            {
+                onSpeechActivityChanged?.Invoke(false);
+            }
         }
 
         /// <summary>Wraps headerless raw PCM in a standard 44-byte WAV header, since

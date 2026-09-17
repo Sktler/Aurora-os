@@ -19,6 +19,7 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private bool _isRenaming;
         [ObservableProperty] private string _renameDraft = "";
         [ObservableProperty] private bool _isListening;
+        [ObservableProperty] private bool _isSpeaking;
         [ObservableProperty] private bool _speakRepliesEnabled = App.Settings.SpeakRepliesByDefault;
 
         public CompanionViewModel(Companion companion)
@@ -176,7 +177,8 @@ namespace Aurora.App.ViewModels
                 App.Memory.AppendMessage(assistantMsg);
                 Companion.LastActivitySummary = Truncate(reply, 60);
                 Companion.Status = CompanionStatus.Idle;
-                if (SpeakRepliesEnabled) App.Voice.Speak(reply);
+                if (SpeakRepliesEnabled)
+                    await App.Voice.SpeakAsync(reply, SetSpeaking);
             }
             catch (Exception ex)
             {
@@ -195,6 +197,9 @@ namespace Aurora.App.ViewModels
 
         private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input) =>
             CameraTools.IsCameraTool(toolName) ? CameraTools.ExecuteAsync(toolName, input) : SystemTools.ExecuteAsync(toolName, input);
+
+        private void SetSpeaking(bool isSpeaking) =>
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => IsSpeaking = isSpeaking);
 
         private List<ChatMessage> SliceHistory() { var list = new List<ChatMessage>(Messages); list.RemoveAt(list.Count - 1); return list; }
         private static string Truncate(string s, int len) => s.Length <= len ? s : s.Substring(0, len) + "…";
