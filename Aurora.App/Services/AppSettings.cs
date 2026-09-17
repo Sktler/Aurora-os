@@ -49,6 +49,11 @@ namespace Aurora.App.Services
         public string AzureSpeechKey { get; set; } = "";
         public string AzureSpeechRegion { get; set; } = "";
         public string AzureVoiceName { get; set; } = "en-US-JennyNeural";
+        /// <summary>Minimum SAPI recognition confidence (0.0-1.0) an utterance must clear to
+        /// be forwarded to the AI at all; anything below this is treated as noise/mumbling
+        /// rather than a real (if imperfectly transcribed) request. Starting point requested
+        /// for Aurora's voice pipeline; tune up for a noisy room or down for a quiet one.</summary>
+        public double VoiceConfidenceThreshold { get; set; } = Aurora.App.Services.VoiceTranscriptFilter.DefaultConfidenceThreshold;
         public bool SpeakRepliesByDefault { get; set; } = true;
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";
