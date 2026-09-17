@@ -93,7 +93,8 @@
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
                 <Grid Grid.Row="1">
-                    <views:ParticleOrb Width="560" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
+                    <views:ParticleOrb Width="560" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"
+                                       IsResponding="{Binding SelectedCompanion.IsBusy}"/>
                 </Grid>
                 <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
                     <Grid>

@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows;
 
 namespace Aurora.App.Views
 {
@@ -16,6 +17,19 @@ namespace Aurora.App.Views
 
         private DateTime _startTime;
         private bool _animating;
+
+        public static readonly DependencyProperty IsRespondingProperty =
+            DependencyProperty.Register(
+                nameof(IsResponding),
+                typeof(bool),
+                typeof(ParticleOrb),
+                new PropertyMetadata(false));
+
+        public bool IsResponding
+        {
+            get => (bool)GetValue(IsRespondingProperty);
+            set => SetValue(IsRespondingProperty, value);
+        }
 
         public ParticleOrb()
         {
@@ -57,7 +71,9 @@ namespace Aurora.App.Views
                 : 1;
             LeftEyeScale.ScaleY = eyeScale;
             RightEyeScale.ScaleY = eyeScale;
-            MouthScale.ScaleY = 0.45 + (Math.Sin(motion * 2.4) + 1) * 0.45;
+            MouthScale.ScaleY = IsResponding
+                ? 0.45 + (Math.Sin(motion * 2.4) + 1) * 0.45
+                : 0.45;
         }
     }
 }
