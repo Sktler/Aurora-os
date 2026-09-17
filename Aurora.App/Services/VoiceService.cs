@@ -48,6 +48,20 @@ namespace Aurora.App.Services
         private SpeechRecognitionEngine? _continuousRecognizer;
         private Action? _onStoppedExternally;
 
+        private const int MaxRecentTranscripts = 50;
+        private readonly object _transcriptLock = new();
+        private readonly List<TranscriptEntry> _recentTranscripts = new();
+
+        /// <summary>Every recognized utterance, raw text plus confidence plus whether it
+        /// passed the confidence threshold - kept purely for debugging voice-recognition
+        /// quality. The AI itself only ever receives the normalized text of phrases that
+        /// were accepted; this list exists so a rejected or misheard phrase can still be
+        /// inspected afterward.</summary>
+        public IReadOnlyList<TranscriptEntry> RecentTranscripts
+        {
+            get { lock (_transcriptLock) return _recentTranscripts.ToList(); }
+        }
+
         public VoiceService(string? preferredVoiceName = null)
         {
             try
@@ -113,11 +127,20 @@ namespace Aurora.App.Services
 
         /// <summary>Speaks through the configured provider, falling back to the local
         /// Windows voice on any failure (missing/invalid key, network error, rate limit) so
-        /// a reply is never silently unspoken.</summary>
+        /// a reply is never silently unspoken. The reply is split into sentence-sized chunks
+        /// first (see <see cref="SpeechFormatter.SplitIntoSentences"/>) and spoken one at a
+        /// time - this both paces delivery naturally between sentences and lets the mouth
+        /// animation visibly pause between them, without ever changing the wording itself.</summary>
         public async Task SpeakAsync(string text, Action<bool>? onSpeechActivityChanged = null)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
 
+            foreach (var sentence in SpeechFormatter.SplitIntoSentences(text))
+                await SpeakSentenceAsync(sentence, onSpeechActivityChanged);
+        }
+
+        private async Task SpeakSentenceAsync(string text, Action<bool>? onSpeechActivityChanged)
+        {
             var provider = App.Settings.TtsProvider;
             try
             {
@@ -164,6 +187,7 @@ namespace Aurora.App.Services
             try
             {
                 _synth!.SpeakAsyncCancelAll();
+                _synth.Rate = SpeechFormatter.WindowsSapiRate; // aims for the natural 150-170 wpm target
                 _synth.SpeakProgress += ReportSpeechProgress;
                 _synth.SpeakCompleted += CompleteSpeech;
                 onSpeechActivityChanged?.Invoke(true);
@@ -191,7 +215,14 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(key)) { await SpeakWindowsAsync(text, onSpeechActivityChanged); return; }
 
             var voice = string.IsNullOrWhiteSpace(App.Settings.OpenAiTtsVoice) ? "alloy" : App.Settings.OpenAiTtsVoice;
-            var payload = JsonSerializer.Serialize(new { model = "tts-1", input = text, voice, response_format = "wav" });
+            var payload = JsonSerializer.Serialize(new
+            {
+                model = "tts-1",
+                input = text,
+                voice,
+                response_format = "wav",
+                speed = SpeechFormatter.OpenAiSpeechSpeed // aims for the natural 150-170 wpm target
+            });
 
             using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/audio/speech");
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
@@ -233,8 +264,9 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(region)) { await SpeakWindowsAsync(text, onSpeechActivityChanged); return; }
 
             var voiceName = string.IsNullOrWhiteSpace(App.Settings.AzureVoiceName) ? "en-US-JennyNeural" : App.Settings.AzureVoiceName;
-            var ssml = "<speak version='1.0' xml:lang='en-US'><voice name='" + voiceName + "'>" +
-                       System.Security.SecurityElement.Escape(text) + "</voice></speak>";
+            // Adds a natural-pace prosody hint plus short breaks at commas/sentence
+            // boundaries - never rewords the reply, only marks up how it should be spoken.
+            var ssml = SpeechFormatter.BuildAzureSsml(text, voiceName);
 
             using var req = new HttpRequestMessage(HttpMethod.Post, $"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1");
             req.Headers.Add("Ocp-Apim-Subscription-Key", key);
@@ -384,8 +416,21 @@ namespace Aurora.App.Services
                 recognizer.SpeechRecognized += (s, e) =>
                 {
                     var text = e.Result?.Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                        onUtteranceRecognized(text);
+                    var confidence = e.Result?.Confidence ?? 0;
+                    var threshold = App.Settings.VoiceConfidenceThreshold > 0
+                        ? App.Settings.VoiceConfidenceThreshold
+                        : VoiceTranscriptFilter.DefaultConfidenceThreshold;
+                    var accepted = !string.IsNullOrWhiteSpace(text) &&
+                                    VoiceTranscriptFilter.MeetsConfidenceThreshold(confidence, threshold);
+
+                    // The raw transcript (and whether it was accepted) is always recorded for
+                    // debugging, regardless of confidence - but only an accepted phrase is
+                    // ever forwarded onward, and only this final result, never a partial/
+                    // hypothesized one (SpeechHypothesized is intentionally not wired up here).
+                    RecordTranscript(text ?? string.Empty, confidence, accepted);
+
+                    if (accepted)
+                        onUtteranceRecognized(text!);
                     // SpeechRecognitionRejected (mumbled/unintelligible audio) is deliberately
                     // ignored here rather than surfaced - in continuous mode that's just
                     // background noise or a false start, not something worth interrupting for.
@@ -419,6 +464,19 @@ namespace Aurora.App.Services
             _continuousRecognizer = null;
             try { recognizer.RecognizeAsyncStop(); } catch { /* ignore */ }
             recognizer.Dispose();
+        }
+
+        private void RecordTranscript(string rawText, double confidence, bool accepted)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[Voice] transcript={(accepted ? "accepted" : "rejected")} confidence={confidence:0.00} raw=\"{rawText}\"");
+
+            lock (_transcriptLock)
+            {
+                _recentTranscripts.Add(new TranscriptEntry(rawText, confidence, accepted, DateTime.UtcNow));
+                while (_recentTranscripts.Count > MaxRecentTranscripts)
+                    _recentTranscripts.RemoveAt(0);
+            }
         }
 
         public void Dispose()
