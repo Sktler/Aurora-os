@@ -45,6 +45,8 @@ public sealed class ParticleOrbTests
         Assert.Contains("MouthScale.ScaleY", code);
         Assert.Contains("IsRespondingProperty", code);
         Assert.Contains("MouthScale.ScaleY = IsResponding", code);
+        var mainWindow = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "Views", "MainWindow.xaml"));
+        Assert.Contains("IsResponding=\"{Binding SelectedCompanion.IsSpeaking}\"", mainWindow);
         Assert.DoesNotContain("RotationSpeed", code);
         Assert.DoesNotContain("OrbScale", code);
     }
