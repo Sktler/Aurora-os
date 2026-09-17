@@ -17,29 +17,9 @@
                     <TranslateTransform x:Name="OrbTranslation"/>
                 </TransformGroup>
             </Grid.RenderTransform>
-            <Image Source="/Aurora;component/Assets/AuroraOrb.png"
+            <Image Source="/Aurora;component/Assets/AuroraFace.png"
                    Stretch="Uniform"
                    Opacity="0.96"/>
-            <Viewbox Stretch="Uniform"
-                     IsHitTestVisible="False">
-                <Canvas Width="100" Height="100">
-                    <Ellipse Width="9" Height="12" Canvas.Left="33" Canvas.Top="42" Fill="#D9F8FF">
-                        <Ellipse.RenderTransform>
-                            <ScaleTransform x:Name="LeftEyeScale" CenterX="4.5" CenterY="6"/>
-                        </Ellipse.RenderTransform>
-                    </Ellipse>
-                    <Ellipse Width="9" Height="12" Canvas.Left="58" Canvas.Top="42" Fill="#D9F8FF">
-                        <Ellipse.RenderTransform>
-                            <ScaleTransform x:Name="RightEyeScale" CenterX="4.5" CenterY="6"/>
-                        </Ellipse.RenderTransform>
-                    </Ellipse>
-                    <Border Width="22" Height="8" Canvas.Left="39" Canvas.Top="61" CornerRadius="0,0,11,11" Background="#D9F8FF">
-                        <Border.RenderTransform>
-                            <ScaleTransform x:Name="MouthScale" CenterX="11" CenterY="0"/>
-                        </Border.RenderTransform>
-                    </Border>
-                </Canvas>
-            </Viewbox>
         </Grid>
     </Grid>
 </UserControl>
