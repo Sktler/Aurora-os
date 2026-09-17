@@ -54,6 +54,11 @@ namespace Aurora.App.Services
         /// rather than a real (if imperfectly transcribed) request. Starting point requested
         /// for Aurora's voice pipeline; tune up for a noisy room or down for a quiet one.</summary>
         public double VoiceConfidenceThreshold { get; set; } = Aurora.App.Services.VoiceTranscriptFilter.DefaultConfidenceThreshold;
+        /// <summary>Target speaking pace in words per minute for replies, applied to whichever
+        /// TTS provider is active (see <see cref="Aurora.App.Services.SpeechFormatter"/>).
+        /// Natural conversational pace is roughly 150-170 wpm; adjustable per user preference
+        /// without changing the wording spoken.</summary>
+        public double SpeechPaceWpm { get; set; } = Aurora.App.Services.SpeechFormatter.TargetWordsPerMinute;
         public bool SpeakRepliesByDefault { get; set; } = true;
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";

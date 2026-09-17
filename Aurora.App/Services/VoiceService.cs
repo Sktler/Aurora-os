@@ -187,7 +187,7 @@ namespace Aurora.App.Services
             try
             {
                 _synth!.SpeakAsyncCancelAll();
-                _synth.Rate = SpeechFormatter.WindowsSapiRate; // aims for the natural 150-170 wpm target
+                _synth.Rate = SpeechFormatter.WindowsSapiRateFor(App.Settings.SpeechPaceWpm); // per-user pace target
                 _synth.SpeakProgress += ReportSpeechProgress;
                 _synth.SpeakCompleted += CompleteSpeech;
                 onSpeechActivityChanged?.Invoke(true);
@@ -221,7 +221,7 @@ namespace Aurora.App.Services
                 input = text,
                 voice,
                 response_format = "wav",
-                speed = SpeechFormatter.OpenAiSpeechSpeed // aims for the natural 150-170 wpm target
+                speed = SpeechFormatter.OpenAiSpeechSpeedFor(App.Settings.SpeechPaceWpm) // per-user pace target
             });
 
             using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/audio/speech");
@@ -266,7 +266,7 @@ namespace Aurora.App.Services
             var voiceName = string.IsNullOrWhiteSpace(App.Settings.AzureVoiceName) ? "en-US-JennyNeural" : App.Settings.AzureVoiceName;
             // Adds a natural-pace prosody hint plus short breaks at commas/sentence
             // boundaries - never rewords the reply, only marks up how it should be spoken.
-            var ssml = SpeechFormatter.BuildAzureSsml(text, voiceName);
+            var ssml = SpeechFormatter.BuildAzureSsml(text, voiceName, App.Settings.SpeechPaceWpm);
 
             using var req = new HttpRequestMessage(HttpMethod.Post, $"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1");
             req.Headers.Add("Ocp-Apim-Subscription-Key", key);

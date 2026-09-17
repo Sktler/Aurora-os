@@ -282,6 +282,36 @@
                         <CheckBox Content="Companions speak their replies out loud by default" IsChecked="{Binding SpeakRepliesByDefault}"
                                   Margin="0,0,0,14"/>
 
+                        <TextBlock Text="Voice input sensitivity (confidence threshold)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0" Minimum="0" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                    Value="{Binding VoiceConfidenceThreshold, UpdateSourceTrigger=PropertyChanged}"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding VoiceConfidenceThreshold, StringFormat={}{0:P0}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" MinWidth="40"/>
+                        </Grid>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Recognized speech below this confidence is treated as noise and never sent to your companion - raise it in a noisy room, lower it in a quiet one. Every recognized phrase (accepted or not) stays available for debugging voice-recognition quality."/>
+
+                        <TextBlock Text="Speaking pace" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0" Minimum="90" Maximum="220" TickFrequency="10" IsSnapToTickEnabled="True"
+                                    Value="{Binding SpeechPaceWpm, UpdateSourceTrigger=PropertyChanged}"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SpeechPaceWpm, StringFormat={}{0:0} wpm}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" MinWidth="70"/>
+                        </Grid>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="How fast replies are spoken, in words per minute - a natural conversational pace is around 150-170. Applies to whichever voice provider is selected below without changing what's said, only how quickly."/>
+
                         <TextBlock Text="Voice provider" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding TtsProvider}"
                                   Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"

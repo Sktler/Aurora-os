@@ -114,6 +114,14 @@ namespace Aurora.App.ViewModels
 
         [ObservableProperty] private bool _isLoadingVoices;
 
+        /// <summary>Minimum SAPI recognition confidence (0.0-1.0) an utterance must clear
+        /// before it's forwarded to the AI at all - the "input" half of the voice pipeline.</summary>
+        [ObservableProperty] private double _voiceConfidenceThreshold = App.Settings.VoiceConfidenceThreshold;
+
+        /// <summary>Target speaking pace in words per minute for replies - the "output" half
+        /// of the voice pipeline, applied to whichever TTS provider is active.</summary>
+        [ObservableProperty] private double _speechPaceWpm = App.Settings.SpeechPaceWpm;
+
         [RelayCommand]
         private async Task LoadElevenLabsVoicesAsync()
         {
@@ -691,6 +699,9 @@ namespace Aurora.App.ViewModels
             }
 
             App.Settings.SpeakRepliesByDefault = SpeakRepliesByDefault;
+            App.Settings.VoiceConfidenceThreshold = Services.VoiceTranscriptFilter
+                .ClampConfidenceThreshold(VoiceConfidenceThreshold);
+            App.Settings.SpeechPaceWpm = SpeechFormatter.ClampWordsPerMinute(SpeechPaceWpm);
             App.Settings.Save();
             VoiceStatus = "Saved. New replies will use this voice.";
         }

@@ -20,5 +20,11 @@ namespace Aurora.App.Services
 
         public static bool MeetsConfidenceThreshold(double confidence, double threshold) =>
             confidence >= threshold;
+
+        /// <summary>Keeps a user-supplied confidence threshold within a valid, still-useful
+        /// 0.0-1.0 range (a value below 0 would accept everything including silence/noise;
+        /// above 1 would reject every utterance, even a perfect transcription).</summary>
+        public static double ClampConfidenceThreshold(double threshold) =>
+            Math.Clamp(threshold, 0.0, 1.0);
     }
 }
