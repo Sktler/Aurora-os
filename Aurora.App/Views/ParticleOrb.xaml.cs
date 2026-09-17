@@ -53,7 +53,8 @@ namespace Aurora.App.Views
         {
             InitializeComponent();
             BuildParticles();
-            Loaded += (_, _) => { _startTime = DateTime.Now; };
+            Loaded += (_, _) => StartAnimating();
+            Unloaded += (_, _) => StopAnimating();
             IsVisibleChanged += (_, e) =>
             {
                 if ((bool)e.NewValue) StartAnimating();
