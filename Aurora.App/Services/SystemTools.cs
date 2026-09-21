@@ -23,6 +23,8 @@ namespace Aurora.App.Services
             new { name = "media_previous", description = "Goes to the previous Windows media track.", input_schema = new { type = "object", properties = new { app = new { type = "string" } } } },
             new { name = "set_system_volume", description = "Sets Windows master volume from 0 to 100.", input_schema = new { type = "object", properties = new { percent = new { type = "number" } }, required = new[] { "percent" } } },
             new { name = "toggle_system_mute", description = "Mutes or unmutes Windows system audio.", input_schema = new { type = "object", properties = new { mute = new { type = "boolean" } }, required = new[] { "mute" } } },
+            new { name = "windows_list_app_adapters", description = "Lists Aurora's supported desktop app adapters, their capabilities, required permissions, and availability.", input_schema = new { type = "object", properties = new { } } },
+            new { name = "windows_app_action", description = "Runs a structured action through a supported desktop app adapter. Modifying file actions return a preview first; repeat with confirm=true only after the user approves the preview.", input_schema = new { type = "object", properties = new { adapter = new { type = "string", description = "Adapter id such as vscode, word, excel, powerpoint, or notepad." }, action = new { type = "string", description = "Adapter action such as open_file, open_folder, new_file, open_document, new_document, open_workbook, new_workbook, open_presentation, or new_presentation." }, target = new { type = "string", description = "Target file or folder when required." }, content = new { type = "string", description = "Optional content for previewed file creation." }, confirm = new { type = "boolean", description = "Set true only after the preview is acceptable and the user has confirmed the modification." } }, required = new[] { "adapter", "action" } } },
             new { name = "windows_list_applications", description = "Lists running Windows applications.", input_schema = new { type = "object", properties = new { } } },
             new { name = "windows_launch_application", description = "Launches a Windows application or URI.", input_schema = new { type = "object", properties = new { target = new { type = "string" } }, required = new[] { "target" } } },
             new { name = "windows_open_path", description = "Opens a Windows file or folder.", input_schema = new { type = "object", properties = new { path = new { type = "string" } }, required = new[] { "path" } } },
@@ -73,6 +75,17 @@ namespace Aurora.App.Services
                 case "media_previous": return (await Media.ControlAsync("previous", GetApp(input))).Message;
                 case "set_system_volume": { var p = input.GetProperty("percent").GetDouble(); if (p < 0 || p > 100) return "Volume must be between 0 and 100."; SystemVolumeControl.SetVolume((float)(p / 100)); return $"System volume set to {p:0}%."; }
                 case "toggle_system_mute": { var m = input.GetProperty("mute").GetBoolean(); SystemVolumeControl.SetMute(m); return m ? "System audio muted." : "System audio unmuted."; }
+                case "windows_list_app_adapters": return FormatAppAdapters(App.AppAdapters.GetAdapters());
+                case "windows_app_action":
+                {
+                    var adapter = input.GetProperty("adapter").GetString() ?? "";
+                    var action = input.GetProperty("action").GetString() ?? "";
+                    var target = input.TryGetProperty("target", out var targetValue) ? targetValue.GetString() : null;
+                    var content = input.TryGetProperty("content", out var contentValue) ? contentValue.GetString() : null;
+                    var confirm = input.TryGetProperty("confirm", out var confirmValue) && confirmValue.ValueKind == JsonValueKind.True;
+                    var result = await App.AppAdapters.ExecuteAsync(adapter, action, target, content, confirm);
+                    return result.Message;
+                }
                 case "windows_list_applications": return FormatProcesses(App.WindowsAutomation.GetProcesses());
                 case "windows_launch_application": App.WindowsAutomation.Launch(input.GetProperty("target").GetString() ?? ""); return "Application launched.";
                 case "windows_open_path": App.WindowsAutomation.OpenPath(input.GetProperty("path").GetString() ?? ""); return "Opened.";
