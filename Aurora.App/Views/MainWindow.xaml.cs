@@ -89,6 +89,8 @@ namespace Aurora.App.Views
 
         private void Close_Click(object sender, RoutedEventArgs e) => ExitApplication();
 
+        private void EmergencyStop_Click(object sender, RoutedEventArgs e) => App.EnterLockdown("Emergency stop requested from Aurora dashboard.");
+
         private void Window_StateChanged(object sender, EventArgs e)
         {
             var maximized = WindowState == WindowState.Maximized;
