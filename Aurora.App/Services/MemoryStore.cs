@@ -187,6 +187,7 @@ namespace Aurora.App.Services
         {
             var cmd = _conn!.CreateCommand();
             cmd.CommandText = "DELETE FROM Messages WHERE ProfileId = $profile AND CompanionId = $cid;";
+            cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             cmd.Parameters.AddWithValue("$cid", companionId);
             cmd.ExecuteNonQuery();
         }
