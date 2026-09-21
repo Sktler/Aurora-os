@@ -7,6 +7,7 @@ namespace Aurora.App.Views
 {
     public partial class ProfileWindow : Window
     {
+        private bool _profileSwitched;
         public ProfileWindow()
         {
             InitializeComponent();
@@ -30,6 +31,7 @@ namespace Aurora.App.Views
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;
             if (!App.Profiles.SwitchProfile(p.Id)) return;
+            _profileSwitched = true;
             if (Owner is MainWindow main) main.ReloadAfterProfileSwitch();
             DialogResult = true;
             Close();
@@ -44,8 +46,11 @@ namespace Aurora.App.Views
 
         protected override void OnClosed(EventArgs e)
         {
-            App.Settings.SpeakerRecognitionEnabled = SpeakerSuggestionsBox.IsChecked == true;
-            App.Profiles.SaveActiveSettings();
+            if (!_profileSwitched)
+            {
+                App.Settings.SpeakerRecognitionEnabled = SpeakerSuggestionsBox.IsChecked == true;
+                App.Profiles.SaveActiveSettings();
+            }
             base.OnClosed(e);
         }
     }
