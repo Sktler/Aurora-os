@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Aurora.App.Models;
@@ -39,13 +38,8 @@ namespace Aurora.App.Views
         private void EnrollVoice_Click(object sender, RoutedEventArgs e)
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;
-            if (!App.Settings.WindowsMicrophoneEnabled && !App.Settings.MicrophoneDeviceName.Any())
-            {
-                // Startup permission is the primary gate; this is a friendly reminder only.
-                MessageBox.Show(this, "Enable microphone access for Aurora before enrolling a voice.", "Voice profile", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-            MessageBox.Show(this, "Voice enrollment is available from the next voice capture. Speak a normal sentence after closing this window; Aurora will store only a local voice signature.", "Voice profile", MessageBoxButton.OK, MessageBoxImage.Information);
+            App.Voice.BeginSpeakerEnrollment(p.Id);
+            MessageBox.Show(this, "Speak a normal sentence using Aurora's microphone after closing this window. Aurora will store only a local voice signature for this profile. Voice matching is not authentication.", "Voice profile", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnClosed(EventArgs e)
