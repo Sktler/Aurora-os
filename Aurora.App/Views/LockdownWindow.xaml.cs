@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using Aurora.App.Services;
@@ -9,16 +8,19 @@ namespace Aurora.App.Views;
 public partial class LockdownWindow : Window
 {
     private readonly InstallationSecurityService _security;
-    private readonly Func<string, bool> _softwareIntegrityCheck;
+    private readonly Func<bool> _softwareIntegrityCheck;
+    private readonly Func<string, bool> _userRecoveryCheck;
     private readonly Action _unlocked;
 
     public LockdownWindow(
         InstallationSecurityService security,
-        Func<string, bool> softwareIntegrityCheck,
+        Func<bool> softwareIntegrityCheck,
+        Func<string, bool> userRecoveryCheck,
         Action unlocked)
     {
         _security = security ?? throw new ArgumentNullException(nameof(security));
         _softwareIntegrityCheck = softwareIntegrityCheck ?? throw new ArgumentNullException(nameof(softwareIntegrityCheck));
+        _userRecoveryCheck = userRecoveryCheck ?? throw new ArgumentNullException(nameof(userRecoveryCheck));
         _unlocked = unlocked ?? throw new ArgumentNullException(nameof(unlocked));
 
         InitializeComponent();
@@ -33,7 +35,6 @@ public partial class LockdownWindow : Window
         };
         Closing += (_, e) =>
         {
-            // The overlay may only close after the security state has been cleared.
             if (_security.IsLockedDown)
                 e.Cancel = true;
         };
@@ -41,11 +42,9 @@ public partial class LockdownWindow : Window
 
     private void RecoveryCodeBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
-        {
-            e.Handled = true;
-            Recover_Click(sender, new RoutedEventArgs());
-        }
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        Recover_Click(sender, new RoutedEventArgs());
     }
 
     private void Recover_Click(object sender, RoutedEventArgs e)
@@ -57,10 +56,7 @@ public partial class LockdownWindow : Window
             return;
         }
 
-        // The software check is deliberately supplied by the caller. A UI action alone
-        // can never clear lockdown; both checks must pass through TryRecover.
-        var softwareValid = _softwareIntegrityCheck(code);
-        if (!softwareValid)
+        if (!_softwareIntegrityCheck())
         {
             StatusText.Text = "Installation verification failed. Aurora remains locked.";
             RecoveryCodeBox.Clear();
@@ -69,9 +65,8 @@ public partial class LockdownWindow : Window
 
         try
         {
-            var userValid = App.Profiles != null &&
-                            App.Profiles.VerifyRecoveryCode(code);
-            if (!_security.TryRecover(softwareValid, userValid))
+            var userValid = _userRecoveryCheck(code);
+            if (!_security.TryRecover(softwareSignatureValid: true, userRecoveryValid: userValid))
             {
                 StatusText.Text = "Recovery code rejected. Aurora remains locked.";
                 RecoveryCodeBox.Clear();
