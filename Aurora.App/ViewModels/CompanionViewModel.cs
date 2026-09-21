@@ -49,14 +49,20 @@ namespace Aurora.App.ViewModels
         private string _lastSubmittedUtterance = "";
         private DateTime _lastSubmittedAtUtc = DateTime.MinValue;
 
+        public void StopListening()
+        {
+            if (!IsListening) return;
+            App.Voice.StopContinuousListening();
+            IsListening = false;
+            App.WakeWord?.Start();
+        }
+
         [RelayCommand]
         private void Listen()
         {
             if (IsListening)
             {
-                App.Voice.StopContinuousListening();
-                IsListening = false;
-                App.WakeWord?.Start();
+                StopListening();
                 return;
             }
 
