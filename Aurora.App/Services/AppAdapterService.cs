@@ -187,7 +187,7 @@ public sealed class AppAdapterService
 
     private static Task<AppAdapterResult> LaunchAsync(
         string executable, IReadOnlyList<string> arguments,
-        string adapterId, string action, string? successMessage = null)
+        string adapterId, string? action, string? successMessage = null)
     {
         var psi = new ProcessStartInfo { FileName = executable, UseShellExecute = true };
         foreach (var argument in arguments)
