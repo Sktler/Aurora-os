@@ -28,6 +28,9 @@ namespace Aurora.App
         public static AppAdapterService AppAdapters { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
         public static WindowsUpdaterService Updater { get; private set; } = null!;
+        public static InstallationSecurityService Security { get; private set; } = null!;
+        public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
+        private static Views.LockdownWindow? _lockdownWindow;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -43,6 +46,8 @@ namespace Aurora.App
                 Profiles = new ProfileManager();
                 Profiles.Initialize(Settings);
                 Updater = new WindowsUpdaterService();
+                Security = new InstallationSecurityService(System.IO.Path.Combine(AppSettings.ConfigDir, "security.lock"));
+                EmergencyStopButtons = new EmergencyStopButtonService();
 
                 if (firstRun)
                 {
@@ -160,6 +165,37 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
+        public static void ShowLockdownOverlay()
+        {
+            if (Security == null || !Security.IsLockedDown) return;
+            Dispatcher.Invoke(() =>
+            {
+                if (_lockdownWindow != null)
+                {
+                    _lockdownWindow.Activate();
+                    return;
+                }
+                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, ClearLockdownOverlay);
+                _lockdownWindow.Show();
+                _lockdownWindow.Activate();
+            });
+        }
+        private static bool VerifyCurrentInstallation() => true;
+        private static bool VerifyRecoveryCode(string code) => false;
+        private static void ClearLockdownOverlay()
+        {
+            _lockdownWindow = null;
+            foreach (Window window in Current.Windows)
+                if (window is not Views.LockdownWindow) window.IsEnabled = true;
+        }
+        public static void EnterLockdown(string reason)
+        {
+            Security.EnterLockdown(reason);
+            foreach (Window window in Current.Windows)
+                if (window is not Views.LockdownWindow) window.IsEnabled = false;
+            ShowLockdownOverlay();
+        }
+
         public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
         {
@@ -192,6 +228,6 @@ namespace Aurora.App
             argument.Contains(' ') || argument.Contains('"')
                 ? $"\"{argument.Replace("\"", "\\\"")}\""
                 : argument;
-        protected override void OnExit(ExitEventArgs e) { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
+        protected override void OnExit(ExitEventArgs e) { EmergencyStopButtons?.Dispose(); Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
 }
