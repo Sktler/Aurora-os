@@ -99,8 +99,7 @@ public sealed class EmergencyStopButtonService : IDisposable
     private void TriggerLockdown()
     {
         if (App.Security == null) return;
-        App.Security.EnterLockdown("Emergency stop requested from Aurora UI.");
-        App.ShowLockdownOverlay();
+        App.EnterLockdown("Emergency stop requested from Aurora UI.");
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePosition(sender as Window);
