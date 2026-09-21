@@ -125,6 +125,7 @@ namespace Aurora.App
                 mainWindow.Show();
                 mainWindow.Activate();
                 bootstrap.Close();
+                if (Security.IsLockedDown) ShowLockdownOverlay();
 
                 try
                 {
@@ -181,8 +182,15 @@ namespace Aurora.App
                 _lockdownWindow.Activate();
             });
         }
-        private static bool VerifyCurrentInstallation() => true;
-        private static bool VerifyRecoveryCode(string code) => !string.IsNullOrWhiteSpace(_sessionRecoveryCode) && AuroraRecoveryService.VerifyRecoveryCode(code, _sessionRecoveryCode);
+        private static bool VerifyCurrentInstallation()
+        {
+            var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
+            var executable = Environment.ProcessPath;
+            return !string.IsNullOrWhiteSpace(expected) &&
+                   !string.IsNullOrWhiteSpace(executable) &&
+                   InstallationSecurityService.VerifyFileSha256(executable, expected);
+        }
+        private static bool VerifyRecoveryCode(string code) => !string.IsNullOrWhiteSpace(_sessionRecoveryCode) && AuroraRecoveryService.VerifyRecoveryCode(code, new[] { _sessionRecoveryCode });
         private static void ClearLockdownOverlay()
         {
             _lockdownWindow = null;
