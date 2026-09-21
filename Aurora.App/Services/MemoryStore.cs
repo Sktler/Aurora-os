@@ -13,8 +13,11 @@ namespace Aurora.App.Services
     {
         private readonly string _dbPath;
         private SqliteConnection? _conn;
+        public string ActiveProfileId { get; private set; } = "primary";
 
         public MemoryStore(string dbPath) => _dbPath = dbPath;
+
+        public void SetActiveProfile(string profileId) => ActiveProfileId = string.IsNullOrWhiteSpace(profileId) ? "primary" : profileId;
 
         public void Initialize()
         {
@@ -25,6 +28,7 @@ namespace Aurora.App.Services
             cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Companions (
                     Id TEXT PRIMARY KEY,
+                    ProfileId TEXT NOT NULL DEFAULT 'primary',
                     Name TEXT NOT NULL,
                     Role TEXT NOT NULL,
                     SystemPrompt TEXT NOT NULL,
@@ -35,6 +39,7 @@ namespace Aurora.App.Services
 
                 CREATE TABLE IF NOT EXISTS Messages (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ProfileId TEXT NOT NULL DEFAULT 'primary',
                     CompanionId TEXT NOT NULL,
                     Role TEXT NOT NULL,
                     Content TEXT NOT NULL,
@@ -44,6 +49,10 @@ namespace Aurora.App.Services
                 CREATE INDEX IF NOT EXISTS IX_Messages_CompanionId ON Messages(CompanionId);
             ";
             cmd.ExecuteNonQuery();
+
+            // Profile migration for databases created before multi-user profiles existed.
+            EnsureColumn("Companions", "ProfileId", "TEXT NOT NULL DEFAULT 'primary'");
+            EnsureColumn("Messages", "ProfileId", "TEXT NOT NULL DEFAULT 'primary'");
 
             // Migration: databases created before ToolAccess existed won't have the column -
             // CREATE TABLE IF NOT EXISTS only affects brand-new tables, so add it explicitly
@@ -86,12 +95,13 @@ namespace Aurora.App.Services
         {
             var cmd = _conn!.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO Companions (Id, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess)
-                VALUES ($id, $name, $role, $prompt, $accent, $bg, $tools)
+                INSERT INTO Companions (Id, ProfileId, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess)
+                VALUES ($id, $profile, $name, $role, $prompt, $accent, $bg, $tools)
                 ON CONFLICT(Id) DO UPDATE SET
-                    Name=$name, Role=$role, SystemPrompt=$prompt, AccentHex=$accent, CanRunInBackground=$bg, ToolAccess=$tools;
+                    ProfileId=$profile, Name=$name, Role=$role, SystemPrompt=$prompt, AccentHex=$accent, CanRunInBackground=$bg, ToolAccess=$tools;
             ";
             cmd.Parameters.AddWithValue("$id", c.Id);
+            cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             cmd.Parameters.AddWithValue("$name", c.Name);
             cmd.Parameters.AddWithValue("$role", c.Role);
             cmd.Parameters.AddWithValue("$prompt", c.SystemPrompt);
@@ -105,7 +115,8 @@ namespace Aurora.App.Services
         {
             var result = new List<Companion>();
             var cmd = _conn!.CreateCommand();
-            cmd.CommandText = "SELECT Id, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess FROM Companions;";
+            cmd.CommandText = "SELECT Id, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess FROM Companions WHERE ProfileId = $profile;";
+            cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -131,9 +142,10 @@ namespace Aurora.App.Services
         {
             var cmd = _conn!.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO Messages (CompanionId, Role, Content, Timestamp)
-                VALUES ($cid, $role, $content, $ts);
+                INSERT INTO Messages (ProfileId, CompanionId, Role, Content, Timestamp)
+                VALUES ($profile, $cid, $role, $content, $ts);
             ";
+            cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             cmd.Parameters.AddWithValue("$cid", m.CompanionId);
             cmd.Parameters.AddWithValue("$role", m.Role);
             cmd.Parameters.AddWithValue("$content", m.Content);
@@ -147,10 +159,11 @@ namespace Aurora.App.Services
             var cmd = _conn!.CreateCommand();
             cmd.CommandText = @"
                 SELECT Id, CompanionId, Role, Content, Timestamp FROM Messages
-                WHERE CompanionId = $cid
+                WHERE ProfileId = $profile AND CompanionId = $cid
                 ORDER BY Id DESC
                 LIMIT $max;
             ";
+            cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             cmd.Parameters.AddWithValue("$cid", companionId);
             cmd.Parameters.AddWithValue("$max", maxMessages);
             using var reader = cmd.ExecuteReader();
@@ -173,9 +186,25 @@ namespace Aurora.App.Services
         public void ClearHistory(string companionId)
         {
             var cmd = _conn!.CreateCommand();
-            cmd.CommandText = "DELETE FROM Messages WHERE CompanionId = $cid;";
+            cmd.CommandText = "DELETE FROM Messages WHERE ProfileId = $profile AND CompanionId = $cid;";
             cmd.Parameters.AddWithValue("$cid", companionId);
             cmd.ExecuteNonQuery();
+        }
+
+        private void EnsureColumn(string table, string column, string definition)
+        {
+            var check = _conn!.CreateCommand();
+            check.CommandText = $"PRAGMA table_info({table});";
+            var exists = false;
+            using (var reader = check.ExecuteReader())
+                while (reader.Read())
+                    if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase)) { exists = true; break; }
+            if (!exists)
+            {
+                var alter = _conn.CreateCommand();
+                alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition};";
+                alter.ExecuteNonQuery();
+            }
         }
 
         public void Dispose() => _conn?.Dispose();
