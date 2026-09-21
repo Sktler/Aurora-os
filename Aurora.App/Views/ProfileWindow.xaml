@@ -2,7 +2,7 @@
     <Grid Margin="24">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel><TextBlock Text="User profiles" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="Each profile has separate settings and companion memory. Voice matching is optional and only suggests a profile." Foreground="#9AA8B8" TextWrapping="Wrap" Margin="0,6,0,16"/></StackPanel>
-        <ListBox x:Name="ProfilesList" Grid.Row="1" Background="#101620" BorderBrush="#263245" Foreground="#F2F6FA" Padding="6" SelectionChanged="ProfilesList_SelectionChanged">
+        <ListBox x:Name="ProfilesList" Grid.Row="1" Background="#101620" BorderBrush="#263245" Foreground="#F2F6FA" Padding="6">
             <ListBox.ItemTemplate><DataTemplate><Grid Margin="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="{Binding Id}" Foreground="#718095" FontSize="10" Margin="0,3,0,0"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding SpeakerEnrolled, StringFormat=Voice enrolled: {0}}" Foreground="#7DE2B0" VerticalAlignment="Center"/></Grid></DataTemplate></ListBox.ItemTemplate>
         </ListBox>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,18,0,0">
