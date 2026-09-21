@@ -67,6 +67,21 @@ namespace Aurora.App.ViewModels
             GreetingText = BuildGreeting();
         }
 
+        public void ReloadForActiveProfile()
+        {
+            foreach (var companion in Companions) companion.StopListening();
+            Companions.Clear();
+            var existing = App.Memory.LoadCompanions();
+            if (existing.Count == 0)
+            {
+                existing = SeedDefaults();
+                foreach (var companion in existing) App.Memory.SaveCompanion(companion);
+            }
+            foreach (var companion in existing) Companions.Add(new CompanionViewModel(companion));
+            SelectedCompanion = Companions.FirstOrDefault();
+            RefreshUserName();
+        }
+
         private static string NormalizeUserName(string? name)
         {
             var trimmed = name?.Trim() ?? "";
