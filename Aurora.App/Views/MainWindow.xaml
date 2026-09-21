@@ -91,6 +91,21 @@
                     <TextBlock Text="{Binding GreetingText}" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{StaticResource AccentVioletBrush}" Margin="0,0,0,4"/>
                     <TextBlock Text="Aurora" FontSize="48" FontWeight="Light" HorizontalAlignment="Center" Foreground="{StaticResource AccentCyanBrush}"><TextBlock.Effect><DropShadowEffect Color="#4FD8E8" BlurRadius="22" ShadowDepth="0" Opacity="0.45"/></TextBlock.Effect></TextBlock>
                     <TextBlock Text="Your AI Companion" FontSize="18" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
+                    <Button x:Name="DashboardEmergencyStopButton"
+                            Content="⛔  EMERGENCY STOP / LOCK AURORA"
+                            Click="EmergencyStop_Click"
+                            Margin="0,16,0,0"
+                            Padding="28,12"
+                            MinWidth="300"
+                            HorizontalAlignment="Center"
+                            Background="#96232D"
+                            Foreground="White"
+                            BorderBrush="#FF6973"
+                            BorderThickness="2"
+                            FontSize="15"
+                            FontWeight="Bold"
+                            Cursor="Hand"
+                            ToolTip="Immediately lock Aurora and block interactive access."/>
                 </StackPanel>
                 <Grid Grid.Row="1">
                     <views:ParticleOrb Width="560" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"
