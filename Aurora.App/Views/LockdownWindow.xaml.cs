@@ -11,19 +11,25 @@ public partial class LockdownWindow : Window
     private readonly Func<bool> _softwareIntegrityCheck;
     private readonly Func<string, bool> _userRecoveryCheck;
     private readonly Action _unlocked;
+    private readonly string _recoveryCode;
 
     public LockdownWindow(
         InstallationSecurityService security,
         Func<bool> softwareIntegrityCheck,
         Func<string, bool> userRecoveryCheck,
-        Action unlocked)
+        Action unlocked,
+        string recoveryCode)
     {
         _security = security ?? throw new ArgumentNullException(nameof(security));
         _softwareIntegrityCheck = softwareIntegrityCheck ?? throw new ArgumentNullException(nameof(softwareIntegrityCheck));
         _userRecoveryCheck = userRecoveryCheck ?? throw new ArgumentNullException(nameof(userRecoveryCheck));
         _unlocked = unlocked ?? throw new ArgumentNullException(nameof(unlocked));
+        _recoveryCode = recoveryCode ?? "";
 
         InitializeComponent();
+        RecoveryCodeDisplay.Text = string.IsNullOrWhiteSpace(_recoveryCode)
+            ? "No recovery credential is available in this session."
+            : $"Emergency recovery code: {_recoveryCode}";
         Loaded += (_, _) =>
         {
             Left = SystemParameters.VirtualScreenLeft;
