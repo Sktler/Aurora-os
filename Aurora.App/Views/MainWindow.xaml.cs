@@ -136,6 +136,19 @@ namespace Aurora.App.Views
                 ? dvm.Companions.Select(c => c.Companion)
                 : Enumerable.Empty<Companion>();
 
+        private void OpenProfiles()
+        {
+            new ProfileWindow { Owner = this }.ShowDialog();
+            ReloadAfterProfileSwitch();
+        }
+
+        public void ReloadAfterProfileSwitch()
+        {
+            if (DataContext is DashboardViewModel dvm)
+                dvm.ReloadForActiveProfile();
+            UpdateProfileNameDisplay();
+        }
+
         private void OpenSettings(SettingsSection section = SettingsSection.Hub)
         {
             var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this };
@@ -247,6 +260,10 @@ namespace Aurora.App.Views
                 Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
                 StaysOpen = false
             };
+
+            var profiles = new MenuItem { Header = "👥  Profiles" };
+            profiles.Click += (_, _) => OpenProfiles();
+            menu.Items.Add(profiles);
 
             var changeName = new MenuItem { Header = "✎  Change name" };
             changeName.Click += (_, _) => ChangeUserName();
