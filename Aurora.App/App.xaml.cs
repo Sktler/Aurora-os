@@ -8,7 +8,9 @@ namespace Aurora.App
 {
     public partial class App : Application
     {
-        public static AppSettings Settings { get; private set; } = null!;
+        public static AppSettings Settings { get; set; } = null!;
+        public static ProfileManager Profiles { get; private set; } = null!;
+        public static SpeakerRecognitionService SpeakerRecognition { get; } = new();
         public static MemoryStore Memory { get; private set; } = null!;
         public static IChatEngine AI { get; private set; } = null!;
         public static ImageGenClient ImageGen { get; private set; } = null!;
@@ -37,6 +39,8 @@ namespace Aurora.App
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var firstRun = !AppSettings.HasSavedConfiguration;
                 Settings = AppSettings.LoadOrCreate();
+                Profiles = new ProfileManager();
+                Profiles.Initialize(Settings);
                 Updater = new WindowsUpdaterService();
 
                 if (firstRun)
@@ -98,6 +102,7 @@ namespace Aurora.App
                 System.Diagnostics.Debug.WriteLine("[Startup] Permission choices complete. Creating dashboard.");
 
                 Memory = new MemoryStore(Settings.DatabasePath);
+                Memory.SetActiveProfile(Settings.ProfileId);
                 Memory.Initialize();
                 Weather = new WeatherClient();
 
@@ -153,7 +158,7 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
-        public static void RefreshIntegrationClients() { SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
+        public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
         {
             var databasePath = Settings?.DatabasePath;

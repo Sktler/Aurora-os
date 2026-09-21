@@ -7,6 +7,8 @@ namespace Aurora.App.Services
     public class AppSettings
     {
         public string UserName { get; set; } = "Adam";
+        public string ProfileId { get; set; } = "primary";
+        public bool SpeakerRecognitionEnabled { get; set; } = false;
         public string ChatProvider { get; set; } = "gemini";
         public string GeminiApiKey { get; set; } = "";
         public string GeminiModel { get; set; } = "gemini-3.6-flash";
@@ -138,6 +140,15 @@ namespace Aurora.App.Services
             return trimmed.StartsWith("models/", StringComparison.OrdinalIgnoreCase) ? trimmed.Substring("models/".Length) : trimmed;
         }
         public void Save()
+        {
+            Directory.CreateDirectory(ConfigDir);
+            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(ConfigPath, json);
+            if (App.Profiles != null)
+                App.Profiles.SaveActiveSettings();
+        }
+
+        public void SaveGlobalOnly()
         {
             Directory.CreateDirectory(ConfigDir);
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });

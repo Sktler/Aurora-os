@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace Aurora.App.Services
 {
@@ -51,6 +52,17 @@ namespace Aurora.App.Services
         private WaveInEvent? _micCapture;
         private LiveMicrophoneStream? _micStream;
         private Action? _onStoppedExternally;
+        private byte[]? _lastVoiceSamplePcm16k;
+        private string? _enrollmentProfileId;
+
+        public byte[]? ConsumeLastVoiceSample()
+        {
+            var sample = _lastVoiceSamplePcm16k;
+            _lastVoiceSamplePcm16k = null;
+            return sample;
+        }
+
+        public void BeginSpeakerEnrollment(string profileId) => _enrollmentProfileId = profileId;
 
         private const int MaxRecentTranscripts = 50;
         private readonly object _transcriptLock = new();
@@ -473,7 +485,19 @@ namespace Aurora.App.Services
                     RecordTranscript(text ?? string.Empty, confidence, accepted);
 
                     if (accepted)
+                    {
+                        var sample = TryExtractPcm16k(e.Result?.Audio);
+                        if (sample.Length > 0)
+                        {
+                            _lastVoiceSamplePcm16k = sample;
+                            if (!string.IsNullOrWhiteSpace(_enrollmentProfileId))
+                            {
+                                App.Profiles?.SaveSpeakerEmbedding(_enrollmentProfileId, App.SpeakerRecognition.CreateEmbedding(sample));
+                                _enrollmentProfileId = null;
+                            }
+                        }
                         onUtteranceRecognized(text!);
+                    }
                     // SpeechRecognitionRejected (mumbled/unintelligible audio) is deliberately
                     // ignored here rather than surfaced - in continuous mode that's just
                     // background noise or a false start, not something worth interrupting for.
@@ -521,6 +545,28 @@ namespace Aurora.App.Services
             _micStream?.Complete();
             _micStream?.Dispose();
             _micStream = null;
+        }
+
+        private static byte[] TryExtractPcm16k(RecognizedAudio? audio)
+        {
+            if (audio == null) return Array.Empty<byte>();
+            try
+            {
+                using var wav = new MemoryStream();
+                audio.WriteToWaveStream(wav);
+                wav.Position = 0;
+                using var reader = new WaveFileReader(wav);
+                var provider = reader.ToSampleProvider();
+                if (provider.WaveFormat.Channels > 1) provider = provider.ToMono();
+                var resampler = new WdlResamplingSampleProvider(provider, 16000);
+                var pcm = resampler.ToWaveProvider16();
+                using var output = new MemoryStream();
+                var buffer = new byte[pcm.WaveFormat.AverageBytesPerSecond];
+                int read;
+                while ((read = pcm.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, read);
+                return output.ToArray();
+            }
+            catch { return Array.Empty<byte>(); }
         }
 
         private void RecordTranscript(string rawText, double confidence, bool accepted)
