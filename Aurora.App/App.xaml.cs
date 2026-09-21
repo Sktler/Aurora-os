@@ -25,6 +25,7 @@ namespace Aurora.App
         public static CameraService Camera { get; private set; } = null!;
         public static McpService Mcp { get; private set; } = null!;
         public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
+        public static AppAdapterService AppAdapters { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
         public static WindowsUpdaterService Updater { get; private set; } = null!;
 
@@ -133,6 +134,7 @@ namespace Aurora.App
                     Camera = new CameraService();
                     Mcp = new McpService();
                     WindowsAutomation = CreateWindowsService();
+                    AppAdapters = new AppAdapterService(WindowsAutomation);
 
                     try { WakeWord.Start(); }
                     catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
@@ -153,7 +155,7 @@ namespace Aurora.App
         {
             return WindowsAutomationService.FromSettings(Settings);
         }
-        public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); }
+        public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); AppAdapters = new AppAdapterService(WindowsAutomation); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
