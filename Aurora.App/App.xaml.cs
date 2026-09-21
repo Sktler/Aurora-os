@@ -31,6 +31,7 @@ namespace Aurora.App
         public static InstallationSecurityService Security { get; private set; } = null!;
         public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
         private static Views.LockdownWindow? _lockdownWindow;
+        private static string? _sessionRecoveryCode;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -175,13 +176,13 @@ namespace Aurora.App
                     _lockdownWindow.Activate();
                     return;
                 }
-                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, ClearLockdownOverlay);
+                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, ClearLockdownOverlay, _sessionRecoveryCode ?? "");
                 _lockdownWindow.Show();
                 _lockdownWindow.Activate();
             });
         }
         private static bool VerifyCurrentInstallation() => true;
-        private static bool VerifyRecoveryCode(string code) => false;
+        private static bool VerifyRecoveryCode(string code) => !string.IsNullOrWhiteSpace(_sessionRecoveryCode) && AuroraRecoveryService.VerifyRecoveryCode(code, _sessionRecoveryCode);
         private static void ClearLockdownOverlay()
         {
             _lockdownWindow = null;
@@ -190,6 +191,7 @@ namespace Aurora.App
         }
         public static void EnterLockdown(string reason)
         {
+            _sessionRecoveryCode ??= AuroraRecoveryService.GenerateRecoveryCodes(1, AuroraRecoveryService.DefaultRecoveryCodeLength)[0];
             Security.EnterLockdown(reason);
             foreach (Window window in Current.Windows)
                 if (window is not Views.LockdownWindow) window.IsEnabled = false;
