@@ -117,6 +117,12 @@ namespace Aurora.App.Services
         }
 
         private static string? GetApp(JsonElement input) => input.TryGetProperty("app", out var a) ? a.GetString() : null;
+        private static string FormatAppAdapters(IReadOnlyList<AppAdapterDefinition> adapters) =>
+            adapters.Count == 0
+                ? "No app adapters are registered."
+                : string.Join(Environment.NewLine, adapters.Select(a =>
+                    $"{a.Id}: {a.Name} — {(a.Available ? "available" : "unavailable")} — capabilities: {string.Join(", ", a.Capabilities)} — permissions: {string.Join(", ", a.Permissions)}"));
+
         private static string FormatProcesses(IReadOnlyList<ProcessInfo> xs) => xs.Count == 0 ? "No running applications found." : string.Join("\n", xs.Select(x => $"{x.Name} (PID {x.Id}) — {x.WindowTitle}"));
         private static string SaveScreen()
         {
