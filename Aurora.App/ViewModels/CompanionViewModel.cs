@@ -86,6 +86,9 @@ namespace Aurora.App.ViewModels
             var normalized = VoiceInputNormalizer.Normalize(heard);
             if (!VoiceInputNormalizer.IsUsable(normalized)) return;
 
+            if (App.Settings.SpeakerRecognitionEnabled && TryHandleSpeakerSuggestion())
+                return;
+
             // Windows continuous recognition can emit the same completed phrase more than once.
             // Suppress only immediate exact duplicates; distinct phrases remain untouched.
             if (VoiceInputNormalizer.IsLikelyDuplicate(normalized, _lastSubmittedUtterance) &&
@@ -96,6 +99,41 @@ namespace Aurora.App.ViewModels
             _lastSubmittedAtUtc = DateTime.UtcNow;
             _pendingUtterances.Enqueue(normalized);
             if (!_isDrainingQueue) _ = DrainUtteranceQueueAsync();
+        }
+
+        private bool TryHandleSpeakerSuggestion()
+        {
+            var sample = App.Voice.ConsumeLastVoiceSample();
+            if (sample == null || App.Profiles == null) return false;
+
+            var candidates = App.Profiles.Profiles
+                .Where(p => p.Id != App.Profiles.ActiveProfile.Id && p.SpeakerEnrolled && !string.IsNullOrWhiteSpace(p.SpeakerEmbedding))
+                .Select(p => (p.Id, p.SpeakerEmbedding));
+            var suggestion = App.SpeakerRecognition.Suggest(candidates, sample);
+            if (string.IsNullOrWhiteSpace(suggestion.ProfileId)) return false;
+
+            var profile = App.Profiles.GetProfile(suggestion.ProfileId);
+            if (profile == null) return false;
+
+            var confirm = System.Windows.MessageBox.Show(
+                System.Windows.Application.Current?.MainWindow,
+                $"Aurora heard a voice that resembles the profile \"{profile.DisplayName}\" ({suggestion.Confidence:P0} match). Switch profiles?\n\nSpeaker matching is only a suggestion and is not authentication.",
+                "Switch profile?",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (confirm != System.Windows.MessageBoxResult.Yes) return false;
+
+            App.Profiles.SwitchProfile(profile.Id);
+            if (System.Windows.Application.Current?.MainWindow is Aurora.App.Views.MainWindow main)
+                main.ReloadAfterProfileSwitch();
+            System.Windows.MessageBox.Show(
+                System.Windows.Application.Current?.MainWindow,
+                $"Switched to {profile.DisplayName}. Please repeat your request.",
+                "Profile switched",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+            return true;
         }
 
         private async Task DrainUtteranceQueueAsync()
