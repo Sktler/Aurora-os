@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 using Aurora.App.Models;
 
 namespace Aurora.App.Services;
 
-public sealed class AuroraConnectorSession
+public sealed class AuroraConnectorSession : IDisposable
 {
     private readonly byte[] _sessionKey;
     private readonly HashSet<string> _messageIds = new(StringComparer.Ordinal);
+    private long _nextSendSequence;
     private long _lastReceivedSequence;
 
     public AuroraConnectorSession(ReadOnlySpan<byte> sessionKey)
@@ -19,7 +21,7 @@ public sealed class AuroraConnectorSession
 
     public AuroraConnectorEnvelope Encrypt(string type, string senderDeviceId, ReadOnlySpan<byte> payload)
     {
-        var sequence = ++_lastReceivedSequence;
+        var sequence = ++_nextSendSequence;
         return AuroraConnectorProtocol.Encrypt(type, senderDeviceId, sequence, _sessionKey, payload);
     }
 
@@ -38,4 +40,6 @@ public sealed class AuroraConnectorSession
         _lastReceivedSequence = envelope.Sequence;
         return plaintext;
     }
+
+    public void Dispose() => CryptographicOperations.ZeroMemory(_sessionKey);
 }
