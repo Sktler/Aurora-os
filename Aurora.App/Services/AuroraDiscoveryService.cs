@@ -47,7 +47,7 @@ public sealed class AuroraDiscoveryService : IDisposable
             deviceId = identity.DeviceId,
             platform = identity.Platform,
             displayName = identity.DisplayName,
-            port = Port,
+            port = Port,\n            publicKeyBase64 = identity.PublicKeyBase64,\n            fingerprint = identity.Fingerprint,
             capabilitiesHash = Convert.ToHexString(
                 System.Security.Cryptography.SHA256.HashData(
                     AuroraConnectorProtocol.Serialize(_capabilities))).ToLowerInvariant()
