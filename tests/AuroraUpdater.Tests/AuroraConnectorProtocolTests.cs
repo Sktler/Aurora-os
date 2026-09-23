@@ -18,7 +18,7 @@ public sealed class AuroraConnectorProtocolTests
             AuroraConnectorPlatform.Windows,
             "Aurora Desktop",
             Convert.ToBase64String(key.ExportSubjectPublicKeyInfo()),
-            Convert.ToBase64String(ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256).PublicKey.ToByteArray()),
+            Convert.ToBase64String(ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256).PublicKey.ExportSubjectPublicKeyInfo()),
             Convert.ToBase64String(RandomNumberGenerator.GetBytes(16)),
             "",
             "capabilities-hash");
