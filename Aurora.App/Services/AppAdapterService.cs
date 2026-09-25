@@ -86,6 +86,13 @@ public sealed class AppAdapterService
             return new(false, false, "Application access is disabled in Aurora Settings.", adapterId, action);
 
         var normalizedAction = (action ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.Equals(adapterId, "vscode", StringComparison.OrdinalIgnoreCase) &&
+            normalizedAction == "new_file" && !confirm)
+        {
+            var path = RequireTarget(target);
+            return new(true, true, BuildWritePreview("VS Code", path, content ?? string.Empty), adapterId, action);
+        }
+
         var executable = adapter.ResolveExecutable();
 
         if (executable == null)
@@ -126,9 +133,6 @@ public sealed class AppAdapterService
                 {
                     var path = RequireTarget(target);
                     var proposedContent = content ?? string.Empty;
-                    if (!confirm)
-                        return new(true, true, BuildWritePreview("VS Code", path, proposedContent), adapterId, action);
-
                     if (!_windows.FilesEnabled)
                         return new(false, false,
                             "File access is disabled; Aurora cannot create the requested file.", adapterId, action);
