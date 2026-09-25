@@ -170,7 +170,7 @@ namespace Aurora.App
         public static void ShowLockdownOverlay()
         {
             if (Security == null || !Security.IsLockedDown) return;
-            Dispatcher.Invoke(() =>
+            Current.Dispatcher.Invoke(() =>
             {
                 if (_lockdownWindow != null)
                 {

@@ -41,7 +41,8 @@ public static class AuroraConnectorProtocol
         try
         {
             using var hmac = new HMACSHA256(shared);
-            return hmac.ComputeHash(transcriptHash);
+            var transcriptBytes = transcriptHash.ToArray();
+            return hmac.ComputeHash(transcriptBytes);
         }
         finally { CryptographicOperations.ZeroMemory(shared); }
     }
