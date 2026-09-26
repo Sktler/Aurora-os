@@ -1,0 +1,39 @@
+<Window x:Class="Aurora.App.Views.RecoveryCodeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Aurora Recovery Code" Width="680" Height="520" MinWidth="620" MinHeight="470"
+        WindowStartupLocation="CenterOwner" Background="#0B1018" Foreground="#F2F6FA" ResizeMode="NoResize">
+    <Grid Margin="30">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Profile recovery" FontSize="26" FontWeight="SemiBold"/>
+            <TextBlock x:Name="ProfileLabel" Foreground="#9AA8B8" Margin="0,6,0,0"/>
+            <TextBlock Text="Create a recovery code for this profile. Aurora stores only a secure verifier; the code itself is shown to you once."
+                       Foreground="#9AA8B8" TextWrapping="Wrap" Margin="0,14,0,0"/>
+        </StackPanel>
+        <Border Grid.Row="1" Margin="0,24,0,20" Padding="24" Background="#101722" BorderBrush="#293245" BorderThickness="1" CornerRadius="14">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="Your recovery code" HorizontalAlignment="Center" Foreground="#9AA8B8"/>
+                <TextBox x:Name="RecoveryCodeBox" Margin="0,12,0,18" Padding="12" FontSize="22" FontFamily="Consolas"
+                         FontWeight="SemiBold" TextAlignment="Center" IsReadOnly="True" Background="#080B11"
+                         Foreground="#7DE2B0" BorderBrush="#35435A" BorderThickness="1"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Generate" Click="Generate_Click" Padding="18,10" Margin="4"/>
+                    <Button x:Name="CopyButton" Content="Copy" Click="Copy_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
+                    <Button x:Name="SaveButton" Content="Save to file" Click="Save_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
+                    <Button x:Name="PrintButton" Content="Print" Click="Print_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
+                </StackPanel>
+                <TextBlock Text="Save or print this code before confirming. Do not put it in GitHub, logs, screenshots, or connector messages."
+                           Foreground="#F2B36B" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="12,18,12,0"/>
+            </StackPanel>
+        </Border>
+        <StackPanel Grid.Row="2">
+            <CheckBox x:Name="SavedCheckBox" Content="I have saved my recovery code somewhere safe."
+                      Foreground="#DCE5EF" Checked="SavedCheckBox_Checked" HorizontalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                <Button Content="Cancel" Click="Cancel_Click" Padding="18,9" Margin="0,0,8,0"/>
+                <Button x:Name="DoneButton" Content="Save recovery code" Click="Done_Click" Padding="18,9" IsEnabled="False"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
