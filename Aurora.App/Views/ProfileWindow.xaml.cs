@@ -37,6 +37,17 @@ namespace Aurora.App.Views
             Close();
         }
 
+        private void RecoveryCode_Click(object sender, RoutedEventArgs e)
+        {
+            if (ProfilesList.SelectedItem is not UserProfile p || p.Id != App.Profiles.ActiveProfile.Id)
+            {
+                MessageBox.Show(this, "Select the active profile to manage its recovery code.", "Recovery code", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            new RecoveryCodeWindow { Owner = this }.ShowDialog();
+        }
+
         private void EnrollVoice_Click(object sender, RoutedEventArgs e)
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;

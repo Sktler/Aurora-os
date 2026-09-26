@@ -6,7 +6,7 @@
             <ListBox.ItemTemplate><DataTemplate><Grid Margin="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="{Binding Id}" Foreground="#718095" FontSize="10" Margin="0,3,0,0"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding SpeakerEnrolled, StringFormat=Voice enrolled: {0}}" Foreground="#7DE2B0" VerticalAlignment="Center"/></Grid></DataTemplate></ListBox.ItemTemplate>
         </ListBox>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,18,0,0">
-            <Button Content="Add profile" Click="AddProfile_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Use selected" Click="UseSelected_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Enroll voice" Click="EnrollVoice_Click" Padding="16,9"/>
+            <Button Content="Add profile" Click="AddProfile_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Use selected" Click="UseSelected_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Enroll voice" Click="EnrollVoice_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="🔐 Recovery code" Click="RecoveryCode_Click" Padding="16,9"/>
             <CheckBox x:Name="SpeakerSuggestionsBox" Content=" Enable speaker suggestions"  Margin="18,10,0,0" Foreground="#DCE5EF"/>
         </StackPanel>
     </Grid>
