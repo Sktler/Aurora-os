@@ -19,6 +19,36 @@ It covers:
 - Known limitations and future work
 - Project structure
 
+## Security and recovery
+
+Aurora includes a fail-closed recovery and lockdown foundation for protecting the desktop application:
+
+- Trusted-installation and software-integrity verification
+- Emergency lockdown from the main dashboard
+- A dedicated lockdown window that remains active while Aurora is locked
+- Profile recovery-code generation and protected verifier storage
+- Recovery-code verification using PBKDF2-SHA256 with 600,000 iterations
+- Encrypted recovery snapshots using AES-256-GCM
+- Detached RSA-SHA256 signature verification
+- Constant-time verification for sensitive recovery and pairing values
+
+Recovery codes are not stored in plaintext by Aurora. Users are responsible for keeping their generated recovery code in a secure offline location.
+
+## Windows ↔ Android connector
+
+Aurora also contains the foundation for a secure Windows ↔ Android connector:
+
+- Signed device-pairing requests using ECDSA P-256
+- ECDH-based session-key derivation
+- AES-256-GCM encrypted connector envelopes
+- Sequence and replay protection
+- Trusted-device storage and revocation
+- Local UDP discovery metadata
+- Capability and device fingerprint exchange
+- A documented shared protocol for future Android implementation
+
+Discovery is treated as untrusted metadata; a device must be authenticated and trusted before protected communication is established.
+
 ## Project
 
 - **Platform:** Windows
