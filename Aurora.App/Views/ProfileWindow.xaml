@@ -7,7 +7,7 @@
         </ListBox>
         <StackPanel Grid.Row="2" Margin="0,18,0,0">
             <StackPanel Orientation="Horizontal">
-                <Button Content="Add profile" Click="AddProfile_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Use selected" Click="UseSelected_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Enroll voice" Click="EnrollVoice_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="🔐 Recovery code" Click="RecoveryCode_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="📁 Recovery storage" Click="RecoveryStorage_Click" Padding="16,9"/>
+                <Button Content="Add profile" Click="AddProfile_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Use selected" Click="UseSelected_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Enroll voice" Click="EnrollVoice_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="🔐 Recovery code" Click="RecoveryCode_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="📁 Recovery storage" Click="RecoveryStorage_Click" Padding="16,9" Margin="0,0,8,0"/><Button Content="Open recovery folder" Click="OpenRecoveryFolder_Click" Padding="16,9"/>
                 <CheckBox x:Name="SpeakerSuggestionsBox" Content=" Enable speaker suggestions" Margin="18,10,0,0" Foreground="#DCE5EF"/>
             </StackPanel>
             <TextBlock Text="Recovery storage: " Foreground="#9AA8B8" Margin="0,10,0,0"/><TextBlock x:Name="RecoveryStoragePathText" Foreground="#DCE5EF" TextWrapping="Wrap"/>
