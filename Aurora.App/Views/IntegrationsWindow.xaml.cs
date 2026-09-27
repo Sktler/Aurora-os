@@ -70,8 +70,59 @@ namespace Aurora.App.Views
 
         private void ResetAurora_Click(object sender, RoutedEventArgs e)
         {
+            var credentialBox = new PasswordBox
+            {
+                Width = 320,
+                Padding = new Thickness(8),
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Developer credential required to reset Aurora.",
+                TextWrapping = TextWrapping.Wrap
+            });
+            panel.Children.Add(credentialBox);
+
+            var credentialDialog = new Window
+            {
+                Title = "Developer reset",
+                Owner = this,
+                Content = panel,
+                Width = 390,
+                Height = 165,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ShowInTaskbar = false
+            };
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+            var cancel = new Button { Content = "Cancel", Padding = new Thickness(14, 6), Margin = new Thickness(0, 0, 8, 0) };
+            var verify = new Button { Content = "Verify", Padding = new Thickness(14, 6), IsDefault = true };
+            cancel.Click += (_, _) => credentialDialog.DialogResult = false;
+            verify.Click += (_, _) => credentialDialog.DialogResult = true;
+            buttons.Children.Add(cancel);
+            buttons.Children.Add(verify);
+            panel.Children.Add(buttons);
+
+            if (credentialDialog.ShowDialog() != true)
+                return;
+
+            if (!DeveloperResetVerifier.Verify(credentialBox.Password))
+            {
+                MessageBox.Show(this, "The developer credential was not accepted. Aurora was not reset.", "Developer reset", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             var confirm = MessageBox.Show(this, "This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?", "Reset Aurora completely", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-            if (confirm == MessageBoxResult.Yes) App.ResetEverythingAndRestart();
+            if (confirm == MessageBoxResult.Yes)
+                App.ResetEverythingAndRestart();
         }
 
         private void ChooseTrustedFolder_Click(object sender, RoutedEventArgs e)
