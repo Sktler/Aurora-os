@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using Aurora.App.Models;
+using Aurora.App.Services;
 
 namespace Aurora.App.Views
 {
@@ -13,6 +14,7 @@ namespace Aurora.App.Views
             InitializeComponent();
             RefreshList();
             SpeakerSuggestionsBox.IsChecked = App.Settings.SpeakerRecognitionEnabled;
+            RecoveryStoragePathText.Text = RecoveryStorageSettings.DirectoryPath;
         }
 
         private void RefreshList() { ProfilesList.ItemsSource = App.Profiles.Profiles; ProfilesList.SelectedItem = App.Profiles.ActiveProfile; }
@@ -46,6 +48,28 @@ namespace Aurora.App.Views
             }
 
             new RecoveryCodeWindow { Owner = this }.ShowDialog();
+        }
+
+        private void RecoveryStorage_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "Choose where Aurora stores recovery-code verifiers",
+                Multiselect = false,
+                InitialDirectory = RecoveryStorageSettings.DirectoryPath
+            };
+
+            if (dialog.ShowDialog(this) != true) return;
+            try
+            {
+                RecoveryStorageSettings.ChangeDirectory(dialog.FolderName);
+                RecoveryStoragePathText.Text = RecoveryStorageSettings.DirectoryPath;
+                MessageBox.Show(this, "Recovery-code verifier files were moved to the selected folder. The recovery codes themselves are never stored there in plaintext.", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Aurora could not change the recovery storage folder. No recovery code was changed.\n\n{ex.Message}", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void EnrollVoice_Click(object sender, RoutedEventArgs e)
