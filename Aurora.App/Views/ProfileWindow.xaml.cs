@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using Aurora.App.Models;
@@ -69,6 +70,25 @@ namespace Aurora.App.Views
             catch (Exception ex)
             {
                 MessageBox.Show(this, $"Aurora could not change the recovery storage folder. No recovery code was changed.\n\n{ex.Message}", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void OpenRecoveryFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var path = RecoveryStorageSettings.DirectoryPath;
+                System.IO.Directory.CreateDirectory(path);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{path}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Aurora could not open the recovery storage folder.\n\n{ex.Message}", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
