@@ -22,10 +22,10 @@ namespace Aurora.App.Views
 
         private void AddProfile_Click(object sender, RoutedEventArgs e)
         {
-            var input = new TextBox { Text = "New User", Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8) };
-            var dialog = new Window { Owner = this, Title = "New profile", Width = 340, Height = 170, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = new StackPanel { Margin = new Thickness(18) } };
+            var input = new TextBox { Text = "New User", Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8) };
+            var dialog = new Window { Owner = this, Title = "New profile", Width = 340, Height = 170, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = new StackPanel { Margin = new Thickness(18, 18, 18, 18) } };
             var panel = (StackPanel)dialog.Content; panel.Children.Add(new TextBlock { Text = "Profile name" }); panel.Children.Add(input);
-            var save = new Button { Content = "Create", Padding = new Thickness(12), HorizontalAlignment = HorizontalAlignment.Right }; panel.Children.Add(save);
+            var save = new Button { Content = "Create", Padding = new Thickness(12, 12, 12, 12), HorizontalAlignment = HorizontalAlignment.Right }; panel.Children.Add(save);
             save.Click += (_, _) => { var p = App.Profiles.CreateProfile(input.Text); RefreshList(); ProfilesList.SelectedItem = p; dialog.Close(); };
             dialog.ShowDialog();
         }
