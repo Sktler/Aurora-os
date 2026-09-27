@@ -30,15 +30,18 @@ public partial class LockdownWindow : Window
         RecoveryCodeDisplay.Text = string.IsNullOrWhiteSpace(_recoveryCode)
             ? "No recovery credential is available in this session."
             : $"Emergency recovery code: {_recoveryCode}";
+
         Loaded += (_, _) =>
         {
-            Left = SystemParameters.VirtualScreenLeft;
-            Top = SystemParameters.VirtualScreenTop;
-            Width = SystemParameters.VirtualScreenWidth;
-            Height = SystemParameters.VirtualScreenHeight;
+            if (Owner != null)
+            {
+                Left = Owner.Left + Math.Max(0, (Owner.ActualWidth - ActualWidth) / 2);
+                Top = Owner.Top + Math.Max(0, (Owner.ActualHeight - ActualHeight) / 2);
+            }
             Activate();
             RecoveryCodeBox.Focus();
         };
+
         Closing += (_, e) =>
         {
             if (_security.IsLockedDown)
