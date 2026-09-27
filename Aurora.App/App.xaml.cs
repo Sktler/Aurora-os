@@ -38,9 +38,6 @@ namespace Aurora.App
             try
             {
                 base.OnStartup(e);
-                // Keep the application alive while startup dialogs are shown. WPF assigns
-                // the first shown window as MainWindow automatically, so closing the
-                // welcome dialog would otherwise shut down the application here.
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var firstRun = !AppSettings.HasSavedConfiguration;
                 Settings = AppSettings.LoadOrCreate();
@@ -113,9 +110,6 @@ namespace Aurora.App
                 Memory.Initialize();
                 Weather = new WeatherClient();
 
-                // DashboardViewModel subscribes to Metrics during construction, so the metrics
-                // service must exist before MainWindow is created. Otherwise all four dashboard
-                // resource readings remain at their initial placeholder values forever.
                 try { Metrics = new SystemMetricsService(); }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
 
@@ -167,6 +161,7 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
+
         public static void ShowLockdownOverlay()
         {
             if (Security == null || !Security.IsLockedDown) return;
@@ -177,11 +172,23 @@ namespace Aurora.App
                     _lockdownWindow.Activate();
                     return;
                 }
-                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, ClearLockdownOverlay, _sessionRecoveryCode ?? "");
-                _lockdownWindow.Show();
-                _lockdownWindow.Activate();
+
+                _lockdownWindow = new Views.LockdownWindow(
+                    Security,
+                    VerifyCurrentInstallation,
+                    VerifyRecoveryCode,
+                    ClearLockdownOverlay,
+                    _sessionRecoveryCode ?? "")
+                {
+                    Owner = MainWindow
+                };
+
+                // The lockdown is a modal Aurora window only. It does not disable other
+                // Windows applications or take over the desktop/screen.
+                _lockdownWindow.ShowDialog();
             });
         }
+
         private static bool VerifyCurrentInstallation()
         {
             var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
@@ -190,19 +197,20 @@ namespace Aurora.App
                    !string.IsNullOrWhiteSpace(executable) &&
                    InstallationSecurityService.VerifyFileSha256(executable, expected);
         }
-        private static bool VerifyRecoveryCode(string code) => !string.IsNullOrWhiteSpace(_sessionRecoveryCode) && AuroraRecoveryService.VerifyRecoveryCode(code, new[] { _sessionRecoveryCode });
+
+        private static bool VerifyRecoveryCode(string code) =>
+            !string.IsNullOrWhiteSpace(_sessionRecoveryCode) &&
+            AuroraRecoveryService.VerifyRecoveryCode(code, new[] { _sessionRecoveryCode });
+
         private static void ClearLockdownOverlay()
         {
             _lockdownWindow = null;
-            foreach (Window window in Current.Windows)
-                if (window is not Views.LockdownWindow) window.IsEnabled = true;
         }
+
         public static void EnterLockdown(string reason)
         {
             _sessionRecoveryCode ??= AuroraRecoveryService.GenerateRecoveryCodes(1, AuroraRecoveryService.DefaultRecoveryCodeLength)[0];
             Security.EnterLockdown(reason);
-            foreach (Window window in Current.Windows)
-                if (window is not Views.LockdownWindow) window.IsEnabled = false;
             ShowLockdownOverlay();
         }
 
