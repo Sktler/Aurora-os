@@ -40,17 +40,29 @@ public static class RecoveryStorageSettings
         }
     }
 
-    public static void SetDirectory(string directoryPath)
+    public static void ChangeDirectory(string directoryPath)
     {
         if (string.IsNullOrWhiteSpace(directoryPath)) throw new ArgumentException("A storage folder is required.", nameof(directoryPath));
         var normalized = Path.GetFullPath(directoryPath.Trim());
+        var current = DirectoryPath;
+        if (string.Equals(current, normalized, StringComparison.OrdinalIgnoreCase)) return;
+
         Directory.CreateDirectory(normalized);
-        lock (Sync)
+        ProfileRecoveryCodeStore.MoveExistingData(current, normalized);
+        try
         {
-            Directory.CreateDirectory(AppSettings.ConfigDir);
-            var path = Path.Combine(AppSettings.ConfigDir, "recovery-storage.json");
-            File.WriteAllText(path, JsonSerializer.Serialize(new Document { DirectoryPath = normalized }));
-            _directoryPath = normalized;
+            lock (Sync)
+            {
+                Directory.CreateDirectory(AppSettings.ConfigDir);
+                var path = Path.Combine(AppSettings.ConfigDir, "recovery-storage.json");
+                File.WriteAllText(path, JsonSerializer.Serialize(new Document { DirectoryPath = normalized }));
+                _directoryPath = normalized;
+            }
+        }
+        catch
+        {
+            try { ProfileRecoveryCodeStore.MoveExistingData(normalized, current); } catch { }
+            throw;
         }
     }
 }
