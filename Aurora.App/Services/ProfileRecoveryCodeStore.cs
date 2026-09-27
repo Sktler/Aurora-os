@@ -18,7 +18,26 @@ public sealed class ProfileRecoveryCodeStore
     private static string PathFor(string profileId)
     {
         var safeId = new string(profileId.Where(char.IsLetterOrDigit).ToArray());
-        return System.IO.Path.Combine(AppSettings.ConfigDir, "recovery", safeId + ".json");
+        return Path.Combine(RecoveryStorageSettings.DirectoryPath, safeId + ".json");
+    }
+
+    public static void MoveExistingData(string sourceDirectory, string destinationDirectory)
+    {
+        var source = Path.GetFullPath(sourceDirectory);
+        var destination = Path.GetFullPath(destinationDirectory);
+        if (string.Equals(source, destination, StringComparison.OrdinalIgnoreCase)) return;
+        if (!Directory.Exists(source)) return;
+
+        Directory.CreateDirectory(destination);
+        foreach (var file in Directory.EnumerateFiles(source, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            var target = Path.Combine(destination, Path.GetFileName(file));
+            if (File.Exists(target))
+                throw new IOException($"A recovery verifier already exists at '{target}'.");
+        }
+
+        foreach (var file in Directory.EnumerateFiles(source, "*.json", SearchOption.TopDirectoryOnly))
+            File.Move(file, Path.Combine(destination, Path.GetFileName(file)));
     }
 
     public void SetCode(string profileId, string recoveryCode)
@@ -31,7 +50,7 @@ public sealed class ProfileRecoveryCodeStore
             var hash = Derive(recoveryCode, salt);
             var document = new RecoveryVerifier(Convert.ToBase64String(salt), Convert.ToBase64String(hash), Iterations);
             var path = PathFor(profileId);
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
