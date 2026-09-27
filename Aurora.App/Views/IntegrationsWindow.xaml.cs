@@ -73,11 +73,11 @@ namespace Aurora.App.Views
             var credentialBox = new PasswordBox
             {
                 Width = 320,
-                Padding = new Thickness(8),
+                Padding = new Thickness(8, 8, 8, 8),
                 Margin = new Thickness(0, 8, 0, 0)
             };
 
-            var panel = new StackPanel { Margin = new Thickness(16) };
+            var panel = new StackPanel { Margin = new Thickness(16, 16, 16, 16) };
             panel.Children.Add(new TextBlock
             {
                 Text = "Developer credential required to reset Aurora.",
@@ -103,8 +103,8 @@ namespace Aurora.App.Views
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 10, 0, 0)
             };
-            var cancel = new Button { Content = "Cancel", Padding = new Thickness(14, 6), Margin = new Thickness(0, 0, 8, 0) };
-            var verify = new Button { Content = "Verify", Padding = new Thickness(14, 6), IsDefault = true };
+            var cancel = new Button { Content = "Cancel", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0) };
+            var verify = new Button { Content = "Verify", Padding = new Thickness(14, 6, 14, 6), IsDefault = true };
             cancel.Click += (_, _) => credentialDialog.DialogResult = false;
             verify.Click += (_, _) => credentialDialog.DialogResult = true;
             buttons.Children.Add(cancel);
