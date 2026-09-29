@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Aurora.App.Services;
@@ -48,9 +49,13 @@ public sealed class AuroraRecoveryServiceTests
                 Assert.Equal(payload, AuroraRecoveryService.RestoreEncryptedSnapshot(snapshot, code, profileId));
 
             Assert.Throws<CryptographicException>(() =>
-                AuroraRecoveryService.RestoreEncryptedSnapshot(snapshot, AuroraRecoveryService.GenerateCode(), profileId));
+            {
+                AuroraRecoveryService.RestoreEncryptedSnapshot(snapshot, AuroraRecoveryService.GenerateCode(), profileId);
+            });
             Assert.Throws<InvalidDataException>(() =>
-                AuroraRecoveryService.RestoreEncryptedSnapshot(snapshot, codes[0], "different-profile"));
+            {
+                AuroraRecoveryService.RestoreEncryptedSnapshot(snapshot, codes[0], "different-profile");
+            });
         }
         finally
         {

@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore Aurora.App/Aurora.App.csproj
+        run: dotnet restore Aurora.sln
 
       - name: Build
         run: dotnet build Aurora.App/Aurora.App.csproj --configuration Release --no-restore

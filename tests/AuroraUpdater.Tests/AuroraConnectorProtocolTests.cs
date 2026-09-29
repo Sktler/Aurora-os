@@ -1,5 +1,7 @@
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Aurora.App.Models;
 using Aurora.App.Services;
 using Xunit;
@@ -58,7 +60,7 @@ public sealed class AuroraConnectorProtocolTests
         Assert.Equal(plaintext, AuroraConnectorProtocol.Decrypt(envelope, key));
 
         var tampered = envelope with { Sequence = 2 };
-        Assert.Throws<CryptographicException>(() => AuroraConnectorProtocol.Decrypt(tampered, key));
+        Assert.ThrowsAny<CryptographicException>(() => AuroraConnectorProtocol.Decrypt(tampered, key));
     }
 
     [Fact]
@@ -79,8 +81,14 @@ public sealed class AuroraConnectorProtocolTests
             Assert.NotEqual("", first.Fingerprint);
 
             var raw = File.ReadAllText(path);
-            Assert.DoesNotContain(first.PublicKeyBase64, raw, StringComparison.Ordinal);
-            Assert.Contains("ProtectedPrivateKeyBase64", raw, StringComparison.Ordinal);
+            using var serialized = JsonDocument.Parse(raw);
+            var properties = serialized.RootElement;
+            Assert.Equal(first.PublicKeyBase64, properties.GetProperty("PublicKeyBase64").GetString());
+            Assert.False(string.IsNullOrWhiteSpace(properties.GetProperty("ProtectedPrivateKeyBase64").GetString()));
+            Assert.Equal(
+                new[] { "DeviceId", "ProtectedPrivateKeyBase64", "PublicKeyBase64" },
+                properties.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
+            Assert.DoesNotContain("\"PrivateKeyBase64\"", raw, StringComparison.Ordinal);
         }
         finally
         {
