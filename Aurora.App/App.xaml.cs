@@ -28,10 +28,6 @@ namespace Aurora.App
         public static AppAdapterService AppAdapters { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
         public static WindowsUpdaterService Updater { get; private set; } = null!;
-        public static InstallationSecurityService Security { get; private set; } = null!;
-        public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
-        private static Views.LockdownWindow? _lockdownWindow;
-        private static string? _sessionRecoveryCode;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -44,8 +40,6 @@ namespace Aurora.App
                 Profiles = new ProfileManager();
                 Profiles.Initialize(Settings);
                 Updater = new WindowsUpdaterService();
-                Security = new InstallationSecurityService(System.IO.Path.Combine(AppSettings.ConfigDir, "security.lock"));
-                EmergencyStopButtons = new EmergencyStopButtonService();
 
                 if (firstRun)
                 {
@@ -119,7 +113,6 @@ namespace Aurora.App
                 mainWindow.Show();
                 mainWindow.Activate();
                 bootstrap.Close();
-                if (Security.IsLockedDown) ShowLockdownOverlay();
 
                 try
                 {
@@ -162,58 +155,6 @@ namespace Aurora.App
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
 
-        public static void ShowLockdownOverlay()
-        {
-            if (Security == null || !Security.IsLockedDown) return;
-            Current.Dispatcher.Invoke(() =>
-            {
-                if (_lockdownWindow != null)
-                {
-                    _lockdownWindow.Activate();
-                    return;
-                }
-
-                _lockdownWindow = new Views.LockdownWindow(
-                    Security,
-                    VerifyCurrentInstallation,
-                    VerifyRecoveryCode,
-                    ClearLockdownOverlay,
-                    _sessionRecoveryCode ?? "")
-                {
-                    Owner = MainWindow
-                };
-
-                // The lockdown is a modal Aurora window only. It does not disable other
-                // Windows applications or take over the desktop/screen.
-                _lockdownWindow.ShowDialog();
-            });
-        }
-
-        private static bool VerifyCurrentInstallation()
-        {
-            var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
-            var executable = Environment.ProcessPath;
-            return !string.IsNullOrWhiteSpace(expected) &&
-                   !string.IsNullOrWhiteSpace(executable) &&
-                   InstallationSecurityService.VerifyFileSha256(executable, expected);
-        }
-
-        private static bool VerifyRecoveryCode(string code) =>
-            !string.IsNullOrWhiteSpace(_sessionRecoveryCode) &&
-            AuroraRecoveryService.VerifyRecoveryCode(code, new[] { _sessionRecoveryCode });
-
-        private static void ClearLockdownOverlay()
-        {
-            _lockdownWindow = null;
-        }
-
-        public static void EnterLockdown(string reason)
-        {
-            _sessionRecoveryCode ??= AuroraRecoveryService.GenerateRecoveryCodes(1, AuroraRecoveryService.DefaultRecoveryCodeLength)[0];
-            Security.EnterLockdown(reason);
-            ShowLockdownOverlay();
-        }
-
         public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
         {
@@ -246,6 +187,6 @@ namespace Aurora.App
             argument.Contains(' ') || argument.Contains('"')
                 ? $"\"{argument.Replace("\"", "\\\"")}\""
                 : argument;
-        protected override void OnExit(ExitEventArgs e) { EmergencyStopButtons?.Dispose(); Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
+        protected override void OnExit(ExitEventArgs e) { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
 }
