@@ -21,11 +21,8 @@ It covers:
 
 ## Security and recovery
 
-Aurora includes a fail-closed recovery and lockdown foundation for protecting the desktop application:
+Aurora includes profile recovery and protected recovery-code storage:
 
-- Trusted-installation and software-integrity verification
-- Emergency lockdown from the main dashboard
-- A dedicated lockdown window that remains active while Aurora is locked
 - Profile recovery-code generation and protected verifier storage
 - Recovery-code verification using PBKDF2-SHA256 with 600,000 iterations
 - Encrypted recovery snapshots using AES-256-GCM
