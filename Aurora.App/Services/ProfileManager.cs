@@ -90,6 +90,7 @@ namespace Aurora.App.Services
 
             App.Memory.DeleteProfileData(target.Id);
             new ProfileRecoveryCodeStore().RemoveCode(target.Id);
+            new ProfilePasswordStore().RemovePassword(target.Id);
             _catalog.Profiles.RemoveAll(p => p.Id == target.Id);
             SaveCatalog();
             return true;
