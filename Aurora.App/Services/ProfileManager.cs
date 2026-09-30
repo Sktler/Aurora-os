@@ -77,6 +77,24 @@ namespace Aurora.App.Services
             return profile;
         }
 
+        public bool DeleteProfile(string profileId)
+        {
+            var target = GetProfile(profileId);
+            if (target == null || _catalog.Profiles.Count <= 1) return false;
+
+            if (target.Id == _catalog.ActiveProfileId)
+            {
+                var replacement = _catalog.Profiles.FirstOrDefault(p => p.Id != target.Id);
+                if (replacement == null || !SwitchProfile(replacement.Id)) return false;
+            }
+
+            App.Memory.DeleteProfileData(target.Id);
+            new ProfileRecoveryCodeStore().RemoveCode(target.Id);
+            _catalog.Profiles.RemoveAll(p => p.Id == target.Id);
+            SaveCatalog();
+            return true;
+        }
+
         public bool SwitchProfile(string profileId)
         {
             var target = _catalog.Profiles.FirstOrDefault(p => p.Id == profileId);
