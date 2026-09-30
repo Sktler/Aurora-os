@@ -18,7 +18,13 @@ namespace Aurora.App.Views
             RecoveryStoragePathText.Text = RecoveryStorageSettings.DirectoryPath;
         }
 
-        private void RefreshList()\n        {\n            // ProfileManager exposes a plain list, so force WPF to rebind after add/delete.\n            ProfilesList.ItemsSource = null;\n            ProfilesList.ItemsSource = App.Profiles.Profiles;\n            ProfilesList.SelectedItem = App.Profiles.ActiveProfile;\n        }
+        private void RefreshList()
+        {
+            // ProfileManager exposes a plain list, so force WPF to rebind after add/delete.
+            ProfilesList.ItemsSource = null;
+            ProfilesList.ItemsSource = App.Profiles.Profiles;
+            ProfilesList.SelectedItem = App.Profiles.ActiveProfile;
+        }
 
         private void RefreshProfiles_Click(object sender, RoutedEventArgs e) => RefreshList();
 
