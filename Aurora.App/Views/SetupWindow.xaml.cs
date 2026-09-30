@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Controls;
+using System.Linq;
 using Aurora.App.Services;
 
 namespace Aurora.App.Views
@@ -9,13 +11,15 @@ namespace Aurora.App.Views
     public partial class SetupWindow : Window
     {
         private readonly bool _restartOnSave;
+        private string? _generatedRecoveryCode;
         public bool KeySaved { get; private set; }
 
         public SetupWindow(bool restartOnSave = true)
         {
             InitializeComponent();
             _restartOnSave = restartOnSave;
-            Title = "Aurora - AI Provider Setup";
+            Title = "Aurora - Initial Setup";
+            ProfileNameBox.Text = string.IsNullOrWhiteSpace(App.Settings.UserName) ? "New User" : App.Settings.UserName;
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
@@ -142,6 +146,62 @@ namespace Aurora.App.Views
             }
         }
 
+        private void GeneratePassword_Click(object sender, RoutedEventArgs e)
+        {
+            var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(18);
+            try
+            {
+                const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+                var password = new string(bytes.Select(b => alphabet[b % alphabet.Length]).ToArray());
+                ProfilePasswordBox.Password = password;
+                ProfilePasswordBox.SelectAll();
+            }
+            finally
+            {
+                System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+            }
+        }
+
+        private void GenerateRecoveryCode_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var code = AuroraRecoveryService.GenerateCode();
+                var normalized = AuroraRecoveryService.NormalizeRecoveryCode(code);
+                _generatedRecoveryCode = $"{normalized.Substring(0,8)}-{normalized.Substring(8,8)}-{normalized.Substring(16,8)}-{normalized.Substring(24,8)}";
+
+                var dialog = new Window
+                {
+                    Owner = this,
+                    Title = "Aurora Recovery Code",
+                    Width = 560,
+                    Height = 360,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = System.Windows.Media.Brushes.Black
+                };
+                var panel = new StackPanel { Margin = new Thickness(24) };
+                panel.Children.Add(new TextBlock { Text = "Save this recovery code somewhere safe.", FontSize = 18, FontWeight = FontWeights.SemiBold });
+                panel.Children.Add(new TextBlock { Text = "It can be used to recover this profile. Aurora will store only a verifier.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
+                var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10), HorizontalContentAlignment = HorizontalAlignment.Center };
+                panel.Children.Add(box);
+                var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
+                var copy = new Button { Content = "Copy", Padding = new Thickness(14, 8), Margin = new Thickness(0, 0, 8, 0) };
+                var close = new Button { Content = "Done", Padding = new Thickness(14, 8) };
+                copy.Click += (_, _) => Clipboard.SetText(_generatedRecoveryCode);
+                close.Click += (_, _) => dialog.Close();
+                actions.Children.Add(copy);
+                actions.Children.Add(close);
+                panel.Children.Add(actions);
+                dialog.Content = panel;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                ErrorText.Text = $"Couldn't generate a recovery code: {ex.Message}";
+                ErrorText.Visibility = Visibility.Visible;
+            }
+        }
+
         private void GetFreeKey_Click(object sender, RoutedEventArgs e) => OpenUrl(SelectedProvider.GetKeyUrl);
 
         private bool _checkingKey;
@@ -192,6 +252,22 @@ namespace Aurora.App.Views
         {
             var apiKey = ApiKeyBox.Password.Trim();
             var p = SelectedProvider;
+            var profileName = ProfileNameBox.Text.Trim();
+            var profilePassword = ProfilePasswordBox.Password;
+
+            if (string.IsNullOrWhiteSpace(profileName))
+            {
+                ErrorText.Text = "Enter a profile name before continuing.";
+                ErrorText.Visibility = Visibility.Visible;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(profilePassword))
+            {
+                ErrorText.Text = "Create or generate a profile password before continuing.";
+                ErrorText.Visibility = Visibility.Visible;
+                return;
+            }
 
             if (string.IsNullOrWhiteSpace(apiKey))
             {
@@ -230,6 +306,11 @@ namespace Aurora.App.Views
             }
 
             App.Settings.ChatProvider = p.Key;
+            App.Settings.UserName = profileName;
+            App.Profiles.SaveActiveSettings();
+            new ProfilePasswordStore().SetPassword(App.Profiles.ActiveProfile.Id, profilePassword);
+            if (!string.IsNullOrWhiteSpace(_generatedRecoveryCode))
+                new ProfileRecoveryCodeStore().SetCode(App.Profiles.ActiveProfile.Id, _generatedRecoveryCode);
             App.Settings.Save();
             KeySaved = true;
             if (_restartOnSave)
