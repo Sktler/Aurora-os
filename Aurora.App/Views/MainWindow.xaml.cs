@@ -47,7 +47,12 @@ namespace Aurora.App.Views
             var text = ComposerTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(text) || dvm.SelectedCompanion.IsBusy) return;
             dvm.SelectedCompanion.DraftMessage = text;
-            try { await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null); }
+            try
+            {
+#pragma warning disable CA1416
+                await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
+#pragma warning restore CA1416
+            }
             finally { ComposerTextBox.Clear(); }
         }
 
