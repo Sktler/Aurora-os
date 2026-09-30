@@ -54,7 +54,7 @@ public sealed class AuroraDiscoveryService : IDisposable
         var data = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(packet));
         using var client = new UdpClient(AddressFamily.InterNetwork);
         client.MulticastLoopback = false;
-        await client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.Parse(MulticastAddress), Port), cancellationToken);
+        await client.SendAsync(data, data.Length, MulticastAddress, Port);
     }
 
     private async Task ListenAsync()
