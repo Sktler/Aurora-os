@@ -884,9 +884,15 @@
                         <!-- Create/unlock developer password -->
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <PasswordBox x:Name="DeveloperPasswordBox" Width="220" Padding="8,6,8,6"
+                                <Grid Width="220">
+                                    <PasswordBox x:Name="DeveloperPasswordBox" Padding="8,6,8,6"
+                                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                 BorderThickness="0"/>
+                                    <TextBox x:Name="DeveloperPasswordTextBox" Padding="8,6,8,6"
+                                             Visibility="Collapsed"
                                              Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                              BorderThickness="0"/>
+                                </Grid>
                                 <Button Content="Show" x:Name="DeveloperPasswordToggleButton" Margin="8,0,0,0" Padding="12,6,12,6"
                                         Click="DeveloperPasswordToggle_Click"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
