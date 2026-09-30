@@ -72,7 +72,7 @@
                                  Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10,10,10,10" FontSize="13"
                                  LostFocus="ApiKeyBox_LostFocus"/>
-                    <Button x:Name="GetKeyButton" Grid.Column="1" Content="Get a key" Margin="8,0,0,0" Padding="12,8"
+                    <Button x:Name="GetKeyButton" Grid.Column="1" Content="Get a key" Margin="8,0,0,0" Padding="12,8,12,8"
                             Background="{StaticResource BgPanelBrush}" BorderThickness="0"
                             Foreground="{StaticResource AccentCyanBrush}" Cursor="Hand"
                             Click="GetFreeKey_Click"/>
@@ -81,7 +81,7 @@
                            TextWrapping="Wrap"/>
 
                 <TextBlock Text="Model" FontSize="13" FontWeight="SemiBold" Margin="0,14,0,6"/>
-                <ComboBox x:Name="ModelBox" Padding="10" FontSize="13"
+                <ComboBox x:Name="ModelBox" Padding="10,10,10,10" FontSize="13"
                           IsEditable="True" IsTextSearchEnabled="True"
                           Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                           BorderThickness="0">
@@ -128,11 +128,11 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="SkipButton" Content="Skip for now" Padding="14,8" Margin="0,0,10,0"
+                <Button x:Name="SkipButton" Content="Skip for now" Padding="14,8,14,8" Margin="0,0,10,0"
                         Background="Transparent" BorderThickness="0"
                         Foreground="{StaticResource TextMutedBrush}" Cursor="Hand"
                         Click="Skip_Click"/>
-                <Button x:Name="SaveContinueButton" Content="Save and Continue" Padding="18,8" FontWeight="Bold"
+                <Button x:Name="SaveContinueButton" Content="Save and Continue" Padding="18,8,18,8" FontWeight="Bold"
                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                         Foreground="{StaticResource BgDeepBrush}" Cursor="Hand"
                         IsDefault="True" IsEnabled="True"
