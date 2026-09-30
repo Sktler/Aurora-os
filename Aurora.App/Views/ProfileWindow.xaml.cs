@@ -20,6 +20,8 @@ namespace Aurora.App.Views
 
         private void RefreshList()\n        {\n            // ProfileManager exposes a plain list, so force WPF to rebind after add/delete.\n            ProfilesList.ItemsSource = null;\n            ProfilesList.ItemsSource = App.Profiles.Profiles;\n            ProfilesList.SelectedItem = App.Profiles.ActiveProfile;\n        }
 
+        private void RefreshProfiles_Click(object sender, RoutedEventArgs e) => RefreshList();
+
         private void AddProfile_Click(object sender, RoutedEventArgs e)
         {
             var input = new TextBox { Text = "New User", Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8) };
