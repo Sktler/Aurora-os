@@ -52,7 +52,7 @@
                         Click="GenerateRecoveryCode_Click"/>
 
                 <TextBlock Text="Chat engine" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <ComboBox x:Name="ProviderCombo" Margin="0,0,0,16" Padding="10,8" FontSize="13"
+                <ComboBox x:Name="ProviderCombo" Margin="0,0,0,16" Padding="10,8,10,8" FontSize="13"
                           Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                           BorderThickness="0" SelectionChanged="Provider_Changed">
                     <ComboBox.ItemTemplate>
