@@ -65,9 +65,20 @@ namespace Aurora.App.Views
 
         private void DeveloperPasswordToggle_Click(object sender, RoutedEventArgs e)
         {
-            // PasswordBox intentionally remains masked; this button is reserved for the
-            // reveal/hide behavior once a visible password control is available.
-            MessageBox.Show(this, "Password fields remain masked in this build.", "Developer password", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (DeveloperPasswordTextBox.Visibility == Visibility.Visible)
+            {
+                DeveloperPasswordBox.Password = DeveloperPasswordTextBox.Text;
+                DeveloperPasswordTextBox.Visibility = Visibility.Collapsed;
+                DeveloperPasswordBox.Visibility = Visibility.Visible;
+                DeveloperPasswordToggleButton.Content = "Show";
+            }
+            else
+            {
+                DeveloperPasswordTextBox.Text = DeveloperPasswordBox.Password;
+                DeveloperPasswordBox.Visibility = Visibility.Collapsed;
+                DeveloperPasswordTextBox.Visibility = Visibility.Visible;
+                DeveloperPasswordToggleButton.Content = "Hide";
+            }
         }
         private void SaveOverrides_Click(object sender, RoutedEventArgs e) { if (sender is Button { DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SaveCompanionOverrides(companion); }
         private void ColorSwatch_Click(object sender, RoutedEventArgs e) { if (sender is Button { Tag: string hex, DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SetCompanionColor(companion, hex); }
