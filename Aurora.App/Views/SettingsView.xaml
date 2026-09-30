@@ -20,11 +20,11 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <PasswordBox x:Name="JamendoClientIdBox" Grid.Column="0" Padding="10"/>
-                            <Button Grid.Column="1" Content="Get Client ID" Padding="14,8" Margin="10,0,0,0" Click="GetJamendoClientId_Click"/>
+                            <Button Grid.Column="1" Content="Get Client ID" Padding="14,8,14,8" Margin="10,0,0,0" Click="GetJamendoClientId_Click"/>
                         </Grid>
 
                         <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                            <Button Content="Save &amp; Connect" Padding="16,9" Click="SaveJamendo_Click"/>
+                            <Button Content="Save &amp; Connect" Padding="16,9,16,9" Click="SaveJamendo_Click"/>
                             <TextBlock x:Name="JamendoStatusText" Text="Not connected" VerticalAlignment="Center" Margin="14,0,0,0" Opacity="0.75"/>
                         </StackPanel>
 
