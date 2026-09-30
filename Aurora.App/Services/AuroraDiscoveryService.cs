@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -25,8 +24,6 @@ public sealed class AuroraDiscoveryService : IDisposable
         _identityService = identityService;
         _capabilities = capabilities;
     }
-
-    public event EventHandler<AuroraDeviceIdentity>? DeviceDiscovered;
 
     public void Start()
     {
@@ -57,7 +54,7 @@ public sealed class AuroraDiscoveryService : IDisposable
         var data = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(packet));
         using var client = new UdpClient(AddressFamily.InterNetwork);
         client.MulticastLoopback = false;
-        await client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.Parse(MulticastAddress), Port));
+        await client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.Parse(MulticastAddress), Port), cancellationToken);
     }
 
     private async Task ListenAsync()
@@ -71,12 +68,9 @@ public sealed class AuroraDiscoveryService : IDisposable
                 var root = document.RootElement;
                 if (!root.TryGetProperty("protocolVersion", out var version) ||
                     version.GetString() != AuroraConnectorProtocol.ProtocolVersion ||
-                    !root.TryGetProperty("deviceId", out var deviceId) ||
+                    !root.TryGetProperty("deviceId", out _) ||
                     !root.TryGetProperty("publicKeyBase64", out _))
                     continue;
-
-                // Discovery is intentionally not trust. A future handshake must validate
-                // the pinned identity before a session is accepted.
             }
         }
         catch (OperationCanceledException) { }
