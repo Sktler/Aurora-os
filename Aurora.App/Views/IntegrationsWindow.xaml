@@ -879,20 +879,32 @@
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="Developer mode uses a password verifier. Generate a new password when you need to replace the current one; Aurora shows the new password once and does not store it in plaintext."/>
+                                   Text="Create your own developer password. Aurora stores only a secure verifier; the same password unlocks developer mode and authorizes a complete Aurora reset."/>
 
-                        <!-- Locked: enter the developer password -->
-                        <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}">
+                        <!-- Create/unlock developer password -->
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <PasswordBox x:Name="DeveloperPasswordBox" Width="220" Padding="8,6,8,6"
+                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderThickness="0"/>
+                                <Button Content="Show" x:Name="DeveloperPasswordToggleButton" Margin="8,0,0,0" Padding="12,6,12,6"
+                                        Click="DeveloperPasswordToggle_Click"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <PasswordBox x:Name="DeveloperPasswordConfirmBox" Width="220" Margin="10,0,0,0" Padding="8,6,8,6"
+                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderThickness="0"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6,8,6"
+                                <Button Content="Create developer password" Padding="16,6,16,6"
+                                        Click="CreateDeveloperPassword_Click"
+                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                <PasswordBox x:Name="OverrideCodeBox" Width="220" Margin="10,0,0,0" Padding="8,6,8,6"
                                              Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                              BorderThickness="0" PasswordChanged="OverrideCodeBox_PasswordChanged"/>
                                 <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6,16,6"
                                         Click="UnlockDevMode_Click"
-                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                                <Button Content="Generate new password" Margin="10,0,0,0" Padding="16,6,16,6"
-                                        Click="GenerateDeveloperPassword_Click"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource TextPrimaryBrush}"/>
                             </StackPanel>
