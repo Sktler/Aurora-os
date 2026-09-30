@@ -41,7 +41,6 @@ namespace Aurora.App.Views
             _ = SendComposerAsync();
         }
 
-        [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
         private async System.Threading.Tasks.Task SendComposerAsync()
         {
             if (DataContext is not DashboardViewModel dvm || dvm.SelectedCompanion == null) return;
