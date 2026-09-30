@@ -113,6 +113,57 @@ namespace Aurora.App.Views
         private void UseSelected_Click(object sender, RoutedEventArgs e)
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;
+            if (p.Id == App.Profiles.ActiveProfile.Id) return;
+
+            if (new ProfilePasswordStore().HasPassword(p.Id))
+            {
+                var passwordBox = new PasswordBox
+                {
+                    MinWidth = 280,
+                    Padding = new Thickness(8, 8, 8, 8),
+                    Margin = new Thickness(0, 8, 0, 12)
+                };
+                var dialog = new Window
+                {
+                    Owner = this,
+                    Title = $"Unlock {p.DisplayName}",
+                    Width = 380,
+                    Height = 190,
+                    ResizeMode = ResizeMode.NoResize,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                var panel = new StackPanel { Margin = new Thickness(20) };
+                panel.Children.Add(new TextBlock { Text = $"Enter the password for {p.DisplayName} to switch profiles.", TextWrapping = TextWrapping.Wrap });
+                panel.Children.Add(passwordBox);
+                var unlock = new Button { Content = "Unlock", Padding = new Thickness(12, 8, 12, 8), HorizontalAlignment = HorizontalAlignment.Right };
+                panel.Children.Add(unlock);
+                dialog.Content = panel;
+
+                var verified = false;
+                unlock.Click += (_, _) =>
+                {
+                    verified = new ProfilePasswordStore().VerifyPassword(p.Id, passwordBox.Password);
+                    if (!verified)
+                    {
+                        MessageBox.Show(dialog, "That password is not valid for this profile.", "Profile password", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        passwordBox.Clear();
+                        passwordBox.Focus();
+                        return;
+                    }
+
+                    dialog.DialogResult = true;
+                    dialog.Close();
+                };
+
+                passwordBox.KeyDown += (_, e) =>
+                {
+                    if (e.Key == System.Windows.Input.Key.Enter) unlock.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                };
+
+                dialog.ShowDialog();
+                if (!verified) return;
+            }
+
             if (!App.Profiles.SwitchProfile(p.Id)) return;
             _profileSwitched = true;
             if (Owner is MainWindow main) main.ReloadAfterProfileSwitch();
