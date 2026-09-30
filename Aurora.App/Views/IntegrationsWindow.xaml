@@ -879,9 +879,9 @@
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="Gated by an override code so it isn't a plain on/off switch. The first code you enter becomes your code - enter that same one again to unlock next time. Once unlocked: failed requests show the real error in chat, and you can directly rewrite any companion's role, system prompt, and tool access below."/>
+                                   Text="Developer mode uses a password verifier. Generate a new password when you need to replace the current one; Aurora shows the new password once and does not store it in plaintext."/>
 
-                        <!-- Locked: enter/set the override code -->
+                        <!-- Locked: enter the developer password -->
                         <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}">
                             <StackPanel Orientation="Horizontal">
                                 <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6,8,6"
@@ -891,6 +891,10 @@
                                         Click="UnlockDevMode_Click"
                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                <Button Content="Generate new password" Margin="10,0,0,0" Padding="16,6,16,6"
+                                        Click="GenerateDeveloperPassword_Click"
+                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
 
