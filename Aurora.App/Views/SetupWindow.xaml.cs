@@ -179,14 +179,14 @@ namespace Aurora.App.Views
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Background = System.Windows.Media.Brushes.Black
                 };
-                var panel = new StackPanel { Margin = new Thickness(24) };
+                var panel = new StackPanel { Margin = new Thickness(24, 24, 24, 24) };
                 panel.Children.Add(new TextBlock { Text = "Save this recovery code somewhere safe.", FontSize = 18, FontWeight = FontWeights.SemiBold });
                 panel.Children.Add(new TextBlock { Text = "It can be used to recover this profile. Aurora will store only a verifier.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
-                var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10), HorizontalContentAlignment = HorizontalAlignment.Center };
+                var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10, 10, 10, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
                 panel.Children.Add(box);
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
-                var copy = new Button { Content = "Copy", Padding = new Thickness(14, 8), Margin = new Thickness(0, 0, 8, 0) };
-                var close = new Button { Content = "Done", Padding = new Thickness(14, 8) };
+                var copy = new Button { Content = "Copy", Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 0) };
+                var close = new Button { Content = "Done", Padding = new Thickness(14, 8, 14, 8) };
                 copy.Click += (_, _) => Clipboard.SetText(_generatedRecoveryCode);
                 close.Click += (_, _) => dialog.Close();
                 actions.Children.Add(copy);
