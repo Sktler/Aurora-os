@@ -52,6 +52,25 @@ namespace Aurora.App.Views
         private void GetAzureKey_Click(object sender, RoutedEventArgs e) => OpenUrl("https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices");
         private void OverrideCodeBox_PasswordChanged(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) vm.OverrideCodeInput = OverrideCodeBox.Password; }
         private void UnlockDevMode_Click(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) { vm.UnlockDevModeCommand.Execute(null); OverrideCodeBox.Password = ""; } }
+        private void GenerateDeveloperPassword_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not IntegrationsViewModel vm) return;
+            try
+            {
+                var password = vm.GenerateDeveloperPassword();
+                OverrideCodeBox.Password = "";
+                MessageBox.Show(
+                    this,
+                    $"Your new developer password is:\n\n{password}\n\nSave it somewhere secure. Aurora will not be able to display it again.",
+                    "New developer password",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Aurora could not generate the developer password.\n\n{ex.Message}", "Developer password", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private void SaveOverrides_Click(object sender, RoutedEventArgs e) { if (sender is Button { DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SaveCompanionOverrides(companion); }
         private void ColorSwatch_Click(object sender, RoutedEventArgs e) { if (sender is Button { Tag: string hex, DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SetCompanionColor(companion, hex); }
         private void CustomColor_Click(object sender, RoutedEventArgs e)
