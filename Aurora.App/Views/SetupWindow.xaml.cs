@@ -154,7 +154,6 @@ namespace Aurora.App.Views
                 const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
                 var password = new string(bytes.Select(b => alphabet[b % alphabet.Length]).ToArray());
                 ProfilePasswordBox.Password = password;
-                ProfilePasswordBox.SelectAll();
             }
             finally
             {
