@@ -1,8 +1,8 @@
 <Window x:Class="Aurora.App.Views.SetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Aurora - AI Provider Setup" Height="720" Width="560"
-        MinHeight="620" MinWidth="520"
+        Title="Aurora - AI Provider Setup" Height="820" Width="560"
+        MinHeight="700" MinWidth="520"
         Background="{StaticResource BgDeepBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
@@ -28,6 +28,29 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,8,0">
+                <TextBlock Text="Your profile" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <TextBox x:Name="ProfileNameBox" Text="New User" Margin="0,0,0,14"/>
+                <TextBlock Text="Profile password" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <PasswordBox x:Name="ProfilePasswordBox" Grid.Column="0"
+                                 Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" FontSize="13"/>
+                    <Button Grid.Column="1" Content="Generate password" Margin="8,0,0,0" Padding="12,8"
+                            Background="{StaticResource BgPanelBrush}" BorderThickness="0"
+                            Foreground="{StaticResource AccentCyanBrush}" Cursor="Hand"
+                            Click="GeneratePassword_Click"/>
+                </Grid>
+                <TextBlock Text="Enter your own password or generate a strong one. Aurora stores only a verifier, not the password itself."
+                           TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                <Button Content="Generate recovery code" HorizontalAlignment="Left" Padding="12,8" Margin="0,0,0,16"
+                        Background="{StaticResource BgPanelBrush}" BorderThickness="0"
+                        Foreground="{StaticResource AccentGreenBrush}" Cursor="Hand"
+                        Click="GenerateRecoveryCode_Click"/>
+
                 <TextBlock Text="Chat engine" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <ComboBox x:Name="ProviderCombo" Margin="0,0,0,16" Padding="10,8" FontSize="13"
                           Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
