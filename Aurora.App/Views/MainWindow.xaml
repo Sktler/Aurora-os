@@ -46,7 +46,7 @@
         <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <Grid Grid.Row="0" Background="#090C12" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBlock Text="Aurora" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="16,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="False"/>
+            <TextBlock Text="Aurora" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="16,0,16,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="False"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="ToggleLeftSidebarButton" Content="☰" Style="{StaticResource CaptionButtonStyle}" Click="ToggleLeftSidebar_Click" ToolTip="Hide navigation"/>
                 <Button x:Name="ToggleRightSidebarButton" Content="◫" Style="{StaticResource CaptionButtonStyle}" Click="ToggleRightSidebar_Click" ToolTip="Hide information panel"/>
@@ -97,8 +97,8 @@
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
                         <Button Grid.Column="0" Width="38" Height="38" Background="#171D29" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" Content="♩" FontSize="19" Command="{Binding SelectedCompanion.ListenCommand}" ToolTip="Voice input"/>
-                        <Button Grid.Column="1" Width="40" Height="40" Margin="4,0" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="＋" FontSize="20" Click="OpenComposerMenu_Click" ToolTip="Add files, tools, and actions"/>
-                        <TextBox x:Name="ComposerTextBox" Grid.Column="2" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" VerticalContentAlignment="Center" FontSize="14" Padding="12,0" ToolTip="Ask Aurora anything"/>
+                        <Button Grid.Column="1" Width="40" Height="40" Margin="4,0,4,0" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="＋" FontSize="20" Click="OpenComposerMenu_Click" ToolTip="Add files, tools, and actions"/>
+                        <TextBox x:Name="ComposerTextBox" Grid.Column="2" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" VerticalContentAlignment="Center" FontSize="14" Padding="12,0,12,0" ToolTip="Ask Aurora anything"/>
                         <Button Grid.Column="3" Width="40" Height="40" Background="#4B16A0" Foreground="White" BorderThickness="0" Content="➤" FontSize="17" Click="Send_Click" ToolTip="Send"/>
                         <Button Grid.Column="4" Width="40" Height="40" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="⌕" FontSize="18" Click="Attach_Click" ToolTip="Attach file"/>
                     </Grid>
