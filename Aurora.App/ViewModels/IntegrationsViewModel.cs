@@ -336,37 +336,60 @@ namespace Aurora.App.ViewModels
 
         public static Array ToolAccessValues => Enum.GetValues(typeof(CompanionToolAccess));
 
+        public string GenerateDeveloperPassword()
+        {
+            const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+            var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(18);
+            try
+            {
+                var chars = new char[18];
+                for (var i = 0; i < chars.Length; i++)
+                    chars[i] = alphabet[bytes[i] % alphabet.Length];
+                var password = new string(chars);
+                new DeveloperPasswordStore().SetPassword(password);
+                App.Settings.DeveloperOverrideCode = "";
+                App.Settings.Save();
+                return password;
+            }
+            finally
+            {
+                System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+            }
+        }
+
         [RelayCommand]
         private void UnlockDevMode()
         {
             var entered = OverrideCodeInput.Trim();
             if (string.IsNullOrWhiteSpace(entered))
             {
-                DevModeStatus = "Enter a code first.";
+                DevModeStatus = "Enter a password first.";
                 return;
             }
 
-            if (string.IsNullOrEmpty(App.Settings.DeveloperOverrideCode))
+            var store = new DeveloperPasswordStore();
+            var valid = store.HasPassword()
+                ? store.VerifyPassword(entered)
+                : !string.IsNullOrEmpty(App.Settings.DeveloperOverrideCode) && entered == App.Settings.DeveloperOverrideCode;
+
+            if (!valid)
             {
-                // First use: whatever you enter becomes your override code from now on.
-                App.Settings.DeveloperOverrideCode = entered;
-                DevModeEnabled = true;
-                App.Settings.DevModeEnabled = true;
-                App.Settings.Save();
-                DevModeStatus = "Override code set. Developer mode unlocked - use this same code next time.";
-            }
-            else if (entered == App.Settings.DeveloperOverrideCode)
-            {
-                DevModeEnabled = true;
-                App.Settings.DevModeEnabled = true;
-                App.Settings.Save();
-                DevModeStatus = "Developer mode unlocked.";
-            }
-            else
-            {
-                DevModeStatus = "Incorrect override code.";
+                DevModeStatus = "Incorrect developer password.";
+                OverrideCodeInput = "";
+                return;
             }
 
+            if (!store.HasPassword() && !string.IsNullOrEmpty(App.Settings.DeveloperOverrideCode))
+            {
+                // Migrate the legacy plaintext override code to the verifier store after a successful unlock.
+                store.SetPassword(entered);
+                App.Settings.DeveloperOverrideCode = "";
+            }
+
+            DevModeEnabled = true;
+            App.Settings.DevModeEnabled = true;
+            App.Settings.Save();
+            DevModeStatus = "Developer mode unlocked.";
             OverrideCodeInput = "";
         }
 
