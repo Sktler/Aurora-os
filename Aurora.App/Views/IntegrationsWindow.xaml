@@ -43,7 +43,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="TileBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="16,12">
+                        <Border x:Name="TileBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="16,12,16,12">
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -154,7 +154,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Engine}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="AI engine" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -163,11 +163,11 @@
                     <StackPanel>
                         <TextBlock Text="{Binding CurrentEngineDescription}" Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Change API key / provider" Padding="16,8"
+                            <Button Content="Change API key / provider" Padding="16,8,16,8"
                                     Click="ChangeApiKey_Click"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                            <Button Content="Reset Aurora completely" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Reset Aurora completely" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Click="ResetAurora_Click"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="#F0745C"/>
@@ -184,7 +184,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Models}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Models" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -193,7 +193,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding ModelFieldLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <Button Content="Refresh" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                            <Button Content="Refresh" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
                                     Command="{Binding RefreshModelsCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource AccentCyanBrush}"/>
@@ -208,10 +208,10 @@
                                       ItemsSource="{Binding ModelSuggestions}"
                                       IsEditable="True" IsTextSearchEnabled="True"
                                       IsEnabled="{Binding CanEditModel}"
-                                      Width="280" Padding="8,6"
+                                      Width="280" Padding="8,6,8,6"
                                       Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                       BorderThickness="0"/>
-                            <Button Content="Save model" Margin="10,0,0,0" Padding="16,6"
+                            <Button Content="Save model" Margin="10,0,0,0" Padding="16,6,16,6"
                                     Command="{Binding SaveModelCommand}" IsEnabled="{Binding CanEditModel}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -227,7 +227,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Companions}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Companion colors" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -255,7 +255,7 @@
                                         <Button Tag="#F0D45C" Background="#F0D45C" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Gold"/>
                                         <Button Tag="#5BE0A0" Background="#5BE0A0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Green"/>
                                         <Button Tag="#4FD0A8" Background="#4FD0A8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Teal"/>
-                                        <Button Content="Custom..." Click="CustomColor_Click" Padding="10,4" Margin="4,0,0,8"
+                                        <Button Content="Custom..." Click="CustomColor_Click" Padding="10,4,10,4" Margin="4,0,0,8"
                                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                                 BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="1" Cursor="Hand"/>
                                     </WrapPanel>
@@ -272,7 +272,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Voice}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Voice" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -336,11 +336,11 @@
                                 <TextBox Grid.Column="0" Text="{Binding OpenAiTtsApiKey, UpdateSourceTrigger=PropertyChanged}"
                                          Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetOpenAiKey_Click"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource AccentCyanBrush}"/>
-                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -376,11 +376,11 @@
                                 <TextBox Grid.Column="0" Text="{Binding ElevenLabsApiKey, UpdateSourceTrigger=PropertyChanged}"
                                          Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetElevenLabsKey_Click"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource AccentCyanBrush}"/>
-                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -390,7 +390,7 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
                                         Command="{Binding LoadElevenLabsVoicesCommand}"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource AccentCyanBrush}"/>
@@ -415,11 +415,11 @@
                                 <TextBox Grid.Column="0" Text="{Binding AzureSpeechKey, UpdateSourceTrigger=PropertyChanged}"
                                          Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                                <Button Grid.Column="1" Content="Create resource" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="1" Content="Create resource" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetAzureKey_Click"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource AccentCyanBrush}"/>
-                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8"
+                                <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -436,7 +436,7 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4" FontSize="11"
+                                <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
                                         Command="{Binding LoadAzureVoicesCommand}"
                                         Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{StaticResource AccentCyanBrush}"/>
@@ -463,11 +463,11 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                            <Button Content="Test voice" Padding="16,8"
+                            <Button Content="Test voice" Padding="16,8,16,8"
                                     Command="{Binding TestVoiceCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <Button Content="Save" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Save" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveVoiceCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -483,7 +483,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Documents}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Sift's documents folder" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -495,11 +495,11 @@
                         <TextBlock Text="{Binding TrustedFolderPath}" FontFamily="Consolas" FontSize="12"
                                    Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Choose folder..." Padding="16,8"
+                            <Button Content="Choose folder..." Padding="16,8,16,8"
                                     Click="ChooseTrustedFolder_Click"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                            <Button Content="Clear" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Clear" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding ClearTrustedFolderCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextMutedBrush}"/>
@@ -514,7 +514,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=System}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="System" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -533,11 +533,11 @@
                         <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,10" TextWrapping="Wrap"
                                    Text="Checks the latest GitHub release, downloads the matching Windows package, and prepares a safe restart once the update is staged."/>
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Check for updates" Padding="16,8"
+                            <Button Content="Check for updates" Padding="16,8,16,8"
                                     Command="{Binding CheckForUpdatesCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <Button Content="Pull latest" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Pull latest" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding PullLatestUpdateCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -557,7 +557,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding SystemVolume}" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Margin="10,0,0,0" Padding="12,6"
+                            <Button Grid.Column="1" Margin="10,0,0,0" Padding="12,6,12,6"
                                     Command="{Binding ToggleSystemMuteCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextPrimaryBrush}">
@@ -583,7 +583,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Music}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Music" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -610,11 +610,11 @@
                                  BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Connect with Spotify" Padding="16,8"
+                            <Button Content="Connect with Spotify" Padding="16,8,16,8"
                                     Command="{Binding ConnectSpotifyCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding DisconnectSpotifyCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextMutedBrush}"/>
@@ -633,7 +633,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=SmartHome}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Smart home" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -655,7 +655,7 @@
                             <TextBox Grid.Column="0" Text="{Binding SmartThingsToken, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestSmartThingsCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -685,7 +685,7 @@
                             <TextBox Grid.Column="0" Text="{Binding HomeAssistantToken, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestHomeAssistantCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -715,7 +715,7 @@
                             <TextBox Grid.Column="0" Text="{Binding HubitatToken, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
-                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8"
+                            <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestHubitatCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -735,7 +735,7 @@
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
                                    Text="This one can't be a real one-click connection: Alexa only talks to apps through a published Smart Home Skill, which means its own Amazon Developer account, a hosted Lambda function, and Amazon's account-linking flow - not something a token or key can shortcut. This toggle just tracks that you've set that up elsewhere; it doesn't verify anything."/>
                         <Button Content="{Binding AlexaConnected, Converter={x:Static local:BoolToToggleLabelConverter.Instance}}"
-                                HorizontalAlignment="Left" Padding="16,8"
+                                HorizontalAlignment="Left" Padding="16,8,16,8"
                                 Command="{Binding ToggleAlexaConnectedCommand}"
                                 Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                 Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -746,7 +746,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Unified device catalog" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <Button Content="Get devices" Margin="12,0,0,0" Padding="14,6"
+                            <Button Content="Get devices" Margin="12,0,0,0" Padding="14,6,14,6"
                                     Command="{Binding DiscoverDevicesCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -761,21 +761,21 @@
                                    Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                         <UniformGrid Columns="3" Margin="0,0,0,12">
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
                                 <StackPanel>
                                     <TextBlock Text="SmartThings" FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding SmartThingsCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
                                     <TextBlock Text="{Binding SmartThingsCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
                                 <StackPanel>
                                     <TextBlock Text="Home Assistant" FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding HomeAssistantCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
                                     <TextBlock Text="{Binding HomeAssistantCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8">
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8">
                                 <StackPanel>
                                     <TextBlock Text="Hubitat" FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding HubitatCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
@@ -787,7 +787,7 @@
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                    <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,0,6">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -816,7 +816,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Google}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Google" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -848,11 +848,11 @@
                                      PasswordChanged="GoogleSecretBox_PasswordChanged"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Connect with Google" Padding="16,8"
+                            <Button Content="Connect with Google" Padding="16,8,16,8"
                                     Command="{Binding ConnectGoogleCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8"
+                            <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding DisconnectGoogleCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="{StaticResource TextMutedBrush}"/>
@@ -871,7 +871,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Developer}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Developer mode" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -884,10 +884,10 @@
                         <!-- Locked: enter/set the override code -->
                         <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}">
                             <StackPanel Orientation="Horizontal">
-                                <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6"
+                                <PasswordBox x:Name="OverrideCodeBox" Width="220" Padding="8,6,8,6"
                                              Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                              BorderThickness="0" PasswordChanged="OverrideCodeBox_PasswordChanged"/>
-                                <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6"
+                                <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6,16,6"
                                         Click="UnlockDevMode_Click"
                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -896,7 +896,7 @@
 
                         <!-- Unlocked: lock button + editable per-companion overrides -->
                         <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
-                            <Button Content="Lock developer mode" HorizontalAlignment="Left" Padding="16,6"
+                            <Button Content="Lock developer mode" HorizontalAlignment="Left" Padding="16,6,16,6"
                                     Command="{Binding LockDevModeCommand}"
                                     Background="{StaticResource BgCardBrush}" BorderThickness="0"
                                     Foreground="#F0745C" Margin="0,0,0,10"/>
@@ -926,7 +926,7 @@
                                                          Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                                          BorderThickness="0"/>
 
-                                                <Button Content="Save overrides" HorizontalAlignment="Left" Padding="14,6"
+                                                <Button Content="Save overrides" HorizontalAlignment="Left" Padding="14,6,14,6"
                                                         Click="SaveOverrides_Click"
                                                         Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                                         Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
@@ -948,7 +948,7 @@
                       Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Memory}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6"
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Memory &amp; data" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
