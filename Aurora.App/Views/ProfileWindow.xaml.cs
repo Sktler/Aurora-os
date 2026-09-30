@@ -30,6 +30,84 @@ namespace Aurora.App.Views
             dialog.ShowDialog();
         }
 
+        private void DeleteProfile_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.DataContext is not UserProfile p) return;
+
+            var username = p.DisplayName?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(username)) return;
+
+            var input = new TextBox
+            {
+                Margin = new Thickness(0, 8, 0, 8),
+                Padding = new Thickness(8),
+                MinWidth = 280
+            };
+            var confirm = new Button
+            {
+                Content = "Delete profile",
+                Padding = new Thickness(12, 8),
+                IsEnabled = false,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            input.TextChanged += (_, _) =>
+            {
+                confirm.IsEnabled = string.Equals(input.Text, username, StringComparison.Ordinal);
+            };
+
+            var dialog = new Window
+            {
+                Owner = this,
+                Title = "Delete profile",
+                Width = 420,
+                Height = 240,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#0B1018"),
+                Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#F2F6FA")
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"Delete profile \"{username}\"? This permanently removes the profile and its profile-scoped Aurora data.",
+                TextWrapping = TextWrapping.Wrap
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"Type {username} exactly to enable deletion.",
+                Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#9AA8B8"),
+                Margin = new Thickness(0, 10, 0, 0)
+            });
+            panel.Children.Add(input);
+            panel.Children.Add(confirm);
+            dialog.Content = panel;
+
+            confirm.Click += (_, _) =>
+            {
+                if (!string.Equals(input.Text, username, StringComparison.Ordinal)) return;
+
+                try
+                {
+                    if (!App.Profiles.DeleteProfile(p.Id))
+                    {
+                        MessageBox.Show(this, "Aurora must keep at least one profile, and the selected profile could not be deleted.", "Delete profile", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    RefreshList();
+                    MessageBox.Show(this, $"Profile \"{username}\" was deleted.", "Profile deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+                    dialog.Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, $"Aurora could not delete profile \"{username}\". No partial deletion was intended.\n\n{ex.Message}", "Delete profile", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            };
+
+            dialog.ShowDialog();
+        }
+
         private void UseSelected_Click(object sender, RoutedEventArgs e)
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;
