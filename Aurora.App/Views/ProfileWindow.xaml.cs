@@ -39,8 +39,8 @@ namespace Aurora.App.Views
             var username = p.DisplayName?.Trim() ?? "";
             if (string.IsNullOrWhiteSpace(username)) return;
 
-            var input = new TextBox { Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8), MinWidth = 280 };
-            var confirm = new Button { Content = "Delete profile", Padding = new Thickness(12, 8, 12, 8), IsEnabled = false, HorizontalAlignment = HorizontalAlignment.Right };
+            var input = new TextBox { Margin = new Thickness(0, 14, 0, 14), Padding = new Thickness(10, 10, 10, 10), MinWidth = 400, FontSize = 15 };
+            var confirm = new Button { Content = "Delete profile", Padding = new Thickness(14, 10, 14, 10), IsEnabled = false, MinWidth = 150, HorizontalAlignment = HorizontalAlignment.Right };
             input.TextChanged += (_, _) => { confirm.IsEnabled = string.Equals(input.Text, username, StringComparison.Ordinal); };
 
             var brushConverter = new System.Windows.Media.BrushConverter();
@@ -48,25 +48,31 @@ namespace Aurora.App.Views
             {
                 Owner = this,
                 Title = "Delete profile",
-                Width = 420,
-                Height = 240,
+                Width = 520,
+                Height = 320,
+                MinWidth = 520,
+                MinHeight = 320,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Background = brushConverter.ConvertFromString("#0B1018") as System.Windows.Media.Brush,
                 Foreground = brushConverter.ConvertFromString("#F2F6FA") as System.Windows.Media.Brush
             };
 
-            var panel = new StackPanel { Margin = new Thickness(20) };
+            var panel = new StackPanel { Margin = new Thickness(28), VerticalAlignment = VerticalAlignment.Stretch };
             panel.Children.Add(new TextBlock
             {
                 Text = $"Delete profile \"{username}\"? This permanently removes the profile and its profile-scoped Aurora data.",
-                TextWrapping = TextWrapping.Wrap
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 440,
+                FontSize = 16,
+                LineHeight = 24
             });
             panel.Children.Add(new TextBlock
             {
                 Text = $"Type {username} exactly to enable deletion.",
                 Foreground = brushConverter.ConvertFromString("#9AA8B8") as System.Windows.Media.Brush,
-                Margin = new Thickness(0, 10, 0, 0)
+                Margin = new Thickness(0, 14, 0, 0),
+                TextWrapping = TextWrapping.Wrap
             });
             panel.Children.Add(input);
             panel.Children.Add(confirm);
