@@ -336,25 +336,39 @@ namespace Aurora.App.ViewModels
 
         public static Array ToolAccessValues => Enum.GetValues(typeof(CompanionToolAccess));
 
-        public string GenerateDeveloperPassword()
+        public bool HasDeveloperPassword => new DeveloperPasswordStore().HasPassword()
+            || !string.IsNullOrEmpty(App.Settings.DeveloperOverrideCode);
+
+        public bool SetDeveloperPassword(string password, string confirmation)
         {
-            const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-            var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(18);
-            try
+            password = (password ?? "").Trim();
+            confirmation = (confirmation ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(password))
             {
-                var chars = new char[18];
-                for (var i = 0; i < chars.Length; i++)
-                    chars[i] = alphabet[bytes[i] % alphabet.Length];
-                var password = new string(chars);
-                new DeveloperPasswordStore().SetPassword(password);
-                App.Settings.DeveloperOverrideCode = "";
-                App.Settings.Save();
-                return password;
+                DevModeStatus = "Create a developer password first.";
+                return false;
             }
-            finally
+
+            if (password.Length < 12)
             {
-                System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+                DevModeStatus = "Developer password must be at least 12 characters.";
+                return false;
             }
+
+            if (!string.Equals(password, confirmation, StringComparison.Ordinal))
+            {
+                DevModeStatus = "The passwords do not match.";
+                return false;
+            }
+
+            new DeveloperPasswordStore().SetPassword(password);
+            App.Settings.DeveloperOverrideCode = "";
+            App.Settings.DevModeEnabled = false;
+            DevModeEnabled = false;
+            App.Settings.Save();
+            DevModeStatus = "Developer password created. Use it to unlock developer mode and authorize a complete Aurora reset.";
+            return true;
         }
 
         [RelayCommand]
