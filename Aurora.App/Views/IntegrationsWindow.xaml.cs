@@ -133,9 +133,14 @@ namespace Aurora.App.Views
             if (credentialDialog.ShowDialog() != true)
                 return;
 
-            if (!DeveloperResetVerifier.Verify(credentialBox.Password))
+            var developerPasswordStore = new DeveloperPasswordStore();
+            var validDeveloperPassword = developerPasswordStore.HasPassword()
+                ? developerPasswordStore.VerifyPassword(credentialBox.Password)
+                : DeveloperResetVerifier.Verify(credentialBox.Password);
+
+            if (!validDeveloperPassword)
             {
-                MessageBox.Show(this, "The developer credential was not accepted. Aurora was not reset.", "Developer reset", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, "The developer password was not accepted. Aurora was not reset.", "Developer reset", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
