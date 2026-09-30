@@ -46,7 +46,7 @@
                 </Grid>
                 <TextBlock Text="Enter your own password or generate a strong one. Aurora stores only a verifier, not the password itself."
                            TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-                <Button Content="Generate recovery code" HorizontalAlignment="Left" Padding="12,8" Margin="0,0,0,16"
+                <Button Content="Generate recovery code" HorizontalAlignment="Left" Padding="12,8,12,8" Margin="0,0,0,16"
                         Background="{StaticResource BgPanelBrush}" BorderThickness="0"
                         Foreground="{StaticResource AccentGreenBrush}" Cursor="Hand"
                         Click="GenerateRecoveryCode_Click"/>
@@ -70,7 +70,7 @@
                     </Grid.ColumnDefinitions>
                     <PasswordBox x:Name="ApiKeyBox" Grid.Column="0"
                                  Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                 BorderThickness="0" Padding="10" FontSize="13"
+                                 BorderThickness="0" Padding="10,10,10,10" FontSize="13"
                                  LostFocus="ApiKeyBox_LostFocus"/>
                     <Button x:Name="GetKeyButton" Grid.Column="1" Content="Get a key" Margin="8,0,0,0" Padding="12,8"
                             Background="{StaticResource BgPanelBrush}" BorderThickness="0"
