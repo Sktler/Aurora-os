@@ -39,7 +39,7 @@ namespace Aurora.App.Views
             var username = p.DisplayName?.Trim() ?? "";
             if (string.IsNullOrWhiteSpace(username)) return;
 
-            var input = new TextBox { Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8), MinWidth = 280 };
+            var input = new TextBox { Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8), MinWidth = 280 };
             var confirm = new Button { Content = "Delete profile", Padding = new Thickness(12, 8, 12, 8), IsEnabled = false, HorizontalAlignment = HorizontalAlignment.Right };
             input.TextChanged += (_, _) => { confirm.IsEnabled = string.Equals(input.Text, username, StringComparison.Ordinal); };
 
