@@ -19,7 +19,7 @@ namespace Aurora.App.Views
             InitializeComponent();
             _restartOnSave = restartOnSave;
             Title = "Aurora - Initial Setup";
-            ProfileNameBox.Text = string.IsNullOrWhiteSpace(App.Settings.UserName) ? "New User" : App.Settings.UserName;
+            ProfileNameBox.Text = !_restartOnSave ? "New User" : (string.IsNullOrWhiteSpace(App.Settings.UserName) ? "New User" : App.Settings.UserName);
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
