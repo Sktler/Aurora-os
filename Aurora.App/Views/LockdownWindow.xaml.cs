@@ -8,7 +8,6 @@ namespace Aurora.App.Views;
 public partial class LockdownWindow : Window
 {
     private readonly InstallationSecurityService _security;
-    private readonly Func<bool> _softwareIntegrityCheck;
     private readonly Func<string, bool> _userRecoveryCheck;
     private readonly Func<bool> _recoveryCodeAvailable;
     private readonly Action _unlocked;
@@ -16,14 +15,12 @@ public partial class LockdownWindow : Window
 
     public LockdownWindow(
         InstallationSecurityService security,
-        Func<bool> softwareIntegrityCheck,
         Func<string, bool> userRecoveryCheck,
         Func<bool> recoveryCodeAvailable,
         Action unlocked,
         Rect? workArea = null)
     {
         _security = security ?? throw new ArgumentNullException(nameof(security));
-        _softwareIntegrityCheck = softwareIntegrityCheck ?? throw new ArgumentNullException(nameof(softwareIntegrityCheck));
         _userRecoveryCheck = userRecoveryCheck ?? throw new ArgumentNullException(nameof(userRecoveryCheck));
         _recoveryCodeAvailable = recoveryCodeAvailable ?? throw new ArgumentNullException(nameof(recoveryCodeAvailable));
         _unlocked = unlocked ?? throw new ArgumentNullException(nameof(unlocked));
@@ -65,13 +62,6 @@ public partial class LockdownWindow : Window
         if (string.IsNullOrWhiteSpace(code))
         {
             StatusText.Text = "Enter a recovery code.";
-            return;
-        }
-
-        if (!_softwareIntegrityCheck())
-        {
-            StatusText.Text = "Installation verification failed. Aurora remains locked.";
-            RecoveryCodeBox.Clear();
             return;
         }
 
