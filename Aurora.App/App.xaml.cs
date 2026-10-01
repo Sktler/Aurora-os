@@ -176,7 +176,7 @@ namespace Aurora.App
 
                 var target = targetWindow ?? Current.Windows.OfType<Window>()
                     .FirstOrDefault(window => window.IsActive && window is not Views.LockdownWindow)
-                    ?? MainWindow;
+                    ?? Current.MainWindow;
                 var workArea = GetMonitorWorkArea(target);
 
                 _lockdownWindow = new Views.LockdownWindow(
@@ -254,7 +254,7 @@ namespace Aurora.App
         {
             var target = Current.Windows.OfType<Window>()
                 .FirstOrDefault(window => window.IsActive && window is not Views.LockdownWindow)
-                ?? MainWindow;
+                ?? Current.MainWindow;
 
             Security.EnterLockdown(reason);
             foreach (Window window in Current.Windows)
@@ -278,7 +278,7 @@ namespace Aurora.App
             if (!string.IsNullOrEmpty(processPath))
             {
                 var arguments = Environment.GetCommandLineArgs()
-                    .Skip(1)
+                                      .Skip(1)
                     .Select(QuoteProcessArgument);
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
@@ -292,7 +292,7 @@ namespace Aurora.App
         }
         private static string QuoteProcessArgument(string argument) =>
             argument.Contains(' ') || argument.Contains('"')
-                ? $"\"{argument.Replace(""", "\"")}\""
+                ? $"\"{argument.Replace("\"", "\\\"")}\""
                 : argument;
         protected override void OnExit(ExitEventArgs e) { EmergencyStopButtons?.Dispose(); Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
