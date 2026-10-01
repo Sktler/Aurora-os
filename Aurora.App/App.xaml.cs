@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using Aurora.App.Services;
 
@@ -119,7 +121,7 @@ namespace Aurora.App
                 mainWindow.Show();
                 mainWindow.Activate();
                 bootstrap.Close();
-                if (Security.IsLockedDown) ShowLockdownOverlay();
+                if (Security.IsLockedDown) ShowLockdownOverlay(mainWindow);
 
                 try
                 {
@@ -161,7 +163,7 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
-        public static void ShowLockdownOverlay()
+        public static void ShowLockdownOverlay(Window? targetWindow = null)
         {
             if (Security == null || !Security.IsLockedDown) return;
             Current.Dispatcher.Invoke(() =>
@@ -171,10 +173,63 @@ namespace Aurora.App
                     _lockdownWindow.Activate();
                     return;
                 }
-                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, HasRecoveryCode, ClearLockdownOverlay);
+
+                var target = targetWindow ?? Current.Windows.OfType<Window>()
+                    .FirstOrDefault(window => window.IsActive && window is not Views.LockdownWindow)
+                    ?? MainWindow;
+                var workArea = GetMonitorWorkArea(target);
+
+                _lockdownWindow = new Views.LockdownWindow(
+                    Security,
+                    VerifyCurrentInstallation,
+                    VerifyRecoveryCode,
+                    HasRecoveryCode,
+                    ClearLockdownOverlay,
+                    workArea);
                 _lockdownWindow.Show();
                 _lockdownWindow.Activate();
             });
+        }
+        private static Rect GetMonitorWorkArea(Window? window)
+        {
+            if (window == null)
+                return SystemParameters.WorkArea;
+
+            var helper = new WindowInteropHelper(window);
+            var handle = helper.Handle;
+            if (handle == IntPtr.Zero)
+                return SystemParameters.WorkArea;
+
+            var monitor = MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+            if (monitor == IntPtr.Zero)
+                return SystemParameters.WorkArea;
+
+            var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+            return GetMonitorInfo(monitor, ref info)
+                ? new Rect(info.rcWork.Left, info.rcWork.Top, info.rcWork.Right - info.rcWork.Left, info.rcWork.Bottom - info.rcWork.Top)
+                : SystemParameters.WorkArea;
+        }
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hWnd, uint dwFlags);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
         }
         private static bool VerifyCurrentInstallation()
         {
@@ -217,10 +272,14 @@ namespace Aurora.App
         }
         public static void EnterLockdown(string reason)
         {
+            var target = Current.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is not Views.LockdownWindow)
+                ?? MainWindow;
+
             Security.EnterLockdown(reason);
             foreach (Window window in Current.Windows)
                 if (window is not Views.LockdownWindow) window.IsEnabled = false;
-            ShowLockdownOverlay();
+            ShowLockdownOverlay(target);
         }
 
         public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
@@ -253,7 +312,7 @@ namespace Aurora.App
         }
         private static string QuoteProcessArgument(string argument) =>
             argument.Contains(' ') || argument.Contains('"')
-                ? $"\"{argument.Replace("\"", "\\\"")}\""
+                ? $"\"{argument.Replace(""", "\"")}\""
                 : argument;
         protected override void OnExit(ExitEventArgs e) { EmergencyStopButtons?.Dispose(); Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
