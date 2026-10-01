@@ -89,6 +89,64 @@ public sealed class AuroraRecoveryServiceTests
     }
 
     [Fact]
+    public void Profile_recovery_code_store_persists_and_is_profile_specific()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-profile-recovery-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var store = new ProfileRecoveryCodeStore(root);
+        var reopened = new ProfileRecoveryCodeStore(root);
+        var codeA = AuroraRecoveryService.GenerateCode();
+        var codeB = AuroraRecoveryService.GenerateCode();
+
+        try
+        {
+            store.SetCode("profile-a", codeA);
+            store.SetCode("profile-b", codeB);
+
+            Assert.True(reopened.HasCode("profile-a"));
+            Assert.True(reopened.HasCode("profile-b"));
+            Assert.True(reopened.VerifyCode("profile-a", codeA));
+            Assert.False(reopened.VerifyCode("profile-a", codeB));
+            Assert.True(reopened.VerifyCode("profile-b", codeB));
+            Assert.False(reopened.VerifyCode("profile-b", codeA));
+
+            var storedA = File.ReadAllText(Path.Combine(root, "profilea.json"));
+            var storedB = File.ReadAllText(Path.Combine(root, "profileb.json"));
+            Assert.DoesNotContain(codeA, storedA, StringComparison.Ordinal);
+            Assert.DoesNotContain(codeB, storedB, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
+    public void Profile_recovery_code_store_rejects_tampered_work_factor()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-profile-recovery-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var store = new ProfileRecoveryCodeStore(root);
+        var code = AuroraRecoveryService.GenerateCode();
+
+        try
+        {
+            store.SetCode("profile-a", code);
+            var path = Path.Combine(root, "profilea.json");
+            var raw = File.ReadAllText(path);
+            File.WriteAllText(path, raw.Replace("\"Iterations\":600000", "\"Iterations\":1000", StringComparison.Ordinal));
+
+            Assert.False(new ProfileRecoveryCodeStore(root).VerifyCode("profile-a", code));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
     public void Detached_signature_verification_accepts_only_matching_key_and_content()
     {
         using var rsa = RSA.Create(2048);
@@ -98,5 +156,66 @@ public sealed class AuroraRecoveryServiceTests
 
         Assert.True(AuroraRecoveryService.VerifyDetachedSignature(content, signature, publicKey));
         Assert.False(AuroraRecoveryService.VerifyDetachedSignature(Encoding.UTF8.GetBytes("tampered"), signature, publicKey));
+    }
+
+    [Fact]
+    public void Installation_security_fails_closed_until_both_checks_pass()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-lockdown-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var statePath = Path.Combine(root, "lockdown.state");
+        var security = new InstallationSecurityService(statePath);
+
+        try
+        {
+            security.EnterLockdown("integrity verification failed");
+            Assert.True(security.IsLockedDown);
+            Assert.False(security.TryRecover(true, false));
+            Assert.True(security.IsLockedDown);
+            Assert.True(security.TryRecover(true, true));
+            Assert.False(security.IsLockedDown);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
+    public void Signed_sha256_verification_requires_the_matching_public_key()
+    {
+        using var rsa = RSA.Create(2048);
+        using var other = RSA.Create(2048);
+        var expected = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("trusted installation")));
+        var signature = Convert.ToBase64String(rsa.SignData(Convert.FromHexString(expected), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        var publicKey = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
+        var wrongKey = Convert.ToBase64String(other.ExportSubjectPublicKeyInfo());
+
+        Assert.True(InstallationSecurityService.VerifySignedSha256(expected, signature, publicKey));
+        Assert.False(InstallationSecurityService.VerifySignedSha256(expected, signature, wrongKey));
+    }
+
+    [Fact]
+    public void File_hash_verification_rejects_tampering()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-hash-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "package.bin");
+
+        try
+        {
+            File.WriteAllText(path, "trusted");
+            var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
+            Assert.True(InstallationSecurityService.VerifyFileSha256(path, hash));
+
+            File.WriteAllText(path, "tampered");
+            Assert.False(InstallationSecurityService.VerifyFileSha256(path, hash));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
     }
 }

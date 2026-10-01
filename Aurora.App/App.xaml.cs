@@ -28,6 +28,10 @@ namespace Aurora.App
         public static AppAdapterService AppAdapters { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
         public static WindowsUpdaterService Updater { get; private set; } = null!;
+        public static InstallationSecurityService Security { get; private set; } = null!;
+        public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
+        public static ProfileRecoveryCodeStore RecoveryCodes { get; } = new();
+        private static Views.LockdownWindow? _lockdownWindow;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -40,6 +44,8 @@ namespace Aurora.App
                 Profiles = new ProfileManager();
                 Profiles.Initialize(Settings);
                 Updater = new WindowsUpdaterService();
+                Security = new InstallationSecurityService(System.IO.Path.Combine(AppSettings.ConfigDir, "security.lock"));
+                EmergencyStopButtons = new EmergencyStopButtonService();
 
                 if (firstRun)
                 {
@@ -113,6 +119,7 @@ namespace Aurora.App
                 mainWindow.Show();
                 mainWindow.Activate();
                 bootstrap.Close();
+                if (Security.IsLockedDown) ShowLockdownOverlay();
 
                 try
                 {
@@ -154,6 +161,67 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
+        public static void ShowLockdownOverlay()
+        {
+            if (Security == null || !Security.IsLockedDown) return;
+            Current.Dispatcher.Invoke(() =>
+            {
+                if (_lockdownWindow != null)
+                {
+                    _lockdownWindow.Activate();
+                    return;
+                }
+                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, HasRecoveryCode, ClearLockdownOverlay);
+                _lockdownWindow.Show();
+                _lockdownWindow.Activate();
+            });
+        }
+        private static bool VerifyCurrentInstallation()
+        {
+            var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
+            var signature = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SIGNATURE");
+            var publicKey = Environment.GetEnvironmentVariable("AURORA_TRUSTED_PUBLIC_KEY");
+            var executable = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(expected) || string.IsNullOrWhiteSpace(executable))
+                return false;
+
+            if (!InstallationSecurityService.VerifyFileSha256(executable, expected))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(signature) && string.IsNullOrWhiteSpace(publicKey))
+                return true;
+
+            return !string.IsNullOrWhiteSpace(signature) &&
+                   !string.IsNullOrWhiteSpace(publicKey) &&
+                   InstallationSecurityService.VerifySignedSha256(expected, signature, publicKey);
+        }
+        private static bool VerifyRecoveryCode(string code)
+        {
+            if (Profiles?.ActiveProfile == null)
+                return false;
+
+            return RecoveryCodes.VerifyCode(Profiles.ActiveProfile.Id, code);
+        }
+        private static bool HasRecoveryCode()
+        {
+            if (Profiles?.ActiveProfile == null)
+                return false;
+
+            return RecoveryCodes.HasCode(Profiles.ActiveProfile.Id);
+        }
+        private static void ClearLockdownOverlay()
+        {
+            _lockdownWindow = null;
+            foreach (Window window in Current.Windows)
+                if (window is not Views.LockdownWindow) window.IsEnabled = true;
+        }
+        public static void EnterLockdown(string reason)
+        {
+            Security.EnterLockdown(reason);
+            foreach (Window window in Current.Windows)
+                if (window is not Views.LockdownWindow) window.IsEnabled = false;
+            ShowLockdownOverlay();
+        }
 
         public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
@@ -187,6 +255,6 @@ namespace Aurora.App
             argument.Contains(' ') || argument.Contains('"')
                 ? $"\"{argument.Replace("\"", "\\\"")}\""
                 : argument;
-        protected override void OnExit(ExitEventArgs e) { Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
+        protected override void OnExit(ExitEventArgs e) { EmergencyStopButtons?.Dispose(); Memory?.Dispose(); Voice?.Dispose(); WakeWord?.Dispose(); Camera?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult(); Metrics?.Dispose(); base.OnExit(e); }
     }
 }
