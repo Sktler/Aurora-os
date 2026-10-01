@@ -181,7 +181,6 @@ namespace Aurora.App
 
                 _lockdownWindow = new Views.LockdownWindow(
                     Security,
-                    VerifyCurrentInstallation,
                     VerifyRecoveryCode,
                     HasRecoveryCode,
                     ClearLockdownOverlay,
@@ -230,25 +229,6 @@ namespace Aurora.App
             public int Top;
             public int Right;
             public int Bottom;
-        }
-        private static bool VerifyCurrentInstallation()
-        {
-            var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
-            var signature = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SIGNATURE");
-            var publicKey = Environment.GetEnvironmentVariable("AURORA_TRUSTED_PUBLIC_KEY");
-            var executable = Environment.ProcessPath;
-            if (string.IsNullOrWhiteSpace(expected) || string.IsNullOrWhiteSpace(executable))
-                return false;
-
-            if (!InstallationSecurityService.VerifyFileSha256(executable, expected))
-                return false;
-
-            if (string.IsNullOrWhiteSpace(signature) && string.IsNullOrWhiteSpace(publicKey))
-                return true;
-
-            return !string.IsNullOrWhiteSpace(signature) &&
-                   !string.IsNullOrWhiteSpace(publicKey) &&
-                   InstallationSecurityService.VerifySignedSha256(expected, signature, publicKey);
         }
         private static bool VerifyRecoveryCode(string code)
         {
