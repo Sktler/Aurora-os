@@ -38,8 +38,7 @@
                     <TextBlock x:Name="StatusText" Foreground="#D0D7E2" TextWrapping="Wrap" Margin="0,12,0,0"/>
                     <Button Content="Verify and unlock" Click="Recover_Click" Height="44" Margin="0,18,0,0"
                             Background="#4B16A0" Foreground="White" BorderThickness="0" FontSize="15"/>
-                    <TextBlock Text="If the installation signature cannot be verified, Aurora remains locked."
-                               Foreground="#D0D7E2" FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"/>
+
                 </StackPanel>
             </Border>
 
