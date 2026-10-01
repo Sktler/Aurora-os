@@ -38,9 +38,6 @@ namespace Aurora.App
             try
             {
                 base.OnStartup(e);
-                // Keep the application alive while startup dialogs are shown. WPF assigns
-                // the first shown window as MainWindow automatically, so closing the
-                // welcome dialog would otherwise shut down the application here.
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var firstRun = !AppSettings.HasSavedConfiguration;
                 Settings = AppSettings.LoadOrCreate();
@@ -113,9 +110,6 @@ namespace Aurora.App
                 Memory.Initialize();
                 Weather = new WeatherClient();
 
-                // DashboardViewModel subscribes to Metrics during construction, so the metrics
-                // service must exist before MainWindow is created. Otherwise all four dashboard
-                // resource readings remain at their initial placeholder values forever.
                 try { Metrics = new SystemMetricsService(); }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
 

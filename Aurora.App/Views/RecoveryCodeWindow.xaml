@@ -18,10 +18,10 @@
                          FontWeight="SemiBold" TextAlignment="Center" IsReadOnly="True" Background="#080B11"
                          Foreground="#7DE2B0" BorderBrush="#35435A" BorderThickness="1"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="Generate" Click="Generate_Click" Padding="18,10" Margin="4"/>
-                    <Button x:Name="CopyButton" Content="Copy" Click="Copy_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
-                    <Button x:Name="SaveButton" Content="Save to file" Click="Save_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
-                    <Button x:Name="PrintButton" Content="Print" Click="Print_Click" Padding="18,10" Margin="4" IsEnabled="False"/>
+                    <Button Content="Generate" Click="Generate_Click" Padding="18,10,18,10" Margin="4"/>
+                    <Button x:Name="CopyButton" Content="Copy" Click="Copy_Click" Padding="18,10,18,10" Margin="4" IsEnabled="False"/>
+                    <Button x:Name="SaveButton" Content="Save to file" Click="Save_Click" Padding="18,10,18,10" Margin="4" IsEnabled="False"/>
+                    <Button x:Name="PrintButton" Content="Print" Click="Print_Click" Padding="18,10,18,10" Margin="4" IsEnabled="False"/>
                 </StackPanel>
                 <TextBlock Text="Save or print this code before confirming. Do not put it in GitHub, logs, screenshots, or connector messages."
                            Foreground="#F2B36B" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="12,18,12,0"/>
@@ -31,8 +31,8 @@
             <CheckBox x:Name="SavedCheckBox" Content="I have saved my recovery code somewhere safe."
                       Foreground="#DCE5EF" Checked="SavedCheckBox_Checked" HorizontalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                <Button Content="Cancel" Click="Cancel_Click" Padding="18,9" Margin="0,0,8,0"/>
-                <Button x:Name="DoneButton" Content="Save recovery code" Click="Done_Click" Padding="18,9" IsEnabled="False"/>
+                <Button Content="Cancel" Click="Cancel_Click" Padding="18,9,18,9" Margin="0,0,8,0"/>
+                <Button x:Name="DoneButton" Content="Save recovery code" Click="Done_Click" Padding="18,9,18,9" IsEnabled="False"/>
             </StackPanel>
         </StackPanel>
     </Grid>

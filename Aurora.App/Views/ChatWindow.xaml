@@ -7,7 +7,7 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid Grid.Row="0" Margin="0,0,0,14">
             <StackPanel><TextBlock Text="Chat with Aurora" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Your full conversation window" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/></StackPanel>
-            <Button HorizontalAlignment="Right" Content="Clear this chat" Command="{Binding SelectedCompanion.ClearChatHistoryCommand}" Padding="12,7" Background="#151B27" Foreground="{StaticResource TextMutedBrush}" BorderBrush="#293245" ToolTip="Delete this conversation only"/>
+            <Button HorizontalAlignment="Right" Content="Clear this chat" Command="{Binding SelectedCompanion.ClearChatHistoryCommand}" Padding="12,7,12,7" Background="#151B27" Foreground="{StaticResource TextMutedBrush}" BorderBrush="#293245" ToolTip="Delete this conversation only"/>
         </Grid>
         <Border Grid.Row="1" Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="12">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -19,8 +19,8 @@
         <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <TextBox Text="{Binding SelectedCompanion.DraftMessage, UpdateSourceTrigger=PropertyChanged}" MinHeight="46" Padding="12" AcceptsReturn="True" TextWrapping="Wrap" Background="#0E131D" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
-            <Button Grid.Column="1" Content="🎙" Command="{Binding SelectedCompanion.ListenCommand}" Margin="8,0,0,0" Padding="16,10"/>
-            <Button Grid.Column="2" Content="Send" Command="{Binding SelectedCompanion.SendCommand}" Margin="8,0,0,0" Padding="18,10" Background="#4B16A0" Foreground="White" BorderThickness="0"/>
+            <Button Grid.Column="1" Content="🎙" Command="{Binding SelectedCompanion.ListenCommand}" Margin="8,0,0,0" Padding="16,10,16,10"/>
+            <Button Grid.Column="2" Content="Send" Command="{Binding SelectedCompanion.SendCommand}" Margin="8,0,0,0" Padding="18,10,18,10" Background="#4B16A0" Foreground="White" BorderThickness="0"/>
         </Grid>
     </Grid>
 </Window>

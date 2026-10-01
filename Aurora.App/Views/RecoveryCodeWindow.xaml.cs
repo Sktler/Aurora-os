@@ -50,7 +50,7 @@ public partial class RecoveryCodeWindow : Window
         var dialog = new System.Windows.Controls.PrintDialog();
         if (dialog.ShowDialog() != true) return;
         var document = new FlowDocument(new Paragraph(new Run($"Aurora profile recovery code{Environment.NewLine}{Environment.NewLine}{_plainCode}")))
-        { PagePadding = new Thickness(60), FontSize = 18 };
+        { PagePadding = new Thickness(60, 60, 60, 60), FontSize = 18 };
         dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, "Aurora Recovery Code");
     }
 

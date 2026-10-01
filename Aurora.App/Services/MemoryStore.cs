@@ -182,6 +182,19 @@ namespace Aurora.App.Services
             return result;
         }
 
+        public void DeleteProfileData(string profileId)
+        {
+            if (string.IsNullOrWhiteSpace(profileId)) return;
+
+            var cmd = _conn!.CreateCommand();
+            cmd.CommandText = @"
+                DELETE FROM Messages WHERE ProfileId = $profile;
+                DELETE FROM Companions WHERE ProfileId = $profile;
+            ";
+            cmd.Parameters.AddWithValue("$profile", profileId);
+            cmd.ExecuteNonQuery();
+        }
+
         /// <summary>Wipes one companion's history - used by the "Forget" privacy control.</summary>
         public void ClearHistory(string companionId)
         {
