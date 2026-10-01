@@ -10,26 +10,24 @@ public partial class LockdownWindow : Window
     private readonly InstallationSecurityService _security;
     private readonly Func<bool> _softwareIntegrityCheck;
     private readonly Func<string, bool> _userRecoveryCheck;
+    private readonly Func<bool> _recoveryCodeAvailable;
     private readonly Action _unlocked;
-    private readonly string _recoveryCode;
 
     public LockdownWindow(
         InstallationSecurityService security,
         Func<bool> softwareIntegrityCheck,
         Func<string, bool> userRecoveryCheck,
-        Action unlocked,
-        string recoveryCode)
+        Func<bool> recoveryCodeAvailable,
+        Action unlocked)
     {
         _security = security ?? throw new ArgumentNullException(nameof(security));
         _softwareIntegrityCheck = softwareIntegrityCheck ?? throw new ArgumentNullException(nameof(softwareIntegrityCheck));
         _userRecoveryCheck = userRecoveryCheck ?? throw new ArgumentNullException(nameof(userRecoveryCheck));
+        _recoveryCodeAvailable = recoveryCodeAvailable ?? throw new ArgumentNullException(nameof(recoveryCodeAvailable));
         _unlocked = unlocked ?? throw new ArgumentNullException(nameof(unlocked));
-        _recoveryCode = recoveryCode ?? "";
 
         InitializeComponent();
-        RecoveryCodeDisplay.Text = string.IsNullOrWhiteSpace(_recoveryCode)
-            ? "No recovery credential is available in this session."
-            : $"Emergency recovery code: {_recoveryCode}";
+        UpdateRecoveryHint();
         Loaded += (_, _) =>
         {
             Left = SystemParameters.VirtualScreenLeft;
@@ -44,6 +42,13 @@ public partial class LockdownWindow : Window
             if (_security.IsLockedDown)
                 e.Cancel = true;
         };
+    }
+
+    private void UpdateRecoveryHint()
+    {
+        RecoveryCodeDisplay.Text = _recoveryCodeAvailable()
+            ? "Enter the recovery code saved for the active profile."
+            : "No recovery code is saved for the active profile. Aurora remains locked until one is created and confirmed.";
     }
 
     private void RecoveryCodeBox_KeyDown(object sender, KeyEventArgs e)

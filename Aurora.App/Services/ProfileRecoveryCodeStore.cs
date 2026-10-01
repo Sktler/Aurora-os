@@ -15,10 +15,20 @@ public sealed class ProfileRecoveryCodeStore
 
     private sealed record RecoveryVerifier(string Salt, string Hash, int Iterations);
 
-    private static string PathFor(string profileId)
+    private readonly string _rootDirectory;
+
+    public ProfileRecoveryCodeStore(string? rootDirectory = null)
     {
+        _rootDirectory = string.IsNullOrWhiteSpace(rootDirectory)
+            ? System.IO.Path.Combine(AppSettings.ConfigDir, "recovery")
+            : System.IO.Path.GetFullPath(rootDirectory);
+    }
+
+    private string PathFor(string profileId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
         var safeId = new string(profileId.Where(char.IsLetterOrDigit).ToArray());
-        return System.IO.Path.Combine(AppSettings.ConfigDir, "recovery", safeId + ".json");
+        return System.IO.Path.Combine(_rootDirectory, safeId + ".json");
     }
 
     public void SetCode(string profileId, string recoveryCode)
@@ -47,7 +57,7 @@ public sealed class ProfileRecoveryCodeStore
         finally { CryptographicOperations.ZeroMemory(salt); }
     }
 
-    public bool HasCode(string profileId) => File.Exists(PathFor(profileId));
+    public bool HasCode(string profileId) => !string.IsNullOrWhiteSpace(profileId) && File.Exists(PathFor(profileId));
 
     public bool VerifyCode(string profileId, string recoveryCode)
     {
@@ -55,7 +65,7 @@ public sealed class ProfileRecoveryCodeStore
         try
         {
             var document = JsonSerializer.Deserialize<RecoveryVerifier>(File.ReadAllText(PathFor(profileId)));
-            if (document == null || document.Iterations < 100_000) return false;
+            if (document == null || document.Iterations != Iterations) return false;
             var salt = Convert.FromBase64String(document.Salt);
             var expected = Convert.FromBase64String(document.Hash);
             var actual = Derive(recoveryCode, salt, document.Iterations);
@@ -72,6 +82,9 @@ public sealed class ProfileRecoveryCodeStore
 
     public void RemoveCode(string profileId)
     {
+        if (string.IsNullOrWhiteSpace(profileId))
+            return;
+
         var path = PathFor(profileId);
         if (File.Exists(path)) File.Delete(path);
     }

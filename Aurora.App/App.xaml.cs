@@ -30,8 +30,8 @@ namespace Aurora.App
         public static WindowsUpdaterService Updater { get; private set; } = null!;
         public static InstallationSecurityService Security { get; private set; } = null!;
         public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
+        public static ProfileRecoveryCodeStore RecoveryCodes { get; } = new();
         private static Views.LockdownWindow? _lockdownWindow;
-        private static string? _sessionRecoveryCode;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -177,7 +177,7 @@ namespace Aurora.App
                     _lockdownWindow.Activate();
                     return;
                 }
-                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, ClearLockdownOverlay, _sessionRecoveryCode ?? "");
+                _lockdownWindow = new Views.LockdownWindow(Security, VerifyCurrentInstallation, VerifyRecoveryCode, HasRecoveryCode, ClearLockdownOverlay);
                 _lockdownWindow.Show();
                 _lockdownWindow.Activate();
             });
@@ -185,12 +185,36 @@ namespace Aurora.App
         private static bool VerifyCurrentInstallation()
         {
             var expected = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SHA256");
+            var signature = Environment.GetEnvironmentVariable("AURORA_TRUSTED_SIGNATURE");
+            var publicKey = Environment.GetEnvironmentVariable("AURORA_TRUSTED_PUBLIC_KEY");
             var executable = Environment.ProcessPath;
-            return !string.IsNullOrWhiteSpace(expected) &&
-                   !string.IsNullOrWhiteSpace(executable) &&
-                   InstallationSecurityService.VerifyFileSha256(executable, expected);
+            if (string.IsNullOrWhiteSpace(expected) || string.IsNullOrWhiteSpace(executable))
+                return false;
+
+            if (!InstallationSecurityService.VerifyFileSha256(executable, expected))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(signature) && string.IsNullOrWhiteSpace(publicKey))
+                return true;
+
+            return !string.IsNullOrWhiteSpace(signature) &&
+                   !string.IsNullOrWhiteSpace(publicKey) &&
+                   InstallationSecurityService.VerifySignedSha256(expected, signature, publicKey);
         }
-        private static bool VerifyRecoveryCode(string code) => !string.IsNullOrWhiteSpace(_sessionRecoveryCode) && AuroraRecoveryService.VerifyRecoveryCode(code, new[] { _sessionRecoveryCode });
+        private static bool VerifyRecoveryCode(string code)
+        {
+            if (Profiles?.ActiveProfile == null)
+                return false;
+
+            return RecoveryCodes.VerifyCode(Profiles.ActiveProfile.Id, code);
+        }
+        private static bool HasRecoveryCode()
+        {
+            if (Profiles?.ActiveProfile == null)
+                return false;
+
+            return RecoveryCodes.HasCode(Profiles.ActiveProfile.Id);
+        }
         private static void ClearLockdownOverlay()
         {
             _lockdownWindow = null;
@@ -199,7 +223,6 @@ namespace Aurora.App
         }
         public static void EnterLockdown(string reason)
         {
-            _sessionRecoveryCode ??= AuroraRecoveryService.GenerateRecoveryCodes(1, AuroraRecoveryService.DefaultRecoveryCodeLength)[0];
             Security.EnterLockdown(reason);
             foreach (Window window in Current.Windows)
                 if (window is not Views.LockdownWindow) window.IsEnabled = false;

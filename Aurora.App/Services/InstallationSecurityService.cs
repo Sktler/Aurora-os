@@ -77,4 +77,33 @@ public sealed class InstallationSecurityService
             actual,
             Convert.FromHexString(normalized));
     }
+
+    public static bool VerifySignedSha256(string expectedHex, string signatureBase64, string subjectPublicKeyInfoBase64)
+    {
+        if (string.IsNullOrWhiteSpace(expectedHex) ||
+            string.IsNullOrWhiteSpace(signatureBase64) ||
+            string.IsNullOrWhiteSpace(subjectPublicKeyInfoBase64))
+        {
+            return false;
+        }
+
+        try
+        {
+            var hashBytes = Convert.FromHexString(expectedHex.Trim());
+            var signatureBytes = Convert.FromBase64String(signatureBase64);
+            var keyBytes = Convert.FromBase64String(subjectPublicKeyInfoBase64);
+
+            using var rsa = RSA.Create();
+            rsa.ImportSubjectPublicKeyInfo(keyBytes, out _);
+            return rsa.VerifyData(hashBytes, signatureBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
 }
