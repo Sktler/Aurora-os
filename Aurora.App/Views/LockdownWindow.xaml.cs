@@ -12,28 +12,29 @@ public partial class LockdownWindow : Window
     private readonly Func<string, bool> _userRecoveryCheck;
     private readonly Func<bool> _recoveryCodeAvailable;
     private readonly Action _unlocked;
+    private readonly Rect _workArea;
 
     public LockdownWindow(
         InstallationSecurityService security,
         Func<bool> softwareIntegrityCheck,
         Func<string, bool> userRecoveryCheck,
         Func<bool> recoveryCodeAvailable,
-        Action unlocked)
+        Action unlocked,
+        Rect? workArea = null)
     {
         _security = security ?? throw new ArgumentNullException(nameof(security));
         _softwareIntegrityCheck = softwareIntegrityCheck ?? throw new ArgumentNullException(nameof(softwareIntegrityCheck));
         _userRecoveryCheck = userRecoveryCheck ?? throw new ArgumentNullException(nameof(userRecoveryCheck));
         _recoveryCodeAvailable = recoveryCodeAvailable ?? throw new ArgumentNullException(nameof(recoveryCodeAvailable));
         _unlocked = unlocked ?? throw new ArgumentNullException(nameof(unlocked));
+        _workArea = workArea ?? SystemParameters.WorkArea;
 
         InitializeComponent();
         UpdateRecoveryHint();
         Loaded += (_, _) =>
         {
-            Left = SystemParameters.VirtualScreenLeft;
-            Top = SystemParameters.VirtualScreenTop;
-            Width = SystemParameters.VirtualScreenWidth;
-            Height = SystemParameters.VirtualScreenHeight;
+            Left = _workArea.Left + Math.Max(0, (_workArea.Width - Width) / 2);
+            Top = _workArea.Top + Math.Max(0, (_workArea.Height - Height) / 2);
             Activate();
             RecoveryCodeBox.Focus();
         };
