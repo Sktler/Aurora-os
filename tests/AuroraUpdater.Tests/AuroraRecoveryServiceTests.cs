@@ -1,6 +1,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Aurora.App.Services;
 using Xunit;
 
@@ -80,6 +81,57 @@ public sealed class AuroraRecoveryServiceTests
 
             Assert.DoesNotContain(payload, raw, StringComparison.Ordinal);
             Assert.DoesNotContain(codes[0], raw, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
+    public void ProfileRecoveryCode_remains_valid_after_saving_and_reopening_store()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-recovery-verifier-{Guid.NewGuid():N}");
+        var code = AuroraRecoveryService.GenerateCode();
+        const string profileId = "profile-a";
+
+        try
+        {
+            var firstStore = new ProfileRecoveryCodeStore(root);
+            firstStore.SetCode(profileId, code);
+            var verifier = Directory.GetFiles(root, "*.json").Single();
+            Assert.DoesNotContain(code, File.ReadAllText(verifier), StringComparison.Ordinal);
+
+            var reopenedStore = new ProfileRecoveryCodeStore(root);
+            Assert.True(reopenedStore.HasCode(profileId));
+            Assert.True(reopenedStore.VerifyCode(profileId, code));
+            Assert.False(reopenedStore.VerifyCode(profileId, AuroraRecoveryService.GenerateCode()));
+            Assert.False(reopenedStore.HasCode("profilea"));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
+    public void ProfileRecoveryCode_rejects_tampered_work_factor()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"aurora-recovery-verifier-{Guid.NewGuid():N}");
+        var code = AuroraRecoveryService.GenerateCode();
+
+        try
+        {
+            var store = new ProfileRecoveryCodeStore(root);
+            store.SetCode("profile-a", code);
+            var verifier = Directory.GetFiles(root, "*.json").Single();
+            var document = JsonDocument.Parse(File.ReadAllText(verifier)).RootElement;
+            File.WriteAllText(verifier,
+                $$"""{"Salt":"{{document.GetProperty("Salt").GetString()}}","Hash":"{{document.GetProperty("Hash").GetString()}}","Iterations":2147483647}""");
+
+            Assert.False(store.VerifyCode("profile-a", code));
         }
         finally
         {
