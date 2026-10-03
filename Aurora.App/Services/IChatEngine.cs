@@ -16,6 +16,8 @@ namespace Aurora.App.Services
     {
         bool IsConfigured { get; }
 
+        void RevokeCredentials();
+
         Task<string> SendAsync(string systemPrompt, IEnumerable<ChatMessage> history, string newUserMessage);
 
         Task<string> SendWithToolsAsync(

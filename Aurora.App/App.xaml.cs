@@ -32,6 +32,7 @@ namespace Aurora.App
         public static WindowsUpdaterService Updater { get; private set; } = null!;
         public static InstallationSecurityService Security { get; private set; } = null!;
         public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
+        public static event EventHandler? AIProviderStatusChanged;
         public static ProfileRecoveryCodeStore RecoveryCodes { get; } = new();
         private static Views.LockdownWindow? _lockdownWindow;
 
@@ -126,6 +127,7 @@ namespace Aurora.App
                 try
                 {
                     AI = BuildChatEngine();
+                    AIProviderStatusChanged?.Invoke(null, EventArgs.Empty);
                     ImageGen = BuildImageGenClient();
                     SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
                     HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
@@ -161,7 +163,18 @@ namespace Aurora.App
         public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); AppAdapters = new AppAdapterService(WindowsAutomation); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
-        private static IChatEngine BuildChatEngine() => Settings.ChatProvider switch { "groq" => new GroqClient(Settings.GroqApiKey, Settings.GroqModel), "openai" => new OpenAIClient(Settings.OpenAIApiKey, Settings.OpenAIModel), "claude" => new ClaudeClient(Settings.ClaudeApiKey, Settings.ClaudeModel), "copilot" => new GitHubCopilotClient(Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel), _ => new GeminiClient(Settings.GeminiApiKey, Settings.GeminiModel) };
+        private static IChatEngine BuildChatEngine()
+        {
+            var isLockedDown = Security?.IsLockedDown == true;
+            return Settings.ChatProvider switch
+            {
+                "groq" => new GroqClient(isLockedDown ? "" : Settings.GroqApiKey, Settings.GroqModel),
+                "openai" => new OpenAIClient(isLockedDown ? "" : Settings.OpenAIApiKey, Settings.OpenAIModel),
+                "claude" => new ClaudeClient(isLockedDown ? "" : Settings.ClaudeApiKey, Settings.ClaudeModel),
+                "copilot" => new GitHubCopilotClient(isLockedDown ? "" : Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel),
+                _ => new GeminiClient(isLockedDown ? "" : Settings.GeminiApiKey, Settings.GeminiModel)
+            };
+        }
         private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
         public static void ShowLockdownOverlay(Window? targetWindow = null)
         {
@@ -261,8 +274,30 @@ namespace Aurora.App
                 if (window is not Views.LockdownWindow) window.IsEnabled = false;
             ShowLockdownOverlay(target);
         }
+        public static void EmergencyStopProvider()
+        {
+            if (Settings == null) throw new InvalidOperationException("Aurora settings are not initialized.");
 
-        public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); RefreshWindowsPermissions(); }
+            AI?.RevokeCredentials();
+            if (Settings.ChatProvider == "gemini" && Settings.ImageProvider != "openai")
+                ImageGen?.RevokeCredentials();
+            Settings.ClearActiveChatProviderCredential();
+            AI = BuildChatEngine();
+            AIProviderStatusChanged?.Invoke(null, EventArgs.Empty);
+            if (Settings.ChatProvider == "gemini")
+                ImageGen = BuildImageGenClient();
+
+            try
+            {
+                Settings.Save();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("The active AI provider was disconnected for this session, but its cleared credential could not be saved to local settings.", ex);
+            }
+        }
+
+        public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); AIProviderStatusChanged?.Invoke(null, EventArgs.Empty); RefreshWindowsPermissions(); }
         public static void ResetEverythingAndRestart()
         {
             var databasePath = Settings?.DatabasePath;

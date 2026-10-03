@@ -18,6 +18,7 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private bool _wakeWordFlash;
         [ObservableProperty] private string _userName = "Adam";
         [ObservableProperty] private string _greetingText = "Good evening, Adam";
+        [ObservableProperty] private string _aiProviderStatus = "AI provider disconnected";
 
         [ObservableProperty] private string _weatherSummary = "Waiting for location permission…";
         [ObservableProperty] private string _weatherLocation = "Finding your location…";
@@ -39,6 +40,8 @@ namespace Aurora.App.ViewModels
             var settings = App.Settings;
             UserName = NormalizeUserName(settings?.UserName);
             GreetingText = BuildGreeting();
+            RefreshAIProviderStatus();
+            App.AIProviderStatusChanged += OnAIProviderStatusChanged;
 
             var existing = App.Memory?.LoadCompanions();
             if (existing == null || existing.Count == 0)
@@ -65,6 +68,18 @@ namespace Aurora.App.ViewModels
         {
             UserName = NormalizeUserName(App.Settings?.UserName);
             GreetingText = BuildGreeting();
+        }
+
+        private void OnAIProviderStatusChanged(object? sender, EventArgs e) => RefreshAIProviderStatus();
+
+        private void RefreshAIProviderStatus()
+        {
+            var providerName = App.Settings == null
+                ? "AI provider"
+                : AIProviderCatalog.Get(App.Settings.ChatProvider).DisplayName;
+            AiProviderStatus = App.AI?.IsConfigured == true
+                ? $"{providerName} configured"
+                : $"{providerName} disconnected";
         }
 
         public void ReloadForActiveProfile()

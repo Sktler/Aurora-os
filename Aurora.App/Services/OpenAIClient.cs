@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Aurora.App.Models;
 
@@ -20,7 +21,8 @@ namespace Aurora.App.Services
     {
         private readonly HttpClient _http;
         private readonly string _model;
-        private readonly string _apiKey;
+        private string _apiKey;
+        private int _credentialsRevoked;
         private const string Endpoint = "https://api.openai.com/v1/chat/completions";
 
         public OpenAIClient(string apiKey, string model)
@@ -33,7 +35,15 @@ namespace Aurora.App.Services
                 _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         }
 
-        public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+        public bool IsConfigured => Volatile.Read(ref _credentialsRevoked) == 0 && !string.IsNullOrWhiteSpace(_apiKey);
+
+        public void RevokeCredentials()
+        {
+            if (Interlocked.Exchange(ref _credentialsRevoked, 1) != 0) return;
+            Interlocked.Exchange(ref _apiKey, "");
+            _http.DefaultRequestHeaders.Remove("Authorization");
+            _http.CancelPendingRequests();
+        }
 
         /// <summary>Fetches the live list of every model this API key can see - includes
         /// chat models, embeddings, moderation, realtime, and anything else OpenAI's
@@ -145,6 +155,8 @@ namespace Aurora.App.Services
             const int maxToolTurns = 5;
             for (int turn = 0; turn < maxToolTurns; turn++)
             {
+                if (!IsConfigured) return "[OpenAI disconnected by emergency stop.]";
+
                 var body = new { model = _model, messages, tools };
                 var json = JsonSerializer.Serialize(body);
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -193,6 +205,8 @@ namespace Aurora.App.Services
 
                 foreach (var call in clonedCalls)
                 {
+                    if (!IsConfigured) return "[OpenAI disconnected by emergency stop.]";
+
                     var callId = call.GetProperty("id").GetString() ?? "";
                     var fn = call.GetProperty("function");
                     var toolName = fn.GetProperty("name").GetString() ?? "";

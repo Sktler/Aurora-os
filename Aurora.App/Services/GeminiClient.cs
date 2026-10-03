@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Aurora.App.Models;
 
@@ -19,7 +20,8 @@ namespace Aurora.App.Services
     {
         private readonly HttpClient _http;
         private readonly string _model;
-        private readonly string _apiKey;
+        private string _apiKey;
+        private int _credentialsRevoked;
         private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/";
 
         public GeminiClient(string apiKey, string model)
@@ -37,7 +39,14 @@ namespace Aurora.App.Services
             _model = string.IsNullOrWhiteSpace(trimmedModel) ? "gemini-3.6-flash" : trimmedModel;
         }
 
-        public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+        public bool IsConfigured => Volatile.Read(ref _credentialsRevoked) == 0 && !string.IsNullOrWhiteSpace(_apiKey);
+
+        public void RevokeCredentials()
+        {
+            if (Interlocked.Exchange(ref _credentialsRevoked, 1) != 0) return;
+            Interlocked.Exchange(ref _apiKey, "");
+            _http.CancelPendingRequests();
+        }
 
         private string Endpoint => $"{BaseUrl}{_model}:generateContent?key={_apiKey}";
 
@@ -219,6 +228,8 @@ namespace Aurora.App.Services
             const int maxToolTurns = 5;
             for (int turn = 0; turn < maxToolTurns; turn++)
             {
+                if (!IsConfigured) return "[Gemini disconnected by emergency stop.]";
+
                 var body = new
                 {
                     system_instruction = new { parts = new[] { new { text = systemPrompt } } },
@@ -279,6 +290,8 @@ namespace Aurora.App.Services
                 var responseParts = new List<object>();
                 foreach (var call in functionCalls)
                 {
+                    if (!IsConfigured) return "[Gemini disconnected by emergency stop.]";
+
                     var fc = call.GetProperty("functionCall");
                     var toolName = fc.GetProperty("name").GetString() ?? "";
                     var args = fc.TryGetProperty("args", out var a) ? a : default;

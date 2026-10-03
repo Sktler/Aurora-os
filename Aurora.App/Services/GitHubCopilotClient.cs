@@ -24,7 +24,8 @@ namespace Aurora.App.Services
     {
         private readonly HttpClient _http;
         private readonly string _model;
-        private readonly string _apiKey; // GitHub token supplied by the user; exchanged for a session token below.
+        private string _apiKey; // GitHub token supplied by the user; exchanged for a session token below.
+        private int _credentialsRevoked;
         private const string Endpoint = "https://api.githubcopilot.com/chat/completions";
         private const string ModelsEndpoint = "https://api.githubcopilot.com/models";
         private const string TokenExchangeEndpoint = "https://api.github.com/copilot_internal/v2/token";
@@ -47,19 +48,34 @@ namespace Aurora.App.Services
             _http = new HttpClient();
         }
 
-        public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+        public bool IsConfigured => Volatile.Read(ref _credentialsRevoked) == 0 && !string.IsNullOrWhiteSpace(_apiKey);
+
+        public void RevokeCredentials()
+        {
+            if (Interlocked.Exchange(ref _credentialsRevoked, 1) != 0) return;
+            Interlocked.Exchange(ref _apiKey, "");
+            _sessionToken = null;
+            _http.DefaultRequestHeaders.Remove("Authorization");
+            _http.CancelPendingRequests();
+        }
 
         /// <summary>Exchanges the configured GitHub token for a short-lived Copilot session
         /// token (valid ~25 minutes), refreshing a minute before expiry. Throws if the
         /// exchange fails, e.g. the token lacks Copilot access.</summary>
         private async Task<string> GetSessionTokenAsync()
         {
+            if (!IsConfigured)
+                throw new OperationCanceledException("GitHub Copilot was disconnected.");
+
             if (_sessionToken != null && DateTimeOffset.UtcNow < _sessionTokenExpiresAt.AddMinutes(-1))
                 return _sessionToken;
 
             await _tokenLock.WaitAsync();
             try
             {
+                if (!IsConfigured)
+                    throw new OperationCanceledException("GitHub Copilot was disconnected.");
+
                 if (_sessionToken != null && DateTimeOffset.UtcNow < _sessionTokenExpiresAt.AddMinutes(-1))
                     return _sessionToken;
 
@@ -71,6 +87,9 @@ namespace Aurora.App.Services
 
                 var response = await _http.SendAsync(request);
                 var text = await response.Content.ReadAsStringAsync();
+                if (!IsConfigured)
+                    throw new OperationCanceledException("GitHub Copilot was disconnected.");
+
                 if (!response.IsSuccessStatusCode)
                     throw new InvalidOperationException($"GitHub Copilot token exchange failed ({(int)response.StatusCode}): {text}. This account may not have an active Copilot subscription.");
 
@@ -111,6 +130,7 @@ namespace Aurora.App.Services
             if (!IsConfigured) return new List<string>();
 
             using var request = await BuildCopilotRequestAsync(HttpMethod.Get, ModelsEndpoint);
+            if (!IsConfigured) return new List<string>();
             var response = await _http.SendAsync(request);
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
@@ -149,6 +169,7 @@ namespace Aurora.App.Services
             {
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 using var request = await BuildCopilotRequestAsync(HttpMethod.Post, Endpoint, content);
+                if (!IsConfigured) return "[GitHub Copilot disconnected by emergency stop.]";
                 var response = await _http.SendAsync(request);
                 var responseText = await response.Content.ReadAsStringAsync();
 
@@ -205,6 +226,8 @@ namespace Aurora.App.Services
             const int maxToolTurns = 5;
             for (int turn = 0; turn < maxToolTurns; turn++)
             {
+                if (!IsConfigured) return "[GitHub Copilot disconnected by emergency stop.]";
+
                 var body = new { model = _model, messages, tools };
                 var json = JsonSerializer.Serialize(body);
 
@@ -214,6 +237,7 @@ namespace Aurora.App.Services
                 {
                     using var content = new StringContent(json, Encoding.UTF8, "application/json");
                     using var request = await BuildCopilotRequestAsync(HttpMethod.Post, Endpoint, content);
+                    if (!IsConfigured) return "[GitHub Copilot disconnected by emergency stop.]";
                     response = await _http.SendAsync(request);
                     responseText = await response.Content.ReadAsStringAsync();
                 }
@@ -252,6 +276,8 @@ namespace Aurora.App.Services
 
                 foreach (var call in clonedCalls)
                 {
+                    if (!IsConfigured) return "[GitHub Copilot disconnected by emergency stop.]";
+
                     var callId = call.GetProperty("id").GetString() ?? "";
                     var fn = call.GetProperty("function");
                     var toolName = fn.GetProperty("name").GetString() ?? "";

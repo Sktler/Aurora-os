@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Aurora.App.Services
@@ -16,8 +17,9 @@ namespace Aurora.App.Services
     {
         private readonly HttpClient _http;
         private readonly string _provider;
-        private readonly string _apiKey;
+        private string _apiKey;
         private readonly bool _configured;
+        private int _credentialsRevoked;
 
         // Google retired the older Imagen image models on August 17, 2026.
         // Use the current Gemini image-generation model instead.
@@ -35,11 +37,19 @@ namespace Aurora.App.Services
                 _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         }
 
-        public bool IsConfigured => _configured;
+        public bool IsConfigured => _configured && Volatile.Read(ref _credentialsRevoked) == 0;
+
+        public void RevokeCredentials()
+        {
+            if (Interlocked.Exchange(ref _credentialsRevoked, 1) != 0) return;
+            Interlocked.Exchange(ref _apiKey, "");
+            _http.DefaultRequestHeaders.Remove("Authorization");
+            _http.CancelPendingRequests();
+        }
 
         public async Task<string> GenerateImageAsync(string prompt)
         {
-            if (!_configured)
+            if (!IsConfigured)
                 return "[No image generation API key set. Add your Gemini key in Settings to enable Google image generation.]";
 
             return _provider switch

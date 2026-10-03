@@ -86,6 +86,28 @@ namespace Aurora.App.Services
         public bool WindowsMicrophoneEnabled { get; set; } = false;
         public bool WindowsMcpEnabled { get; set; } = false;
 
+        public void ClearActiveChatProviderCredential()
+        {
+            switch (ChatProvider)
+            {
+                case "groq":
+                    GroqApiKey = "";
+                    break;
+                case "openai":
+                    OpenAIApiKey = "";
+                    break;
+                case "claude":
+                    ClaudeApiKey = "";
+                    break;
+                case "copilot":
+                    GitHubCopilotApiKey = "";
+                    break;
+                default:
+                    GeminiApiKey = "";
+                    break;
+            }
+        }
+
         public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
         public static bool HasSavedConfiguration
