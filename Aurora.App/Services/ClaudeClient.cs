@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Aurora.App.Models;
 
@@ -22,7 +23,8 @@ namespace Aurora.App.Services
     {
         private readonly HttpClient _http;
         private readonly string _model;
-        private readonly string _apiKey;
+        private string _apiKey;
+        private int _credentialsRevoked;
         private const string Endpoint = "https://api.anthropic.com/v1/messages";
         private const string AnthropicVersion = "2023-06-01";
         private const int MaxTokens = 4096;
@@ -40,7 +42,15 @@ namespace Aurora.App.Services
             }
         }
 
-        public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+        public bool IsConfigured => Volatile.Read(ref _credentialsRevoked) == 0 && !string.IsNullOrWhiteSpace(_apiKey);
+
+        public void RevokeCredentials()
+        {
+            if (Interlocked.Exchange(ref _credentialsRevoked, 1) != 0) return;
+            Interlocked.Exchange(ref _apiKey, "");
+            _http.DefaultRequestHeaders.Remove("x-api-key");
+            _http.CancelPendingRequests();
+        }
 
         /// <summary>Fetches the live list of every model this API key can see on
         /// Anthropic's account. Unfiltered on purpose, same reasoning as
@@ -138,6 +148,8 @@ namespace Aurora.App.Services
             const int maxToolTurns = 5;
             for (int turn = 0; turn < maxToolTurns; turn++)
             {
+                if (!IsConfigured) return "[Claude disconnected by emergency stop.]";
+
                 var body = new
                 {
                     model = _model,
@@ -194,6 +206,8 @@ namespace Aurora.App.Services
                 var toolResults = new List<object>();
                 foreach (var block in toolUseBlocks)
                 {
+                    if (!IsConfigured) return "[Claude disconnected by emergency stop.]";
+
                     var toolUseId = block.GetProperty("id").GetString() ?? "";
                     var toolName = block.GetProperty("name").GetString() ?? "";
                     var input = block.TryGetProperty("input", out var i) ? i : default;

@@ -55,7 +55,7 @@ public sealed class EmergencyStopButtonService : IDisposable
             var button = new Button
             {
                 Content = "⛔  EMERGENCY STOP",
-                ToolTip = "Immediately lock Aurora",
+                ToolTip = "Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.",
                 Padding = new Thickness(12, 7, 12, 7),
                 FontSize = 11,
                 FontWeight = FontWeights.Bold,
@@ -98,8 +98,18 @@ public sealed class EmergencyStopButtonService : IDisposable
 
     private void TriggerLockdown()
     {
-        if (App.Security == null) return;
-        App.EnterLockdown("Emergency stop requested from Aurora UI.");
+        try
+        {
+            App.EmergencyStopProvider();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"The active AI provider was disconnected for this session, but Aurora could not save the cleared credential to local settings. {ex.Message}",
+                "Emergency stop incomplete",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePosition(sender as Window);
