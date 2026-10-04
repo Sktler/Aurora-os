@@ -16,6 +16,8 @@ namespace Aurora.App.Services
             EnsureTerminalAccess();
             if (string.IsNullOrWhiteSpace(script))
                 throw new ArgumentException("A PowerShell command is required.", nameof(script));
+            if (!ActionApprovalCenter.ConfirmAction("windows_run_powershell", $"Run PowerShell: {script}"))
+                throw new UnauthorizedAccessException("PowerShell execution was denied by Aurora approval policy.");
 
             var psi = new ProcessStartInfo
             {
@@ -42,6 +44,8 @@ namespace Aurora.App.Services
             EnsureTerminalAccess();
             if (string.IsNullOrWhiteSpace(command))
                 throw new ArgumentException("A Command Prompt command is required.", nameof(command));
+            if (!ActionApprovalCenter.ConfirmAction("windows_run_cmd", $"Run Command Prompt: {command}"))
+                throw new UnauthorizedAccessException("Command Prompt execution was denied by Aurora approval policy.");
 
             var psi = new ProcessStartInfo
             {
