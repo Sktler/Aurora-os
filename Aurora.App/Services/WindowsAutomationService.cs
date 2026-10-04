@@ -55,6 +55,8 @@ namespace Aurora.App.Services
         {
             if (!ApplicationsEnabled) throw new UnauthorizedAccessException("Application access is disabled.");
             if (string.IsNullOrWhiteSpace(executableOrPath)) throw new ArgumentException("An application path or command is required.");
+            if (!ActionApprovalCenter.ConfirmAction("windows_launch_application", $"Launch application: {executableOrPath}"))
+                throw new UnauthorizedAccessException("Application launch was denied by Aurora approval policy.");
             Process.Start(new ProcessStartInfo { FileName = executableOrPath, UseShellExecute = true });
         }
 
@@ -62,6 +64,8 @@ namespace Aurora.App.Services
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
             if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A path is required.");
+            if (!ActionApprovalCenter.ConfirmAction("windows_open_path", $"Open path: {path}"))
+                throw new UnauthorizedAccessException("Opening the requested path was denied by Aurora approval policy.");
             Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
         }
 
@@ -74,6 +78,8 @@ namespace Aurora.App.Services
         public async Task WriteTextAsync(string path, string content, CancellationToken cancellationToken = default)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
+            if (!ActionApprovalCenter.ConfirmAction("windows_write_file", $"Write file: {path}"))
+                throw new UnauthorizedAccessException("Writing the requested file was denied by Aurora approval policy.");
             await File.WriteAllTextAsync(path, content ?? string.Empty, cancellationToken);
         }
 
@@ -89,6 +95,8 @@ namespace Aurora.App.Services
         public async Task SetClipboardTextAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
+            if (!ActionApprovalCenter.ConfirmAction("windows_set_clipboard", "Set clipboard text"))
+                throw new UnauthorizedAccessException("Changing the clipboard was denied by Aurora approval policy.");
             await Application.Current.Dispatcher.InvokeAsync(
                 () => Clipboard.SetText(text ?? string.Empty),
                 System.Windows.Threading.DispatcherPriority.Normal,
@@ -116,6 +124,8 @@ namespace Aurora.App.Services
         {
             if (!TerminalEnabled) throw new UnauthorizedAccessException("Terminal access is disabled.");
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("A command is required.");
+            if (!ActionApprovalCenter.ConfirmAction("windows_run_command", $"Run command: {fileName} {arguments}".Trim()))
+                throw new UnauthorizedAccessException("The requested command was denied by Aurora approval policy.");
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var process = new Process
             {

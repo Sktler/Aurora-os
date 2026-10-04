@@ -6,6 +6,26 @@
             <StackPanel>
                 <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
 
+                <!-- Security -->
+                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="High-impact action approval" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="Control when Aurora asks for confirmation before risky side effects such as terminal commands, file writes, clipboard changes, and MCP tool calls." TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+
+                        <TextBlock Text="Approval policy" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="ApprovalModeBox" SelectedValuePath="Tag" Margin="0,0,0,12">
+                            <ComboBoxItem Tag="AskForRisky" IsSelected="True">Ask for risky actions</ComboBoxItem>
+                            <ComboBoxItem Tag="AlwaysAsk">Always ask before any side effect</ComboBoxItem>
+                            <ComboBoxItem Tag="AllowTrusted">Allow trusted tools; ask for everything else</ComboBoxItem>
+                        </ComboBox>
+
+                        <TextBlock Text="Trusted tools (comma-separated)" Margin="0,0,0,5"/>
+                        <TextBox x:Name="TrustedToolsBox" Padding="10" Margin="0,0,0,12"/>
+
+                        <Button Content="Save approval policy" Padding="16,9,16,9" Width="180" HorizontalAlignment="Left" Click="SaveApprovalPolicy_Click"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Music -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
