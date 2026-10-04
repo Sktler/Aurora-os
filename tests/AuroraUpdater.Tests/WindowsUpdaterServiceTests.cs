@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Xunit;
+using Aurora.App;
 using Aurora.App.Services;
 using Aurora.App.Views;
 
@@ -35,14 +36,27 @@ public class WindowsUpdaterServiceTests
     [Fact]
     public async Task WindowsAutomationService_RunApprovedCommandAsync_ReturnsExitCode()
     {
+        var previousSettings = App.Settings;
+        App.Settings = new AppSettings
+        {
+            ActionApprovalMode = "AllowTrusted",
+            TrustedTools = ["windows_run_command"]
+        };
         var service = new WindowsAutomationService { TerminalEnabled = true };
 
-        var exitCode = await service.RunApprovedCommandAsync(
-            "cmd.exe",
-            "/c exit 7",
-            TestContext.Current.CancellationToken);
+        try
+        {
+            var exitCode = await service.RunApprovedCommandAsync(
+                "cmd.exe",
+                "/c exit 7",
+                TestContext.Current.CancellationToken);
 
-        Assert.Equal(7, exitCode);
+            Assert.Equal(7, exitCode);
+        }
+        finally
+        {
+            App.Settings = previousSettings;
+        }
     }
 
     [Fact]
