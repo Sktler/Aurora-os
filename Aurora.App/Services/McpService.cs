@@ -40,6 +40,8 @@ namespace Aurora.App.Services
         public async Task<string> CallToolAsync(string serverName, string toolName, JsonElement arguments, CancellationToken cancellationToken = default)
         {
             if (!App.Settings.WindowsMcpEnabled) return "MCP permission is disabled in Aurora Settings.";
+            if (!ActionApprovalCenter.ConfirmAction("mcp_call_tool", $"Invoke MCP tool '{toolName}' on '{serverName}'"))
+                return "MCP tool execution was denied by Aurora approval policy.";
             var server = _servers.FirstOrDefault(s => string.Equals(s.Name, serverName, StringComparison.OrdinalIgnoreCase));
             if (server == null) return $"MCP server '{serverName}' is not connected.";
             var tools = await server.Client.ListToolsAsync(cancellationToken: cancellationToken);

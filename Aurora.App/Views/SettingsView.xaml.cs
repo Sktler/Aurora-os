@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Aurora.App.Services;
@@ -17,6 +18,12 @@ namespace Aurora.App.Views
         private void SettingsView_Loaded(object sender, RoutedEventArgs e)
         {
             JamendoClientIdBox.Password = App.Settings.JamendoClientId ?? "";
+            var approvalMode = ActionApprovalCenter.NormalizeApprovalMode(App.Settings.ActionApprovalMode);
+            foreach (ComboBoxItem item in ApprovalModeBox.Items)
+            {
+                item.IsSelected = string.Equals(item.Tag as string, approvalMode, StringComparison.OrdinalIgnoreCase);
+            }
+            TrustedToolsBox.Text = string.Join(", ", App.Settings.TrustedTools ?? new System.Collections.Generic.List<string>());
             UpdateJamendoStatus();
         }
 
@@ -43,6 +50,17 @@ namespace Aurora.App.Views
             App.Settings.Save();
             App.RefreshIntegrationClients();
             UpdateJamendoStatus();
+        }
+
+        private void SaveApprovalPolicy_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedMode = ApprovalModeBox.SelectedValue as string ?? ActionApprovalCenter.NormalizeApprovalMode(App.Settings.ActionApprovalMode);
+            App.Settings.ActionApprovalMode = ActionApprovalCenter.NormalizeApprovalMode(selectedMode);
+            App.Settings.TrustedTools = TrustedToolsBox.Text
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            App.Settings.Save();
         }
 
         private void UpdateJamendoStatus()
