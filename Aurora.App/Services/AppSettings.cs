@@ -88,6 +88,7 @@ namespace Aurora.App.Services
         public bool WindowsMcpEnabled { get; set; } = false;
         public string ActionApprovalMode { get; set; } = "AskForRisky";
         public List<string> TrustedTools { get; set; } = new();
+        public List<string> PersistentGrantedTools { get; set; } = new();
 
         public void ClearActiveChatProviderCredential()
         {
@@ -154,6 +155,7 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(loaded.DatabasePath)) loaded.DatabasePath = Path.Combine(ConfigDir, "aurora.db");
             if (string.IsNullOrWhiteSpace(loaded.ActionApprovalMode)) loaded.ActionApprovalMode = "AskForRisky";
             if (loaded.TrustedTools == null) loaded.TrustedTools = new List<string>();
+            if (loaded.PersistentGrantedTools == null) loaded.PersistentGrantedTools = new List<string>();
 
             var originalModel = loaded.GeminiModel;
             if (loaded.GeminiModel == "gemini-2.5-flash") loaded.GeminiModel = "gemini-3.6-flash";

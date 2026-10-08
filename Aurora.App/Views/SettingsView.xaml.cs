@@ -63,6 +63,18 @@ namespace Aurora.App.Views
             App.Settings.Save();
         }
 
+        public static string GetGrantStatusText(string toolName, AppSettings? settings = null)
+        {
+            var grantScope = ActionApprovalCenter.GetGrantScope(toolName, settings ?? App.Settings);
+            return grantScope switch
+            {
+                ActionGrantScope.Persistent => "Always allowed",
+                ActionGrantScope.Session => "Allowed for this session",
+                ActionGrantScope.OneTime => "Allowed once",
+                _ => "No active grant"
+            };
+        }
+
         private void UpdateJamendoStatus()
         {
             JamendoStatusText.Text = App.Settings.JamendoConnected && !string.IsNullOrWhiteSpace(App.Settings.JamendoClientId)
