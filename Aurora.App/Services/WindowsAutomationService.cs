@@ -55,18 +55,20 @@ namespace Aurora.App.Services
         {
             if (!ApplicationsEnabled) throw new UnauthorizedAccessException("Application access is disabled.");
             if (string.IsNullOrWhiteSpace(executableOrPath)) throw new ArgumentException("An application path or command is required.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_launch_application", $"Launch application: {executableOrPath}"))
+            if (!ActionApprovalCenter.ConfirmAction("windows_launch_application", $"Launch application: {executableOrPath}", companion: "system"))
                 throw new UnauthorizedAccessException("Application launch was denied by Aurora approval policy.");
             Process.Start(new ProcessStartInfo { FileName = executableOrPath, UseShellExecute = true });
+            ActionAuditLog.Record("windows_launch_application", "system", $"Launch application: {executableOrPath}", "Application started successfully.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_launch_application").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_launch_application").ToString(), source: "windows");
         }
 
         public void OpenPath(string path)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
             if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A path is required.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_open_path", $"Open path: {path}"))
+            if (!ActionApprovalCenter.ConfirmAction("windows_open_path", $"Open path: {path}", companion: "system"))
                 throw new UnauthorizedAccessException("Opening the requested path was denied by Aurora approval policy.");
             Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            ActionAuditLog.Record("windows_open_path", "system", $"Open path: {path}", "Path opened successfully.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_open_path").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_open_path").ToString(), source: "windows");
         }
 
         public async Task<string> ReadTextAsync(string path, CancellationToken cancellationToken = default)
@@ -78,9 +80,10 @@ namespace Aurora.App.Services
         public async Task WriteTextAsync(string path, string content, CancellationToken cancellationToken = default)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_write_file", $"Write file: {path}"))
+            if (!ActionApprovalCenter.ConfirmAction("windows_write_file", $"Write file: {path}", companion: "system"))
                 throw new UnauthorizedAccessException("Writing the requested file was denied by Aurora approval policy.");
             await File.WriteAllTextAsync(path, content ?? string.Empty, cancellationToken);
+            ActionAuditLog.Record("windows_write_file", "system", $"Write file: {path}", $"Wrote {content?.Length ?? 0} characters to disk.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_write_file").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_write_file").ToString(), source: "windows");
         }
 
         public async Task<string> GetClipboardTextAsync(CancellationToken cancellationToken = default)
@@ -95,12 +98,13 @@ namespace Aurora.App.Services
         public async Task SetClipboardTextAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_set_clipboard", "Set clipboard text"))
+            if (!ActionApprovalCenter.ConfirmAction("windows_set_clipboard", "Set clipboard text", companion: "system"))
                 throw new UnauthorizedAccessException("Changing the clipboard was denied by Aurora approval policy.");
             await Application.Current.Dispatcher.InvokeAsync(
                 () => Clipboard.SetText(text ?? string.Empty),
                 System.Windows.Threading.DispatcherPriority.Normal,
                 cancellationToken);
+            ActionAuditLog.Record("windows_set_clipboard", "system", "Set clipboard text", $"Clipboard updated with {text?.Length ?? 0} characters.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_set_clipboard").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_set_clipboard").ToString(), source: "windows");
         }
 
         public BitmapSource CaptureScreen()
@@ -124,8 +128,9 @@ namespace Aurora.App.Services
         {
             if (!TerminalEnabled) throw new UnauthorizedAccessException("Terminal access is disabled.");
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("A command is required.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_run_command", $"Run command: {fileName} {arguments}".Trim()))
+            if (!ActionApprovalCenter.ConfirmAction("windows_run_command", $"Run command: {fileName} {arguments}".Trim(), companion: "system"))
                 throw new UnauthorizedAccessException("The requested command was denied by Aurora approval policy.");
+            var commandSummary = $"Run command: {fileName} {arguments}".Trim();
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var process = new Process
             {
@@ -165,7 +170,9 @@ namespace Aurora.App.Services
                     tcs.TrySetCanceled(cancellationToken);
                 });
 
-                return await tcs.Task;
+                var exitCode = await tcs.Task;
+                ActionAuditLog.Record("windows_run_command", "system", commandSummary, $"Command exited with code {exitCode}.", success: exitCode == 0, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_run_command").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_run_command").ToString(), source: "windows");
+                return exitCode;
             }
             finally
             {

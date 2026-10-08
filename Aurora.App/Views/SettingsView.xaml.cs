@@ -24,7 +24,26 @@ namespace Aurora.App.Views
                 item.IsSelected = string.Equals(item.Tag as string, approvalMode, StringComparison.OrdinalIgnoreCase);
             }
             TrustedToolsBox.Text = string.Join(", ", App.Settings.TrustedTools ?? new System.Collections.Generic.List<string>());
+            RefreshAuditLog();
             UpdateJamendoStatus();
+        }
+
+        private void AuditLogSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            RefreshAuditLog();
+        }
+
+        private void ClearAuditLog_Click(object sender, RoutedEventArgs e)
+        {
+            ActionAuditLog.Clear();
+            RefreshAuditLog();
+        }
+
+        private void RefreshAuditLog()
+        {
+            var entries = ActionAuditLog.Search(AuditLogSearchBox?.Text);
+            AuditLogListBox.ItemsSource = entries;
+            NoAuditEntriesText.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void GetJamendoClientId_Click(object sender, RoutedEventArgs e)
