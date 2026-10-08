@@ -138,13 +138,10 @@ public sealed class AppAdapterService
                             "File access is disabled; Aurora cannot create the requested file.", adapterId, action);
 
                     var fullPath = Path.GetFullPath(path);
-                    var directory = Path.GetDirectoryName(fullPath);
-                    if (!string.IsNullOrWhiteSpace(directory))
-                        Directory.CreateDirectory(directory);
-                    await File.WriteAllTextAsync(fullPath, proposedContent);
+                    await _windows.WriteTextAsync(fullPath, proposedContent, requireApproval: false);
                     return await LaunchAsync(executable,
                         new[] { "--reuse-window", fullPath }, adapterId, action,
-                        $"Created and opened {fullPath} in VS Code.");
+                        $"Created and opened {fullPath} in VS Code. Undo is available with windows_undo_last_reversible_action.");
                 }
 
                 case ("word", "open_document"):

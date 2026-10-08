@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -27,6 +28,7 @@ namespace Aurora.App
         public static CameraService Camera { get; private set; } = null!;
         public static McpService Mcp { get; private set; } = null!;
         public static WindowsAutomationService WindowsAutomation { get; private set; } = null!;
+        public static ActionRecoveryService ActionRecovery { get; private set; } = null!;
         public static AppAdapterService AppAdapters { get; private set; } = null!;
         public static SystemMetricsService Metrics { get; private set; } = null!;
         public static WindowsUpdaterService Updater { get; private set; } = null!;
@@ -111,6 +113,7 @@ namespace Aurora.App
                 Memory = new MemoryStore(Settings.DatabasePath);
                 Memory.SetActiveProfile(Settings.ProfileId);
                 Memory.Initialize();
+                ActionRecovery = new ActionRecoveryService(RestoreClipboardTextAsync);
                 Weather = new WeatherClient();
 
                 try { Metrics = new SystemMetricsService(); }
@@ -158,7 +161,17 @@ namespace Aurora.App
 
         private static WindowsAutomationService CreateWindowsService()
         {
-            return WindowsAutomationService.FromSettings(Settings);
+            return new WindowsAutomationService(ActionRecovery)
+            {
+                FilesEnabled = Settings.WindowsFilesEnabled,
+                ScreenEnabled = Settings.WindowsScreenEnabled,
+                ClipboardEnabled = Settings.WindowsClipboardEnabled,
+                ApplicationsEnabled = Settings.WindowsApplicationsEnabled,
+                TerminalEnabled = Settings.WindowsTerminalEnabled,
+                UiAutomationEnabled = Settings.WindowsUiAutomationEnabled,
+                NetworkEnabled = Settings.WindowsNetworkEnabled,
+                PowerEnabled = Settings.WindowsPowerEnabled
+            };
         }
         public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); AppAdapters = new AppAdapterService(WindowsAutomation); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
@@ -263,6 +276,18 @@ namespace Aurora.App
             foreach (Window window in Current.Windows)
                 if (window is not Views.LockdownWindow) window.IsEnabled = true;
         }
+
+        private static Task RestoreClipboardTextAsync(string? text)
+        {
+            return Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (text is null)
+                    System.Windows.Clipboard.Clear();
+                else
+                    System.Windows.Clipboard.SetText(text);
+            }).Task;
+        }
+
         public static void EnterLockdown(string reason)
         {
             var target = Current.Windows.OfType<Window>()

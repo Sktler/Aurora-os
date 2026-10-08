@@ -17,6 +17,7 @@ namespace Aurora.App.Services
     /// </summary>
     public sealed class WindowsAutomationService
     {
+        public ActionRecoveryService Recovery { get; }
         public bool FilesEnabled { get; set; }
         public bool ScreenEnabled { get; set; }
         public bool ClipboardEnabled { get; set; }
@@ -25,6 +26,11 @@ namespace Aurora.App.Services
         public bool UiAutomationEnabled { get; set; }
         public bool NetworkEnabled { get; set; }
         public bool PowerEnabled { get; set; }
+
+        public WindowsAutomationService(ActionRecoveryService? recovery = null)
+        {
+            Recovery = recovery ?? new ActionRecoveryService(RestoreClipboardTextAsync);
+        }
 
         public static WindowsAutomationService FromSettings(AppSettings settings)
         {
@@ -77,22 +83,24 @@ namespace Aurora.App.Services
             return await File.ReadAllTextAsync(path, cancellationToken);
         }
 
-        public async Task WriteTextAsync(string path, string content, CancellationToken cancellationToken = default)
+        public async Task WriteTextAsync(
+            string path,
+            string content,
+            CancellationToken cancellationToken = default,
+            bool requireApproval = true)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_write_file", $"Write file: {path}", companion: "system"))
+            if (requireApproval && !ActionApprovalCenter.ConfirmAction("windows_write_file", $"Write file: {path}", companion: "system"))
                 throw new UnauthorizedAccessException("Writing the requested file was denied by Aurora approval policy.");
-            await File.WriteAllTextAsync(path, content ?? string.Empty, cancellationToken);
-            ActionAuditLog.Record("windows_write_file", "system", $"Write file: {path}", $"Wrote {content?.Length ?? 0} characters to disk.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_write_file").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_write_file").ToString(), source: "windows");
+            await WriteTextCoreAsync(path, content, cancellationToken);
+            ActionAuditLog.Record("windows_write_file", "system", $"Write file: {path}", $"Wrote {content?.Length ?? 0} characters to disk. Undo state captured.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_write_file").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_write_file").ToString(), source: "windows");
         }
 
         public async Task<string> GetClipboardTextAsync(CancellationToken cancellationToken = default)
         {
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
-            return await Application.Current.Dispatcher.InvokeAsync(
-                () => Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty,
-                System.Windows.Threading.DispatcherPriority.Normal,
-                cancellationToken);
+            var snapshot = await GetClipboardSnapshotAsync(cancellationToken);
+            return snapshot.HasText ? snapshot.Text ?? string.Empty : string.Empty;
         }
 
         public async Task SetClipboardTextAsync(string text, CancellationToken cancellationToken = default)
@@ -100,11 +108,18 @@ namespace Aurora.App.Services
             if (!ClipboardEnabled) throw new UnauthorizedAccessException("Clipboard access is disabled.");
             if (!ActionApprovalCenter.ConfirmAction("windows_set_clipboard", "Set clipboard text", companion: "system"))
                 throw new UnauthorizedAccessException("Changing the clipboard was denied by Aurora approval policy.");
-            await Application.Current.Dispatcher.InvokeAsync(
-                () => Clipboard.SetText(text ?? string.Empty),
-                System.Windows.Threading.DispatcherPriority.Normal,
-                cancellationToken);
-            ActionAuditLog.Record("windows_set_clipboard", "system", "Set clipboard text", $"Clipboard updated with {text?.Length ?? 0} characters.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_set_clipboard").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_set_clipboard").ToString(), source: "windows");
+            var snapshot = await GetClipboardSnapshotAsync(cancellationToken);
+            await SetClipboardTextCoreAsync(text, cancellationToken);
+            Recovery.RecordClipboardChange(snapshot.HasText, snapshot.Text);
+            ActionAuditLog.Record("windows_set_clipboard", "system", "Set clipboard text", $"Clipboard updated with {text?.Length ?? 0} characters. Undo state captured.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_set_clipboard").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_set_clipboard").ToString(), source: "windows");
+        }
+
+        public async Task<string> UndoLastReversibleActionAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await Recovery.UndoLastAsync();
+            ActionAuditLog.Record("windows_undo_last_reversible_action", "system", "Undo last reversible action", result, success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_undo_last_reversible_action").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_undo_last_reversible_action").ToString(), source: "windows");
+            return result;
         }
 
         public BitmapSource CaptureScreen()
@@ -181,6 +196,48 @@ namespace Aurora.App.Services
         }
 
         private static string SafeMainWindowTitle(Process process) { try { return process.MainWindowTitle ?? string.Empty; } catch { return string.Empty; } }
+
+        private async Task WriteTextCoreAsync(string path, string content, CancellationToken cancellationToken = default)
+        {
+            var fullPath = Path.GetFullPath(path);
+            var existedBefore = File.Exists(fullPath);
+            string? previousContent = null;
+
+            if (existedBefore)
+                previousContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
+
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            await File.WriteAllTextAsync(fullPath, content ?? string.Empty, cancellationToken);
+            Recovery.RecordFileWrite(fullPath, existedBefore, previousContent);
+        }
+
+        private async Task<(bool HasText, string? Text)> GetClipboardSnapshotAsync(CancellationToken cancellationToken)
+        {
+            return await Application.Current.Dispatcher.InvokeAsync(
+                () => Clipboard.ContainsText() ? (true, Clipboard.GetText()) : (false, null),
+                System.Windows.Threading.DispatcherPriority.Normal,
+                cancellationToken);
+        }
+
+        private async Task SetClipboardTextCoreAsync(string? text, CancellationToken cancellationToken)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(
+                () =>
+                {
+                    if (text is null)
+                        Clipboard.Clear();
+                    else
+                        Clipboard.SetText(text);
+                },
+                System.Windows.Threading.DispatcherPriority.Normal,
+                cancellationToken);
+        }
+
+        private Task RestoreClipboardTextAsync(string? text) =>
+            SetClipboardTextCoreAsync(text, CancellationToken.None);
     }
 
     public sealed record ProcessInfo(int Id, string Name, string WindowTitle);
