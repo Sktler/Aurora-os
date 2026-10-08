@@ -208,7 +208,7 @@ namespace Aurora.App.Services
             };
         }
 
-        public static bool ConfirmAction(string toolName, string actionDescription, AppSettings? settings = null, ToolRiskLevel? explicitRiskLevel = null)
+        public static bool ConfirmAction(string toolName, string actionDescription, AppSettings? settings = null, ToolRiskLevel? explicitRiskLevel = null, string? companion = null)
         {
             var currentSettings = settings ?? App.Settings ?? new AppSettings();
             var risk = explicitRiskLevel ?? GetRiskLevel(toolName);
@@ -216,10 +216,33 @@ namespace Aurora.App.Services
             if (existingScope == ActionGrantScope.OneTime)
             {
                 ConsumeOneTimeGrant(toolName);
+                ActionAuditLog.Record(
+                    toolName,
+                    companion,
+                    actionDescription,
+                    $"One-time grant consumed before action. Risk={risk}; grant={existingScope}.",
+                    success: true,
+                    approved: true,
+                    grantScope: existingScope.ToString(),
+                    riskLevel: risk.ToString(),
+                    source: "approval");
                 return true;
             }
 
-            if (!RequiresConfirmation(toolName, currentSettings, risk)) return true;
+            if (!RequiresConfirmation(toolName, currentSettings, risk))
+            {
+                ActionAuditLog.Record(
+                    toolName,
+                    companion,
+                    actionDescription,
+                    $"Auto-approved under policy. Risk={risk}; grant={existingScope}; approvalMode={NormalizeApprovalMode(currentSettings.ActionApprovalMode)}.",
+                    success: true,
+                    approved: true,
+                    grantScope: existingScope.ToString(),
+                    riskLevel: risk.ToString(),
+                    source: "approval");
+                return true;
+            }
 
             var mode = NormalizeApprovalMode(currentSettings.ActionApprovalMode);
             var message =
@@ -228,10 +251,24 @@ namespace Aurora.App.Services
                 $"Current grant: {existingScope}{Environment.NewLine}" +
                 $"Risk: {risk}{Environment.NewLine}" +
                 $"Policy: {mode}{Environment.NewLine}{Environment.NewLine}" +
-                $"Description: {actionDescription}{Environment.NewLine}{Environment.NewLine}" +
+                $"Description: {ActionAuditLog.RedactSensitive(actionDescription)}{Environment.NewLine}{Environment.NewLine}" +
                 "Choose how Aurora should handle this action:";
 
-            if (Application.Current == null) return false;
+            if (Application.Current == null)
+            {
+                ActionAuditLog.Record(
+                    toolName,
+                    companion,
+                    actionDescription,
+                    $"Approval required but no UI dispatcher was available. Risk={risk}; policy={mode}; grant={existingScope}.",
+                    success: false,
+                    approved: false,
+                    grantScope: existingScope.ToString(),
+                    riskLevel: risk.ToString(),
+                    error: "No user approval UI was available.",
+                    source: "approval");
+                return false;
+            }
 
             var grantScope = Application.Current.Dispatcher.Invoke(() => ShowApprovalWindow(message, toolName));
             switch (grantScope)
@@ -239,16 +276,57 @@ namespace Aurora.App.Services
                 case ActionGrantScope.Persistent:
                     GrantAction(toolName, ActionGrantScope.Persistent, currentSettings);
                     currentSettings.Save();
+                    ActionAuditLog.Record(
+                        toolName,
+                        companion,
+                        actionDescription,
+                        $"Approval granted with persistent scope. Risk={risk}; policy={mode}.",
+                        success: true,
+                        approved: true,
+                        grantScope: grantScope.ToString(),
+                        riskLevel: risk.ToString(),
+                        source: "approval");
                     return true;
                 case ActionGrantScope.Session:
                     GrantAction(toolName, ActionGrantScope.Session, currentSettings);
+                    ActionAuditLog.Record(
+                        toolName,
+                        companion,
+                        actionDescription,
+                        $"Approval granted with session scope. Risk={risk}; policy={mode}.",
+                        success: true,
+                        approved: true,
+                        grantScope: grantScope.ToString(),
+                        riskLevel: risk.ToString(),
+                        source: "approval");
                     return true;
                 case ActionGrantScope.OneTime:
                     GrantAction(toolName, ActionGrantScope.OneTime, currentSettings);
                     ConsumeOneTimeGrant(toolName);
+                    ActionAuditLog.Record(
+                        toolName,
+                        companion,
+                        actionDescription,
+                        $"Approval granted with one-time scope. Risk={risk}; policy={mode}.",
+                        success: true,
+                        approved: true,
+                        grantScope: grantScope.ToString(),
+                        riskLevel: risk.ToString(),
+                        source: "approval");
                     return true;
                 default:
                     RevokeAction(toolName, currentSettings);
+                    ActionAuditLog.Record(
+                        toolName,
+                        companion,
+                        actionDescription,
+                        $"Approval rejected or denied. Risk={risk}; policy={mode}; grant={existingScope}.",
+                        success: false,
+                        approved: false,
+                        grantScope: existingScope.ToString(),
+                        riskLevel: risk.ToString(),
+                        error: "User denied the requested action.",
+                        source: "approval");
                     return false;
             }
         }
