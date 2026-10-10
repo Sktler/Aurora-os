@@ -2,42 +2,250 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Windows.Security.Credentials;
 
 namespace Aurora.App.Services
 {
+    public static class WindowsCredentialVault
+    {
+        private const string ResourcePrefix = "Aurora.AppSettings";
+
+        public static string? GetSecret(string key, string? fallback = null)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return fallback;
+
+            try
+            {
+                var vault = new PasswordVault();
+                var resource = GetResourceName(key);
+                var credential = vault.Retrieve(resource, "Aurora");
+                return credential?.Password ?? fallback;
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
+        public static void SetSecret(string key, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                RemoveSecret(key);
+                return;
+            }
+
+            try
+            {
+                var vault = new PasswordVault();
+                var resource = GetResourceName(key);
+                try
+                {
+                    foreach (var credential in vault.FindAllByResource(resource))
+                        vault.Remove(credential);
+                }
+                catch
+                {
+                }
+
+                vault.Add(new PasswordCredential(resource, "Aurora", value));
+            }
+            catch
+            {
+            }
+        }
+
+        public static void RemoveSecret(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            try
+            {
+                var vault = new PasswordVault();
+                var resource = GetResourceName(key);
+                foreach (var credential in vault.FindAllByResource(resource))
+                    vault.Remove(credential);
+            }
+            catch
+            {
+            }
+        }
+
+        public static void ClearAllSecrets()
+        {
+            try
+            {
+                var vault = new PasswordVault();
+                foreach (var credential in vault.RetrieveAll())
+                {
+                    if (credential.Resource.StartsWith(ResourcePrefix, StringComparison.OrdinalIgnoreCase))
+                        vault.Remove(credential);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static string GetResourceName(string key) => $"{ResourcePrefix}.{key}";
+    }
+
     public class AppSettings
     {
+        private string _geminiApiKey = "";
+        private string _groqApiKey = "";
+        private string _openAIApiKey = "";
+        private string _claudeApiKey = "";
+        private string _gitHubCopilotApiKey = "";
+        private string _imageProviderApiKey = "";
+        private string _smartThingsToken = "";
+        private string _homeAssistantToken = "";
+        private string _hubitatToken = "";
+        private string _googleClientSecret = "";
+        private string _googleRefreshToken = "";
+        private string _spotifyRefreshToken = "";
+        private string _openAiTtsApiKey = "";
+        private string _elevenLabsApiKey = "";
+        private string _azureSpeechKey = "";
+
+        private static readonly string[] SecretPropertyNames =
+        {
+            nameof(GeminiApiKey),
+            nameof(GroqApiKey),
+            nameof(OpenAIApiKey),
+            nameof(ClaudeApiKey),
+            nameof(GitHubCopilotApiKey),
+            nameof(ImageProviderApiKey),
+            nameof(SmartThingsToken),
+            nameof(HomeAssistantToken),
+            nameof(HubitatToken),
+            nameof(GoogleClientSecret),
+            nameof(GoogleRefreshToken),
+            nameof(SpotifyRefreshToken),
+            nameof(OpenAiTtsApiKey),
+            nameof(ElevenLabsApiKey),
+            nameof(AzureSpeechKey)
+        };
+
         public string UserName { get; set; } = "Adam";
         public string ProfileId { get; set; } = "primary";
         public bool LocalOnlyMode { get; set; } = false;
         public bool SpeakerRecognitionEnabled { get; set; } = false;
         public string ChatProvider { get; set; } = "gemini";
-        public string GeminiApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string GeminiApiKey
+        {
+            get => GetSecretValue(nameof(GeminiApiKey), _geminiApiKey);
+            set => SetSecretValue(nameof(GeminiApiKey), ref _geminiApiKey, value);
+        }
+
         public string GeminiModel { get; set; } = "gemini-3.6-flash";
-        public string GroqApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string GroqApiKey
+        {
+            get => GetSecretValue(nameof(GroqApiKey), _groqApiKey);
+            set => SetSecretValue(nameof(GroqApiKey), ref _groqApiKey, value);
+        }
+
         public string GroqModel { get; set; } = "llama-3.3-70b-versatile";
-        public string OpenAIApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string OpenAIApiKey
+        {
+            get => GetSecretValue(nameof(OpenAIApiKey), _openAIApiKey);
+            set => SetSecretValue(nameof(OpenAIApiKey), ref _openAIApiKey, value);
+        }
+
         public string OpenAIModel { get; set; } = "gpt-4o-mini";
-        public string ClaudeApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string ClaudeApiKey
+        {
+            get => GetSecretValue(nameof(ClaudeApiKey), _claudeApiKey);
+            set => SetSecretValue(nameof(ClaudeApiKey), ref _claudeApiKey, value);
+        }
+
         public string ClaudeModel { get; set; } = "claude-sonnet-5";
-        public string GitHubCopilotApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string GitHubCopilotApiKey
+        {
+            get => GetSecretValue(nameof(GitHubCopilotApiKey), _gitHubCopilotApiKey);
+            set => SetSecretValue(nameof(GitHubCopilotApiKey), ref _gitHubCopilotApiKey, value);
+        }
+
         public string GitHubCopilotModel { get; set; } = "gpt-4o";
         public string ImageProvider { get; set; } = "gemini";
-        public string ImageProviderApiKey { get; set; } = "";
-        public string SmartThingsToken { get; set; } = "";
+
+        [JsonIgnore]
+        public string ImageProviderApiKey
+        {
+            get => GetSecretValue(nameof(ImageProviderApiKey), _imageProviderApiKey);
+            set => SetSecretValue(nameof(ImageProviderApiKey), ref _imageProviderApiKey, value);
+        }
+
+        [JsonIgnore]
+        public string SmartThingsToken
+        {
+            get => GetSecretValue(nameof(SmartThingsToken), _smartThingsToken);
+            set => SetSecretValue(nameof(SmartThingsToken), ref _smartThingsToken, value);
+        }
+
         public string HomeAssistantUrl { get; set; } = "";
-        public string HomeAssistantToken { get; set; } = "";
+
+        [JsonIgnore]
+        public string HomeAssistantToken
+        {
+            get => GetSecretValue(nameof(HomeAssistantToken), _homeAssistantToken);
+            set => SetSecretValue(nameof(HomeAssistantToken), ref _homeAssistantToken, value);
+        }
+
         public string HubitatUrl { get; set; } = "";
-        public string HubitatToken { get; set; } = "";
+
+        [JsonIgnore]
+        public string HubitatToken
+        {
+            get => GetSecretValue(nameof(HubitatToken), _hubitatToken);
+            set => SetSecretValue(nameof(HubitatToken), ref _hubitatToken, value);
+        }
+
         public bool SmartHomeCatalogIncludeRawMetadata { get; set; } = false;
         public bool AlexaConnected { get; set; } = false;
         public string GoogleClientId { get; set; } = "";
-        public string GoogleClientSecret { get; set; } = "";
-        public string GoogleRefreshToken { get; set; } = "";
+
+        [JsonIgnore]
+        public string GoogleClientSecret
+        {
+            get => GetSecretValue(nameof(GoogleClientSecret), _googleClientSecret);
+            set => SetSecretValue(nameof(GoogleClientSecret), ref _googleClientSecret, value);
+        }
+
+        [JsonIgnore]
+        public string GoogleRefreshToken
+        {
+            get => GetSecretValue(nameof(GoogleRefreshToken), _googleRefreshToken);
+            set => SetSecretValue(nameof(GoogleRefreshToken), ref _googleRefreshToken, value);
+        }
+
         public bool GoogleConnected { get; set; } = false;
         public string GoogleAccountEmail { get; set; } = "";
         public string SpotifyClientId { get; set; } = "";
-        public string SpotifyRefreshToken { get; set; } = "";
+
+        [JsonIgnore]
+        public string SpotifyRefreshToken
+        {
+            get => GetSecretValue(nameof(SpotifyRefreshToken), _spotifyRefreshToken);
+            set => SetSecretValue(nameof(SpotifyRefreshToken), ref _spotifyRefreshToken, value);
+        }
+
         public bool SpotifyConnected { get; set; } = false;
         public string SpotifyAccountName { get; set; } = "";
         public string JamendoClientId { get; set; } = "";
@@ -54,12 +262,33 @@ namespace Aurora.App.Services
         /// target a specific playback device.</summary>
         public string SpeakerDeviceName { get; set; } = AudioDeviceCatalog.SystemDefaultDeviceName;
         public string TtsProvider { get; set; } = "openai";
-        public string OpenAiTtsApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string OpenAiTtsApiKey
+        {
+            get => GetSecretValue(nameof(OpenAiTtsApiKey), _openAiTtsApiKey);
+            set => SetSecretValue(nameof(OpenAiTtsApiKey), ref _openAiTtsApiKey, value);
+        }
+
         public string OpenAiTtsVoice { get; set; } = "alloy";
-        public string ElevenLabsApiKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string ElevenLabsApiKey
+        {
+            get => GetSecretValue(nameof(ElevenLabsApiKey), _elevenLabsApiKey);
+            set => SetSecretValue(nameof(ElevenLabsApiKey), ref _elevenLabsApiKey, value);
+        }
+
         public string ElevenLabsVoiceId { get; set; } = "";
         public string ElevenLabsVoiceName { get; set; } = "";
-        public string AzureSpeechKey { get; set; } = "";
+
+        [JsonIgnore]
+        public string AzureSpeechKey
+        {
+            get => GetSecretValue(nameof(AzureSpeechKey), _azureSpeechKey);
+            set => SetSecretValue(nameof(AzureSpeechKey), ref _azureSpeechKey, value);
+        }
+
         public string AzureSpeechRegion { get; set; } = "";
         public string AzureVoiceName { get; set; } = "en-US-JennyNeural";
         /// <summary>Minimum SAPI recognition confidence (0.0-1.0) an utterance must clear to
@@ -91,6 +320,105 @@ namespace Aurora.App.Services
         public List<string> TrustedTools { get; set; } = new();
         public List<string> PersistentGrantedTools { get; set; } = new();
 
+        private string GetSecretValue(string propertyName, string fallback)
+        {
+            var secret = WindowsCredentialVault.GetSecret(propertyName, fallback);
+            return string.IsNullOrWhiteSpace(secret) ? fallback : secret;
+        }
+
+        private void SetSecretValue(string propertyName, ref string backingField, string value)
+        {
+            backingField = value ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(backingField))
+                WindowsCredentialVault.RemoveSecret(propertyName);
+            else
+                WindowsCredentialVault.SetSecret(propertyName, backingField);
+        }
+
+        private static bool IsLoadedSecretProperty(string propertyName, JsonElement value)
+        {
+            return value.ValueKind == JsonValueKind.String &&
+                   !string.IsNullOrWhiteSpace(value.GetString()) &&
+                   Array.Exists(SecretPropertyNames, existing => string.Equals(existing, propertyName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void PersistLegacySecretValue(string propertyName, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            switch (propertyName)
+            {
+                case nameof(GeminiApiKey):
+                    GeminiApiKey = value;
+                    break;
+                case nameof(GroqApiKey):
+                    GroqApiKey = value;
+                    break;
+                case nameof(OpenAIApiKey):
+                    OpenAIApiKey = value;
+                    break;
+                case nameof(ClaudeApiKey):
+                    ClaudeApiKey = value;
+                    break;
+                case nameof(GitHubCopilotApiKey):
+                    GitHubCopilotApiKey = value;
+                    break;
+                case nameof(ImageProviderApiKey):
+                    ImageProviderApiKey = value;
+                    break;
+                case nameof(SmartThingsToken):
+                    SmartThingsToken = value;
+                    break;
+                case nameof(HomeAssistantToken):
+                    HomeAssistantToken = value;
+                    break;
+                case nameof(HubitatToken):
+                    HubitatToken = value;
+                    break;
+                case nameof(GoogleClientSecret):
+                    GoogleClientSecret = value;
+                    break;
+                case nameof(GoogleRefreshToken):
+                    GoogleRefreshToken = value;
+                    break;
+                case nameof(SpotifyRefreshToken):
+                    SpotifyRefreshToken = value;
+                    break;
+                case nameof(OpenAiTtsApiKey):
+                    OpenAiTtsApiKey = value;
+                    break;
+                case nameof(ElevenLabsApiKey):
+                    ElevenLabsApiKey = value;
+                    break;
+                case nameof(AzureSpeechKey):
+                    AzureSpeechKey = value;
+                    break;
+            }
+        }
+
+        private void MigrateLegacySecretsFromJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Object)
+                    return;
+
+                foreach (var propertyName in SecretPropertyNames)
+                {
+                    if (document.RootElement.TryGetProperty(propertyName, out var value) && IsLoadedSecretProperty(propertyName, value))
+                        PersistLegacySecretValue(propertyName, value.GetString());
+                }
+            }
+            catch (JsonException)
+            {
+            }
+        }
+
         public void ClearActiveChatProviderCredential()
         {
             switch (ChatProvider)
@@ -120,26 +448,59 @@ namespace Aurora.App.Services
             get
             {
                 if (!File.Exists(ConfigPath))
-                    return false;
+                {
+                    return HasConfiguredActiveProviderSecret();
+                }
 
                 try
                 {
-                    var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(ConfigPath));
-                    return settings != null &&
-                           (settings.ChatProvider switch
-                           {
-                               "groq" => !string.IsNullOrWhiteSpace(settings.GroqApiKey),
-                               "openai" => !string.IsNullOrWhiteSpace(settings.OpenAIApiKey),
-                               "claude" => !string.IsNullOrWhiteSpace(settings.ClaudeApiKey),
-                               "copilot" => !string.IsNullOrWhiteSpace(settings.GitHubCopilotApiKey),
-                               _ => !string.IsNullOrWhiteSpace(settings.GeminiApiKey)
-                           });
+                    var json = File.ReadAllText(ConfigPath);
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    settings.MigrateLegacySecretsFromJson(json);
+                    return settings.IsConfiguredForProvider(settings.ChatProvider);
                 }
                 catch (JsonException)
                 {
-                    return false;
+                    return HasConfiguredActiveProviderSecret();
                 }
             }
+        }
+
+        private static bool HasConfiguredActiveProviderSecret()
+        {
+            return IsConfiguredForProviderSecret("gemini") ||
+                   IsConfiguredForProviderSecret("groq") ||
+                   IsConfiguredForProviderSecret("openai") ||
+                   IsConfiguredForProviderSecret("claude") ||
+                   IsConfiguredForProviderSecret("copilot");
+        }
+
+        private static bool IsConfiguredForProviderSecret(string? provider)
+        {
+            var key = provider switch
+            {
+                "groq" => nameof(GroqApiKey),
+                "openai" => nameof(OpenAIApiKey),
+                "claude" => nameof(ClaudeApiKey),
+                "copilot" => nameof(GitHubCopilotApiKey),
+                _ => nameof(GeminiApiKey)
+            };
+
+            return !string.IsNullOrWhiteSpace(WindowsCredentialVault.GetSecret(key, string.Empty));
+        }
+
+        private bool IsConfiguredForProvider(string? provider)
+        {
+            var key = provider switch
+            {
+                "groq" => nameof(GroqApiKey),
+                "openai" => nameof(OpenAIApiKey),
+                "claude" => nameof(ClaudeApiKey),
+                "copilot" => nameof(GitHubCopilotApiKey),
+                _ => nameof(GeminiApiKey)
+            };
+
+            return !string.IsNullOrWhiteSpace(GetSecretValue(key, string.Empty));
         }
 
         public static AppSettings LoadOrCreate()
@@ -150,6 +511,7 @@ namespace Aurora.App.Services
             {
                 var json = File.ReadAllText(ConfigPath);
                 loaded = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                loaded.MigrateLegacySecretsFromJson(json);
             }
             else loaded = new AppSettings();
             if (string.IsNullOrWhiteSpace(loaded.UserName)) loaded.UserName = "Adam";
@@ -164,11 +526,13 @@ namespace Aurora.App.Services
             if (loaded.GeminiModel != originalModel || !File.Exists(ConfigPath)) loaded.Save();
             return loaded;
         }
+
         private static string StripModelsPrefix(string? model)
         {
             var trimmed = model?.Trim() ?? "";
             return trimmed.StartsWith("models/", StringComparison.OrdinalIgnoreCase) ? trimmed.Substring("models/".Length) : trimmed;
         }
+
         public void Save()
         {
             Directory.CreateDirectory(ConfigDir);
@@ -184,8 +548,12 @@ namespace Aurora.App.Services
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigPath, json);
         }
+
         public static void ResetAll(string? databasePath = null, string? configDirectory = null)
         {
+            foreach (var propertyName in SecretPropertyNames)
+                WindowsCredentialVault.RemoveSecret(propertyName);
+
             var resetDirectory = configDirectory ?? ConfigDir;
             if (Directory.Exists(resetDirectory))
                 Directory.Delete(resetDirectory, recursive: true);

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace AuroraUpdater.Tests;
 
+[Collection("App.Settings")]
 public class ProviderCatalogTests
 {
     [Fact]
@@ -25,6 +26,7 @@ public class ProviderCatalogTests
         var configDir = AppSettings.ConfigDir;
         var configPath = Path.Combine(configDir, "settings.json");
         var backup = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+        var previousCopilotApiKey = WindowsCredentialVault.GetSecret(nameof(AppSettings.GitHubCopilotApiKey), string.Empty);
 
         Directory.CreateDirectory(configDir);
         var settings = new AppSettings
@@ -41,6 +43,8 @@ public class ProviderCatalogTests
         }
         finally
         {
+            settings.GitHubCopilotApiKey = previousCopilotApiKey ?? string.Empty;
+
             if (backup is null)
             {
                 if (File.Exists(configPath)) File.Delete(configPath);

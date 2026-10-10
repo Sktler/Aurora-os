@@ -6,6 +6,7 @@ using Xunit;
 
 namespace AuroraUpdater.Tests;
 
+[Collection("App.Settings")]
 public class EmergencyStopTests
 {
     [Fact]
