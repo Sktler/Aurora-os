@@ -7,6 +7,7 @@ using Xunit;
 
 namespace AuroraUpdater.Tests;
 
+[Collection("App.Settings")]
 public class ProviderCatalogTests
 {
     [Fact]
