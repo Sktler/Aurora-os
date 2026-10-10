@@ -44,8 +44,14 @@ namespace Aurora.App.Services
             {
                 var vault = new PasswordVault();
                 var resource = GetResourceName(key);
-                foreach (var credential in vault.FindAllByResource(resource))
-                    vault.Remove(credential);
+                try
+                {
+                    foreach (var credential in vault.FindAllByResource(resource))
+                        vault.Remove(credential);
+                }
+                catch
+                {
+                }
 
                 vault.Add(new PasswordCredential(resource, "Aurora", value));
             }
