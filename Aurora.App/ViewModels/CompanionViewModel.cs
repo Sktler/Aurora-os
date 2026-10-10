@@ -191,8 +191,8 @@ namespace Aurora.App.ViewModels
             try
             {
                 var historyForClaude = Messages.Count > 1 ? SliceHistory() : new List<ChatMessage>();
-                var toolDefinitions = SystemTools.Definitions
-                    .Concat(CameraTools.Definitions)
+                var toolDefinitions = CompanionToolAccessExtensions.GetAllowedToolDefinitions(Companion.ToolAccess)
+                    .Cast<object>()
                     .GroupBy(x => x.GetType().GetProperty("name")?.GetValue(x)?.ToString() ?? "")
                     .Where(g => !string.IsNullOrWhiteSpace(g.Key))
                     .Select(g => g.First())
@@ -239,8 +239,19 @@ namespace Aurora.App.ViewModels
             finally { IsBusy = false; }
         }
 
-        private static Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input) =>
-            CameraTools.IsCameraTool(toolName) ? CameraTools.ExecuteAsync(toolName, input) : SystemTools.ExecuteAsync(toolName, input);
+        private Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input)
+        {
+            var toolAccess = Companion.ToolAccess;
+            if (!CompanionToolAccessExtensions.IsToolAllowed(toolName, toolAccess))
+            {
+                var friendlyName = toolName ?? "this tool";
+                return Task.FromResult($"The '{friendlyName}' tool is not available for this companion because its tool access does not include that capability.");
+            }
+
+            return CameraTools.IsCameraTool(toolName)
+                ? CameraTools.ExecuteAsync(toolName, input)
+                : SystemTools.ExecuteAsync(toolName, input);
+        }
 
         private void SetSpeaking(bool isSpeaking) =>
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => IsSpeaking = isSpeaking);
