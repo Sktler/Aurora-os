@@ -1,10 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Aurora.App.Models;
 using Aurora.App.Services;
+using System.Windows.Threading;
 
 namespace Aurora.App.ViewModels
 {
@@ -24,6 +26,8 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _weatherLocation = "Finding your location…";
         [ObservableProperty] private string _weatherTemperature = "—";
         [ObservableProperty] private string _weatherCondition = "Weather";
+        private readonly SemaphoreSlim _weatherRefreshGate = new(1, 1);
+        private readonly DispatcherTimer? _weatherRefreshTimer;
 
         [ObservableProperty] private string _cpuUsage = "—";
         [ObservableProperty] private string _ramUsage = "—";
@@ -62,6 +66,13 @@ namespace Aurora.App.ViewModels
 
             if (App.Metrics != null)
                 App.Metrics.Updated += OnMetricsUpdated;
+
+            if (App.Weather != null)
+            {
+                _weatherRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+                _weatherRefreshTimer.Tick += async (_, _) => await RefreshWeatherAsync();
+                _weatherRefreshTimer.Start();
+            }
         }
 
         public void RefreshUserName()
@@ -113,8 +124,20 @@ namespace Aurora.App.ViewModels
 
         public async System.Threading.Tasks.Task RefreshWeatherAsync()
         {
+            if (!await _weatherRefreshGate.WaitAsync(0))
+                return;
+
             try
             {
+                if (App.Weather == null)
+                {
+                    WeatherLocation = "Location unavailable";
+                    WeatherTemperature = "—";
+                    WeatherCondition = "Weather unavailable";
+                    WeatherSummary = "Weather service is not available.";
+                    return;
+                }
+
                 var location = await new LocationService().GetCurrentLocationAsync();
                 if (location == null)
                 {
@@ -139,6 +162,10 @@ namespace Aurora.App.ViewModels
                 WeatherTemperature = "—";
                 WeatherCondition = "Weather unavailable";
                 WeatherSummary = $"Unable to load National Weather Service data: {ex.Message}";
+            }
+            finally
+            {
+                _weatherRefreshGate.Release();
             }
         }
 

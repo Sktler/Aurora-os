@@ -14,13 +14,23 @@ namespace Aurora.App.Services
     public class WeatherClient
     {
         private const string NwsBaseUrl = "https://api.weather.gov";
+        private const string NationwideAlertsRelativeUrl = "/alerts/active?area=US";
         private readonly HttpClient _http;
 
         public WeatherClient()
+            : this(new HttpClient())
         {
-            _http = new HttpClient { BaseAddress = new Uri(NwsBaseUrl), Timeout = TimeSpan.FromSeconds(15) };
-            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Aurora", "1.0"));
-            _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/geo+json"));
+        }
+
+        public WeatherClient(HttpClient httpClient)
+        {
+            _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _http.BaseAddress ??= new Uri(NwsBaseUrl);
+            _http.Timeout = TimeSpan.FromSeconds(15);
+            if (!_http.DefaultRequestHeaders.UserAgent.Any())
+                _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Aurora", "1.0"));
+            if (!_http.DefaultRequestHeaders.Accept.Any(x => string.Equals(x.MediaType, "application/geo+json", StringComparison.OrdinalIgnoreCase)))
+                _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/geo+json"));
         }
 
         public async Task<WeatherSnapshot> GetCurrentWeatherAsync(double latitude, double longitude)
@@ -101,30 +111,23 @@ namespace Aurora.App.Services
         {
             try
             {
-                // Use the point filter so both county- and zone-based NWS alerts that
-                // affect this exact location are returned. This avoids the older zone-only
-                // approach, which can miss county alerts.
-                using var alerts = await GetJsonAsync($"/alerts/active?point={latitude.ToString(CultureInfo.InvariantCulture)},{longitude.ToString(CultureInfo.InvariantCulture)}");
-                if (!alerts.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
-                    return new ActiveAlerts(Array.Empty<ActiveAlert>(), "No active NWS alerts.");
+                // Combine the exact-point feed with the nationwide feed so local alerts
+                // and US-wide severe weather alerts are both surfaced without duplicates.
+                var pointAlertsTask = FetchActiveAlertsAsync($"/alerts/active?point={latitude.ToString(CultureInfo.InvariantCulture)},{longitude.ToString(CultureInfo.InvariantCulture)}");
+                var nationwideAlertsTask = FetchActiveAlertsAsync(NationwideAlertsRelativeUrl);
+                await Task.WhenAll(pointAlertsTask, nationwideAlertsTask);
 
-                var items = features.EnumerateArray()
-                    .Select(feature => feature.TryGetProperty("properties", out var properties) ? properties : default)
-                    .Where(properties => properties.ValueKind == JsonValueKind.Object)
-                    .Select(properties => new
-                    {
-                        Event = properties.TryGetProperty("event", out var eventValue) ? eventValue.GetString() : null,
-                        Headline = properties.TryGetProperty("headline", out var headlineValue) ? headlineValue.GetString() : null,
-                        Severity = properties.TryGetProperty("severity", out var severityValue) ? severityValue.GetString() : null,
-                        Area = properties.TryGetProperty("areaDesc", out var areaValue) ? areaValue.GetString() : null,
-                        Description = properties.TryGetProperty("description", out var descriptionValue) ? descriptionValue.GetString() : null,
-                        Instruction = properties.TryGetProperty("instruction", out var instructionValue) ? instructionValue.GetString() : null
-                    })
+                var pointAlerts = pointAlertsTask.Result;
+                var nationwideAlerts = nationwideAlertsTask.Result;
+                var items = pointAlerts.Items
+                    .Concat(nationwideAlerts.Items)
                     .Where(x => !string.IsNullOrWhiteSpace(x.Event) || !string.IsNullOrWhiteSpace(x.Headline))
-                    .GroupBy(x => $"{x.Event}|{x.Headline}|{x.Area}", StringComparer.OrdinalIgnoreCase)
+                    .GroupBy(x => x.Id ?? $"{x.Event}|{x.Headline}|{x.Area}", StringComparer.OrdinalIgnoreCase)
                     .Select(g => g.First())
-                    .Select(x => new ActiveAlert(x.Event, x.Headline, x.Severity, x.Area, x.Description, x.Instruction))
                     .ToList();
+
+                if (!pointAlerts.Succeeded && !nationwideAlerts.Succeeded)
+                    return new ActiveAlerts(Array.Empty<ActiveAlert>(), "NWS alerts unavailable.");
 
                 if (items.Count == 0) return new ActiveAlerts(Array.Empty<ActiveAlert>(), "No active NWS alerts.");
 
@@ -147,6 +150,51 @@ namespace Aurora.App.Services
             catch
             {
                 return new ActiveAlerts(Array.Empty<ActiveAlert>(), "NWS alerts unavailable.");
+            }
+        }
+
+        private async Task<AlertFetchResult> FetchActiveAlertsAsync(string relativeUrl)
+        {
+            try
+            {
+                using var alerts = await GetJsonAsync(relativeUrl);
+                if (!alerts.RootElement.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+                    return new AlertFetchResult(Array.Empty<ActiveAlert>(), true);
+
+                var items = features.EnumerateArray()
+                    .Select< JsonElement, ActiveAlert?>(feature =>
+                    {
+                        var id = feature.TryGetProperty("id", out var idValue) ? idValue.GetString() : null;
+                        var properties = feature.TryGetProperty("properties", out var propertiesValue) ? propertiesValue : default;
+                        if (properties.ValueKind != JsonValueKind.Object)
+                            return null;
+
+                        return new ActiveAlert(
+                            id,
+                            properties.TryGetProperty("event", out var eventValue) ? eventValue.GetString() : null,
+                            properties.TryGetProperty("headline", out var headlineValue) ? headlineValue.GetString() : null,
+                            properties.TryGetProperty("severity", out var severityValue) ? severityValue.GetString() : null,
+                            properties.TryGetProperty("areaDesc", out var areaValue) ? areaValue.GetString() : null,
+                            properties.TryGetProperty("description", out var descriptionValue) ? descriptionValue.GetString() : null,
+                            properties.TryGetProperty("instruction", out var instructionValue) ? instructionValue.GetString() : null);
+                    })
+                    .Where(x => x.HasValue)
+                    .Select(x => x.GetValueOrDefault())
+                    .ToList();
+
+                return new AlertFetchResult(items, true);
+            }
+            catch (HttpRequestException)
+            {
+                return new AlertFetchResult(Array.Empty<ActiveAlert>(), false);
+            }
+            catch (TaskCanceledException)
+            {
+                return new AlertFetchResult(Array.Empty<ActiveAlert>(), false);
+            }
+            catch
+            {
+                return new AlertFetchResult(Array.Empty<ActiveAlert>(), false);
             }
         }
 
@@ -215,7 +263,8 @@ namespace Aurora.App.Services
 
         private static double CelsiusToFahrenheit(double celsius) => celsius * 9.0 / 5.0 + 32.0;
         private readonly record struct Observation(double TemperatureF, string Condition, string WindSpeed, string WindDirection);
-        private readonly record struct ActiveAlert(string? Event, string? Headline, string? Severity, string? Area, string? Description, string? Instruction);
+        private readonly record struct ActiveAlert(string? Id, string? Event, string? Headline, string? Severity, string? Area, string? Description, string? Instruction);
+        private readonly record struct AlertFetchResult(System.Collections.Generic.IReadOnlyList<ActiveAlert> Items, bool Succeeded);
         private readonly record struct ActiveAlerts(System.Collections.Generic.IReadOnlyList<ActiveAlert> Items, string Summary);
     }
 }
