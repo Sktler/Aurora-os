@@ -65,6 +65,11 @@ namespace Aurora.App.Services
 
         public static Task<string> PowerAsync(string action)
         {
+            EnsurePowerAccess();
+            EnsureTerminalAccess();
+            if (string.IsNullOrWhiteSpace(action))
+                throw new ArgumentException("A power action is required.", nameof(action));
+
             return action.Trim().ToLowerInvariant() switch
             {
                 "lock" => RunCmdAsync("rundll32.exe user32.dll,LockWorkStation"),
@@ -112,6 +117,12 @@ namespace Aurora.App.Services
         {
             if (!App.Settings.WindowsTerminalEnabled)
                 throw new UnauthorizedAccessException("Terminal access is disabled.");
+        }
+
+        private static void EnsurePowerAccess()
+        {
+            if (!App.Settings.WindowsPowerEnabled)
+                throw new UnauthorizedAccessException("Power controls are disabled.");
         }
 
         private static string FindPowerShell()
