@@ -1,5 +1,8 @@
+using Aurora.App.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Aurora.App.Models
 {
@@ -11,15 +14,88 @@ namespace Aurora.App.Models
         Error
     }
 
-    /// <summary>What tool set a companion is allowed to use. Deliberately separate from the
+    /// <summary>What tool families a companion is allowed to use. Deliberately separate from the
     /// free-text Role field (which is just display text like "Home Automation" and can be
     /// renamed) - ToolAccess is what actually gates capability, so renaming or retyping a
     /// companion's Role label can never silently strip its tools.</summary>
+    [Flags]
     public enum CompanionToolAccess
     {
-        General,          // weather, web search, Spotify - Aurora, Scout, Nova
-        InboxDocuments,    // read/summarize files - Sift
-        HomeAutomation     // smart home control - Home
+        None = 0,
+        General = 1 << 0,          // weather, web search, media, system tools, camera
+        InboxDocuments = 1 << 1,    // file and document access - Sift
+        HomeAutomation = 1 << 2     // smart home control - Home
+    }
+
+    public static class CompanionToolAccessExtensions
+    {
+        public static bool IsToolAllowed(string toolName, CompanionToolAccess access)
+        {
+            if (string.IsNullOrWhiteSpace(toolName)) return false;
+
+            var normalized = toolName.Trim();
+            if (IsHomeAutomationTool(normalized) && (access & CompanionToolAccess.HomeAutomation) != 0) return true;
+            if (IsInboxDocumentsTool(normalized) && (access & CompanionToolAccess.InboxDocuments) != 0) return true;
+            if (IsGeneralTool(normalized) && (access & CompanionToolAccess.General) != 0) return true;
+            return false;
+        }
+
+        public static List<object> GetAllowedToolDefinitions(CompanionToolAccess access)
+        {
+            var result = new List<object>();
+            foreach (var definition in SystemTools.Definitions.Concat(CameraTools.Definitions).Concat(HomeTools.Definitions))
+            {
+                var name = definition.GetType().GetProperty("name")?.GetValue(definition)?.ToString();
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                if (IsToolAllowed(name, access)) result.Add(definition);
+            }
+            return result;
+        }
+
+        private static bool IsGeneralTool(string toolName)
+        {
+            if (string.IsNullOrEmpty(toolName)) return false;
+            return toolName.StartsWith("get_weather", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("web_search", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("get_now_playing", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("list_media_sessions", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("media_", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("set_system_volume", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("toggle_system_mute", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_list_applications", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_launch_application", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_run_command", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_run_powershell", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_run_cmd", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_power_control", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_network_status", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_wifi_status", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_wifi_toggle", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_bluetooth_status", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_capture_screen", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("camera", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("mcp_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsInboxDocumentsTool(string toolName)
+        {
+            if (string.IsNullOrEmpty(toolName)) return false;
+            return toolName.StartsWith("windows_list_app_adapters", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_app_action", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_open_path", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_read_file", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_write_file", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_get_clipboard", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_set_clipboard", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("windows_undo_last_reversible_action", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHomeAutomationTool(string toolName)
+        {
+            if (string.IsNullOrEmpty(toolName)) return false;
+            return toolName.StartsWith("list_smart_home_devices", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("control_smart_home_device", StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     /// <summary>
