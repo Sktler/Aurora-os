@@ -22,6 +22,7 @@ namespace Aurora.App.Services
         private DateTime _accessTokenExpiresUtc = DateTime.MinValue;
 
         public event Action<string>? RefreshTokenRotated;
+        public string? LastError { get; private set; }
 
         public SpotifyClient(string clientId, string refreshToken)
         {
@@ -33,14 +34,28 @@ namespace Aurora.App.Services
 
         private async Task<string?> GetValidAccessTokenAsync()
         {
-            if (!IsConfigured) return null;
-            if (_accessToken != null && DateTime.UtcNow < _accessTokenExpiresUtc) return _accessToken;
+            if (!IsConfigured)
+            {
+                LastError = "Spotify isn't connected.";
+                return null;
+            }
+
+            if (_accessToken != null && DateTime.UtcNow < _accessTokenExpiresUtc)
+            {
+                LastError = null;
+                return _accessToken;
+            }
 
             var (success, accessToken, newRefreshToken, _) = await SpotifyAuthClient.RefreshAccessTokenAsync(_clientId, _refreshToken);
-            if (!success || string.IsNullOrEmpty(accessToken)) return null;
+            if (!success || string.IsNullOrEmpty(accessToken))
+            {
+                LastError = "Spotify sign-in expired or was revoked. Reconnect from Settings.";
+                return null;
+            }
 
             _accessToken = accessToken;
             _accessTokenExpiresUtc = DateTime.UtcNow.AddMinutes(50);
+            LastError = null;
 
             if (!string.IsNullOrEmpty(newRefreshToken) && newRefreshToken != _refreshToken)
             {
@@ -62,7 +77,11 @@ namespace Aurora.App.Services
 
         public async Task<SpotifyNowPlaying> GetNowPlayingAsync()
         {
-            if (!IsConfigured) return new SpotifyNowPlaying(false, false, "", "", "");
+            if (!IsConfigured)
+            {
+                LastError = "Spotify isn't connected.";
+                return new SpotifyNowPlaying(false, false, "", "", "");
+            }
 
             using var req = await AuthedRequestAsync(HttpMethod.Get, "https://api.spotify.com/v1/me/player/currently-playing");
             if (req == null) return new SpotifyNowPlaying(false, false, "", "", "");
@@ -71,16 +90,27 @@ namespace Aurora.App.Services
             {
                 var response = await _http.SendAsync(req);
                 if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    LastError = null;
                     return new SpotifyNowPlaying(false, false, "", "", "");
+                }
 
                 var text = await response.Content.ReadAsStringAsync();
-                if (!response.IsSuccessStatusCode) return new SpotifyNowPlaying(false, false, "", "", "");
+                if (!response.IsSuccessStatusCode)
+                {
+                    LastError = BuildApiError("read what's playing", response, text);
+                    return new SpotifyNowPlaying(false, false, "", "", "");
+                }
 
                 using var doc = JsonDocument.Parse(text);
                 var root = doc.RootElement;
                 var isPlaying = root.TryGetProperty("is_playing", out var ip) && ip.GetBoolean();
                 var item = root.TryGetProperty("item", out var i) ? i : default;
-                if (item.ValueKind != JsonValueKind.Object) return new SpotifyNowPlaying(false, false, "", "", "");
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    LastError = null;
+                    return new SpotifyNowPlaying(false, false, "", "", "");
+                }
 
                 var trackName = item.TryGetProperty("name", out var tn) ? (tn.GetString() ?? "") : "";
                 var artists = "";
@@ -106,10 +136,12 @@ namespace Aurora.App.Services
                     }
                 }
 
+                LastError = null;
                 return new SpotifyNowPlaying(true, isPlaying, trackName, artists, artwork);
             }
-            catch
+            catch (Exception ex)
             {
+                LastError = $"Couldn't read what's playing on Spotify: {ex.Message}";
                 return new SpotifyNowPlaying(false, false, "", "", "");
             }
         }
@@ -124,22 +156,39 @@ namespace Aurora.App.Services
 
         public async Task<string> SearchAndPlayAsync(string query)
         {
-            if (!IsConfigured) return "Spotify isn't connected.";
-            if (string.IsNullOrWhiteSpace(query)) return "No search query given.";
+            if (!IsConfigured)
+            {
+                LastError = "Spotify isn't connected.";
+                return "Spotify isn't connected.";
+            }
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                LastError = "No search query given.";
+                return "No search query given.";
+            }
 
             var searchUrl = $"https://api.spotify.com/v1/search?q={Uri.EscapeDataString(query)}&type=track&limit=1";
             using var searchReq = await AuthedRequestAsync(HttpMethod.Get, searchUrl);
-            if (searchReq == null) return "Couldn't get a valid Spotify session - try reconnecting from Settings.";
+            if (searchReq == null) return LastError ?? "Couldn't get a valid Spotify session - try reconnecting from Settings.";
 
             string trackUri, trackName, artists;
             try
             {
                 var response = await _http.SendAsync(searchReq);
                 var text = await response.Content.ReadAsStringAsync();
-                if (!response.IsSuccessStatusCode) return $"Spotify search error ({(int)response.StatusCode}): {text}";
+                if (!response.IsSuccessStatusCode)
+                {
+                    LastError = BuildApiError("search Spotify", response, text);
+                    return $"Spotify search error ({(int)response.StatusCode}): {text}";
+                }
                 using var doc = JsonDocument.Parse(text);
                 var items = doc.RootElement.GetProperty("tracks").GetProperty("items");
-                if (items.GetArrayLength() == 0) return $"No tracks found for \"{query}\".";
+                if (items.GetArrayLength() == 0)
+                {
+                    LastError = null;
+                    return $"No tracks found for \"{query}\".";
+                }
                 var track = items[0];
                 trackUri = track.GetProperty("uri").GetString() ?? "";
                 trackName = track.TryGetProperty("name", out var tn) ? tn.GetString() ?? "" : "";
@@ -149,10 +198,19 @@ namespace Aurora.App.Services
                         if (a.TryGetProperty("name", out var an)) names.Add(an.GetString() ?? "");
                 artists = string.Join(", ", names);
             }
-            catch (Exception ex) { return $"Couldn't search Spotify: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                LastError = $"Couldn't search Spotify: {ex.Message}";
+                return $"Couldn't search Spotify: {ex.Message}";
+            }
 
-            if (string.IsNullOrEmpty(trackUri)) return $"Found a result for \"{query}\" but couldn't get its URI.";
+            if (string.IsNullOrEmpty(trackUri))
+            {
+                LastError = $"Found a result for \"{query}\" but couldn't get its URI.";
+                return $"Found a result for \"{query}\" but couldn't get its URI.";
+            }
             var playResult = await PlayUriAsync(trackUri);
+            LastError = playResult.Success ? null : playResult.Error;
             return playResult.Success
                 ? $"Now playing \"{trackName}\" by {artists}."
                 : $"Found \"{trackName}\" by {artists}, but couldn't start playback: {playResult.Error}";
@@ -161,7 +219,7 @@ namespace Aurora.App.Services
         private async Task<(bool Success, string? Error)> PlayUriAsync(string uri)
         {
             using var req = await AuthedRequestAsync(HttpMethod.Put, "https://api.spotify.com/v1/me/player/play");
-            if (req == null) return (false, "no valid session");
+            if (req == null) return (false, LastError ?? "no valid session");
             req.Content = new StringContent(JsonSerializer.Serialize(new { uris = new[] { uri } }), Encoding.UTF8, "application/json");
             return await SendPlaybackCommandAsync(req);
         }
@@ -169,32 +227,36 @@ namespace Aurora.App.Services
         public async Task<string> PauseAsync()
         {
             using var req = await AuthedRequestAsync(HttpMethod.Put, "https://api.spotify.com/v1/me/player/pause");
-            if (req == null) return "Couldn't get a valid Spotify session.";
+            if (req == null) return LastError ?? "Couldn't get a valid Spotify session.";
             var (success, error) = await SendPlaybackCommandAsync(req);
+            LastError = success ? null : error;
             return success ? "Paused." : $"Couldn't pause: {error}";
         }
 
         public async Task<string> ResumeAsync()
         {
             using var req = await AuthedRequestAsync(HttpMethod.Put, "https://api.spotify.com/v1/me/player/play");
-            if (req == null) return "Couldn't get a valid Spotify session.";
+            if (req == null) return LastError ?? "Couldn't get a valid Spotify session.";
             var (success, error) = await SendPlaybackCommandAsync(req);
+            LastError = success ? null : error;
             return success ? "Resumed." : $"Couldn't resume: {error}";
         }
 
         public async Task<string> SkipNextAsync()
         {
             using var req = await AuthedRequestAsync(HttpMethod.Post, "https://api.spotify.com/v1/me/player/next");
-            if (req == null) return "Couldn't get a valid Spotify session.";
+            if (req == null) return LastError ?? "Couldn't get a valid Spotify session.";
             var (success, error) = await SendPlaybackCommandAsync(req);
+            LastError = success ? null : error;
             return success ? "Skipped to the next track." : $"Couldn't skip: {error}";
         }
 
         public async Task<string> SkipPreviousAsync()
         {
             using var req = await AuthedRequestAsync(HttpMethod.Post, "https://api.spotify.com/v1/me/player/previous");
-            if (req == null) return "Couldn't get a valid Spotify session.";
+            if (req == null) return LastError ?? "Couldn't get a valid Spotify session.";
             var (success, error) = await SendPlaybackCommandAsync(req);
+            LastError = success ? null : error;
             return success ? "Went back to the previous track." : $"Couldn't go back: {error}";
         }
 
@@ -205,13 +267,21 @@ namespace Aurora.App.Services
                 var response = await _http.SendAsync(req);
                 if (response.IsSuccessStatusCode) return (true, null);
                 var text = await response.Content.ReadAsStringAsync();
-                var hint = response.StatusCode == System.Net.HttpStatusCode.Forbidden
-                    ? " (Spotify playback control needs an active Premium account and an open Spotify app playing on some device.)"
-                    : response.StatusCode == System.Net.HttpStatusCode.NotFound
-                        ? " (No active Spotify device found - open Spotify somewhere first.)" : "";
-                return (false, $"{(int)response.StatusCode} {text}{hint}");
+                return (false, BuildApiError("control Spotify playback", response, text));
             }
             catch (Exception ex) { return (false, ex.Message); }
+        }
+
+        private static string BuildApiError(string action, HttpResponseMessage response, string body)
+        {
+            var details = string.IsNullOrWhiteSpace(body) ? response.ReasonPhrase ?? "unknown error" : body;
+            return response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized => $"Spotify sign-in expired or was revoked. Reconnect from Settings.",
+                System.Net.HttpStatusCode.Forbidden => $"Spotify rejected the request while trying to {action}. Make sure playback control is allowed and Spotify is open on an active device.",
+                System.Net.HttpStatusCode.NotFound => $"No active Spotify device found while trying to {action}. Open Spotify somewhere first.",
+                _ => $"Spotify failed to {action} ({(int)response.StatusCode}): {details}"
+            };
         }
     }
 }
