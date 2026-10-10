@@ -12,6 +12,7 @@ using Aurora.App.Views;
 
 namespace AuroraUpdater.Tests;
 
+[Collection("App.Settings")]
 public class WindowsUpdaterServiceTests
 {
     [Fact]
