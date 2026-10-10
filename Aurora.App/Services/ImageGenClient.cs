@@ -49,6 +49,9 @@ namespace Aurora.App.Services
 
         public async Task<string> GenerateImageAsync(string prompt)
         {
+            if (App.IsLocalOnlyModeEnabled)
+                return App.LocalOnlyModeBlockedMessage("image generation");
+
             if (!IsConfigured)
                 return "[No image generation API key set. Add your Gemini key in Settings to enable Google image generation.]";
 

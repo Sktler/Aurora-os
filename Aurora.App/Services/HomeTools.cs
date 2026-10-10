@@ -70,12 +70,18 @@ namespace Aurora.App.Services
             }
         };
 
-        public static async Task<string> ExecuteAsync(string toolName, JsonElement input) => toolName switch
+        public static async Task<string> ExecuteAsync(string toolName, JsonElement input)
         {
-            "list_smart_home_devices" => await ListAllAsync(input),
-            "control_smart_home_device" => await ControlAsync(input),
-            _ => $"Unknown tool: {toolName}"
-        };
+            if (App.IsLocalOnlyModeEnabled)
+                return App.LocalOnlyModeBlockedMessage("smart-home controls");
+
+            return toolName switch
+            {
+                "list_smart_home_devices" => await ListAllAsync(input),
+                "control_smart_home_device" => await ControlAsync(input),
+                _ => $"Unknown tool: {toolName}"
+            };
+        }
 
         private static async Task<string> ListAllAsync(JsonElement input)
         {

@@ -9,6 +9,7 @@ namespace Aurora.App.Services
     {
         public string UserName { get; set; } = "Adam";
         public string ProfileId { get; set; } = "primary";
+        public bool LocalOnlyMode { get; set; } = false;
         public bool SpeakerRecognitionEnabled { get; set; } = false;
         public string ChatProvider { get; set; } = "gemini";
         public string GeminiApiKey { get; set; } = "";

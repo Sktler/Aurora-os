@@ -21,6 +21,9 @@ namespace Aurora.App.Services
         /// simple facts/definitions) - callers should fall back to OpenSearchInBrowser.</summary>
         public async Task<string?> TryInstantAnswerAsync(string query)
         {
+            if (App.IsLocalOnlyModeEnabled)
+                return App.LocalOnlyModeBlockedMessage("web search");
+
             if (string.IsNullOrWhiteSpace(query)) return null;
 
             try
@@ -52,6 +55,9 @@ namespace Aurora.App.Services
         /// Always works, never costs anything, no rate limit.</summary>
         public string OpenSearchInBrowser(string query)
         {
+            if (App.IsLocalOnlyModeEnabled)
+                return App.LocalOnlyModeBlockedMessage("web search");
+
             if (string.IsNullOrWhiteSpace(query)) return "No search query given.";
 
             try

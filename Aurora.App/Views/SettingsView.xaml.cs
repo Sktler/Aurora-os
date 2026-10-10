@@ -18,6 +18,8 @@ namespace Aurora.App.Views
         private void SettingsView_Loaded(object sender, RoutedEventArgs e)
         {
             JamendoClientIdBox.Password = App.Settings.JamendoClientId ?? "";
+            LocalOnlyModeToggle.IsChecked = App.Settings.LocalOnlyMode;
+            UpdateLocalOnlyModeStatus();
             var approvalMode = ActionApprovalCenter.NormalizeApprovalMode(App.Settings.ActionApprovalMode);
             foreach (ComboBoxItem item in ApprovalModeBox.Items)
             {
@@ -26,6 +28,21 @@ namespace Aurora.App.Views
             TrustedToolsBox.Text = string.Join(", ", App.Settings.TrustedTools ?? new System.Collections.Generic.List<string>());
             RefreshAuditLog();
             UpdateJamendoStatus();
+        }
+
+        private void LocalOnlyModeToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            App.Settings.LocalOnlyMode = LocalOnlyModeToggle.IsChecked == true;
+            App.Settings.Save();
+            UpdateLocalOnlyModeStatus();
+            App.RefreshIntegrationClients();
+        }
+
+        private void UpdateLocalOnlyModeStatus()
+        {
+            LocalOnlyModeStatusText.Text = App.Settings.LocalOnlyMode
+                ? "Enabled: Aurora will only use local capabilities and block cloud AI and external integrations."
+                : "Cloud AI and external integrations are available.";
         }
 
         private void AuditLogSearchBox_TextChanged(object sender, TextChangedEventArgs e)
