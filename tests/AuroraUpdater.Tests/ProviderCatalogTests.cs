@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using Aurora.App;
 using Aurora.App.Services;
 using Xunit;
 
@@ -49,5 +50,14 @@ public class ProviderCatalogTests
                 File.WriteAllText(configPath, backup);
             }
         }
+    }
+
+    [Fact]
+    public void LocalOnlyMode_block_message_raises_clear_privacy_notice()
+    {
+        var message = App.LocalOnlyModeBlockedMessage("web search");
+
+        Assert.Contains("local-only mode is enabled", message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("web search", message, StringComparison.OrdinalIgnoreCase);
     }
 }

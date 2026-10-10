@@ -57,6 +57,15 @@ namespace Aurora.App.Services
 
         public static async Task<string> ExecuteAsync(string toolName, JsonElement input)
         {
+            if (App.IsLocalOnlyModeEnabled &&
+                (toolName == "get_weather" || toolName == "get_weather_alerts" || toolName == "web_search" || toolName == "mcp_list_servers" || toolName == "mcp_list_tools" || toolName == "mcp_call_tool"))
+                return App.LocalOnlyModeBlockedMessage(toolName switch
+                {
+                    "get_weather" or "get_weather_alerts" => "weather",
+                    "web_search" => "web search",
+                    _ => "MCP tools"
+                });
+
             switch (toolName)
             {
                 case "camera": return await CameraTools.ExecuteAsync("camera", input);

@@ -7,6 +7,17 @@
             <StackPanel>
                 <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
 
+                <!-- Privacy -->
+                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Privacy and local-only mode" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="Keep Aurora on your device by disabling cloud AI, external integrations, and internet-backed tools while leaving local capabilities available." TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+
+                        <CheckBox x:Name="LocalOnlyModeToggle" Content="Enable local-only mode" Margin="0,0,0,8" Checked="LocalOnlyModeToggle_Checked" Unchecked="LocalOnlyModeToggle_Checked"/>
+                        <TextBlock x:Name="LocalOnlyModeStatusText" Text="Cloud AI and external integrations are available." Opacity="0.75" Margin="0,0,0,0"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Security -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>

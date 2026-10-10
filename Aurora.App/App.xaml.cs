@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using Aurora.App.Models;
 using Aurora.App.Services;
 
 namespace Aurora.App
@@ -36,7 +39,20 @@ namespace Aurora.App
         public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
         public static event EventHandler? AIProviderStatusChanged;
         public static ProfileRecoveryCodeStore RecoveryCodes { get; } = new();
+        public static bool IsLocalOnlyModeEnabled => Settings != null && Settings.LocalOnlyMode;
+        public static string LocalOnlyModeBlockedMessage(string featureName) => $"[Local-only mode is enabled. {featureName} is unavailable while Aurora is restricted to local-only features.]";
         private static Views.LockdownWindow? _lockdownWindow;
+
+        private sealed class LocalOnlyChatEngine : IChatEngine
+        {
+            public bool IsConfigured => false;
+            public void RevokeCredentials() { }
+            public Task<string> SendAsync(string systemPrompt, IEnumerable<ChatMessage> history, string newUserMessage)
+                => Task.FromResult(App.LocalOnlyModeBlockedMessage("cloud chat"));
+            public Task<string> SendWithToolsAsync(string systemPrompt, IEnumerable<ChatMessage> history, string newUserMessage, List<object> toolDefinitions, Func<string, JsonElement, Task<string>> executeTool)
+                => Task.FromResult(App.LocalOnlyModeBlockedMessage("tool-calling chat"));
+            public Task<List<string>> ListModelsAsync() => Task.FromResult(new List<string>());
+        }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -132,13 +148,13 @@ namespace Aurora.App
                     AI = BuildChatEngine();
                     AIProviderStatusChanged?.Invoke(null, EventArgs.Empty);
                     ImageGen = BuildImageGenClient();
-                    SmartThings = new SmartThingsClient(Settings.SmartThingsToken);
-                    HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken);
-                    Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken);
+                    SmartThings = new SmartThingsClient(IsLocalOnlyModeEnabled ? "" : Settings.SmartThingsToken);
+                    HomeAssistant = new HomeAssistantClient(IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantUrl, IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantToken);
+                    Hubitat = new HubitatClient(IsLocalOnlyModeEnabled ? "" : Settings.HubitatUrl, IsLocalOnlyModeEnabled ? "" : Settings.HubitatToken);
                     Voice = new VoiceService(Settings.VoiceName);
                     WakeWord = new WakeWordService();
                     WebSearch = new WebSearchClient();
-                    Spotify = BuildSpotifyClient();
+                    Spotify = IsLocalOnlyModeEnabled ? new SpotifyClient("", "") : BuildSpotifyClient();
                     Camera = new CameraService();
                     Mcp = new McpService();
                     WindowsAutomation = CreateWindowsService();
@@ -178,6 +194,9 @@ namespace Aurora.App
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine()
         {
+            if (IsLocalOnlyModeEnabled)
+                return new LocalOnlyChatEngine();
+
             var isLockedDown = Security?.IsLockedDown == true;
             return Settings.ChatProvider switch
             {
@@ -188,7 +207,7 @@ namespace Aurora.App
                 _ => new GeminiClient(isLockedDown ? "" : Settings.GeminiApiKey, Settings.GeminiModel)
             };
         }
-        private static ImageGenClient BuildImageGenClient() { var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
+        private static ImageGenClient BuildImageGenClient() { if (IsLocalOnlyModeEnabled) return new ImageGenClient("", Settings.ImageProvider); var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
         public static void ShowLockdownOverlay(Window? targetWindow = null)
         {
             if (Security == null || !Security.IsLockedDown) return;
@@ -322,7 +341,18 @@ namespace Aurora.App
             }
         }
 
-        public static void RefreshIntegrationClients() { Profiles?.SaveActiveSettings(); SmartThings = new SmartThingsClient(Settings.SmartThingsToken); HomeAssistant = new HomeAssistantClient(Settings.HomeAssistantUrl, Settings.HomeAssistantToken); Hubitat = new HubitatClient(Settings.HubitatUrl, Settings.HubitatToken); ImageGen = BuildImageGenClient(); Spotify = BuildSpotifyClient(); AI = BuildChatEngine(); AIProviderStatusChanged?.Invoke(null, EventArgs.Empty); RefreshWindowsPermissions(); }
+        public static void RefreshIntegrationClients()
+        {
+            Profiles?.SaveActiveSettings();
+            SmartThings = new SmartThingsClient(IsLocalOnlyModeEnabled ? "" : Settings.SmartThingsToken);
+            HomeAssistant = new HomeAssistantClient(IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantUrl, IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantToken);
+            Hubitat = new HubitatClient(IsLocalOnlyModeEnabled ? "" : Settings.HubitatUrl, IsLocalOnlyModeEnabled ? "" : Settings.HubitatToken);
+            ImageGen = BuildImageGenClient();
+            Spotify = IsLocalOnlyModeEnabled ? new SpotifyClient("", "") : BuildSpotifyClient();
+            AI = BuildChatEngine();
+            AIProviderStatusChanged?.Invoke(null, EventArgs.Empty);
+            RefreshWindowsPermissions();
+        }
         public static void ResetEverythingAndRestart()
         {
             var databasePath = Settings?.DatabasePath;
