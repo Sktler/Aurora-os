@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aurora.App;
+using Aurora.App.Models;
 using Aurora.App.Services;
+using Aurora.App.ViewModels;
 using Xunit;
 
 namespace AuroraUpdater.Tests;
@@ -63,5 +65,42 @@ public class ProviderCatalogTests
 
         Assert.Contains("local-only mode is enabled", message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("web search", message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void IntegrationsViewModel_refreshes_provider_fields_when_the_active_provider_changes()
+    {
+        var originalSettings = App.Settings;
+
+        try
+        {
+            App.Settings = new AppSettings
+            {
+                ChatProvider = "gemini",
+                GeminiApiKey = "gemini-key",
+                GeminiModel = "gemini-3.6-flash",
+                GroqApiKey = "groq-key",
+                GroqModel = "llama-3.3-70b-versatile"
+            };
+
+            App.RefreshIntegrationClients();
+
+            var vm = new IntegrationsViewModel(Array.Empty<Companion>());
+            Assert.Equal("Gemini (Google) model", vm.ModelFieldLabel);
+            Assert.Equal("gemini-3.6-flash", vm.ModelName);
+            Assert.Contains("Gemini", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
+
+            App.Settings.ChatProvider = "groq";
+            App.RefreshIntegrationClients();
+
+            Assert.Equal("Groq model", vm.ModelFieldLabel);
+            Assert.Equal("llama-3.3-70b-versatile", vm.ModelName);
+            Assert.Contains("Groq", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            App.Settings = originalSettings ?? new AppSettings();
+            App.RefreshIntegrationClients();
+        }
     }
 }

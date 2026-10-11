@@ -41,6 +41,14 @@ namespace Aurora.App.Views
             MicaHelper.ApplyMica(new WindowInteropHelper(this).Handle);
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            if (DataContext is IDisposable disposable)
+                disposable.Dispose();
+
+            base.OnClosed(e);
+        }
+
         private void OpenUrl(string url)
         {
             try { Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true }); }
@@ -94,7 +102,16 @@ namespace Aurora.App.Views
             vm.SetCompanionColor(companion, $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}");
         }
         private void GoogleSecretBox_PasswordChanged(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) vm.GoogleClientSecret = GoogleSecretBox.Password; }
-        private void ChangeApiKey_Click(object sender, RoutedEventArgs e) { new SetupWindow { Owner = this }.ShowDialog(); }
+        private void ChangeApiKey_Click(object sender, RoutedEventArgs e)
+        {
+            var setup = new SetupWindow(restartOnSave: false)
+            {
+                Owner = this
+            };
+
+            if (setup.ShowDialog() == true && setup.KeySaved)
+                App.RefreshIntegrationClients();
+        }
 
         private void ResetAurora_Click(object sender, RoutedEventArgs e)
         {
