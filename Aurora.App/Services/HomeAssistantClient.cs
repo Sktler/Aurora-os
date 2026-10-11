@@ -31,11 +31,11 @@ namespace Aurora.App.Services
         private readonly string _baseUrl;
         private readonly bool _configured;
 
-        public HomeAssistantClient(string baseUrl, string token)
+        public HomeAssistantClient(string baseUrl, string token, HttpClient? httpClient = null)
         {
             _baseUrl = (baseUrl ?? "").TrimEnd('/');
             _configured = !string.IsNullOrWhiteSpace(_baseUrl) && !string.IsNullOrWhiteSpace(token);
-            _http = new HttpClient();
+            _http = httpClient ?? new HttpClient();
             if (_configured)
                 _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
@@ -74,9 +74,10 @@ namespace Aurora.App.Services
             if (!_configured) return result;
 
             var response = await _http.GetAsync($"{_baseUrl}/api/states");
-            if (!response.IsSuccessStatusCode) return result;
-
             var text = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Home Assistant rejected the request ({(int)response.StatusCode}): {Truncate(text)}");
+
             return ParseStatesPayload(text);
         }
 

@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Aurora.App.Models;
 using Aurora.App.Services;
 using Xunit;
@@ -164,5 +169,60 @@ public class SmartHomeCatalogTests
         Assert.True(lightOk, lightError);
         Assert.Equal("turn_on", lightService);
         Assert.Equal(60, lightBody["brightness_pct"]);
+    }
+
+    [Fact]
+    public async Task HomeAssistant_ListDevicesAsync_ThrowsWhenApiReturnsError()
+    {
+        var client = new HomeAssistantClient(
+            "http://homeassistant.local:8123",
+            "token",
+            new HttpClient(new StubHttpMessageHandler(
+                HttpStatusCode.Unauthorized,
+                """{"message":"bad token"}""")));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => client.ListDevicesAsync());
+
+        Assert.Contains("Home Assistant rejected the request", ex.Message);
+        Assert.Contains("401", ex.Message);
+    }
+
+    [Fact]
+    public void HomeAssistant_TryResolveService_RejectsUnsupportedActions()
+    {
+        var ok = HomeAssistantClient.TryResolveService(
+            "light.kitchen",
+            new[] { "light", "brightness" },
+            "open",
+            null,
+            out _,
+            out _,
+            out _,
+            out var error);
+
+        Assert.False(ok);
+        Assert.Contains("cover entities", error);
+    }
+
+    private sealed class StubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly HttpStatusCode _statusCode;
+        private readonly string _content;
+
+        public StubHttpMessageHandler(HttpStatusCode statusCode, string content)
+        {
+            _statusCode = statusCode;
+            _content = content;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var response = new HttpResponseMessage(_statusCode)
+            {
+                Content = new StringContent(_content)
+            };
+
+            return Task.FromResult(response);
+        }
     }
 }
