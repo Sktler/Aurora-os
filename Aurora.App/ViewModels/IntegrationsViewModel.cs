@@ -10,16 +10,21 @@ using Aurora.App.Services;
 
 namespace Aurora.App.ViewModels
 {
-    public partial class IntegrationsViewModel : ObservableObject
+    public partial class IntegrationsViewModel : ObservableObject, IDisposable
     {
         /// <summary>The live Companion instances already bound to the main window's sidebar -
         /// not a fresh copy loaded from the database, so an accent color change here shows up
         /// on the sidebar globe immediately, without needing to close and reopen Settings.</summary>
         public ObservableCollection<Companion> Companions { get; }
+        private string _lastKnownChatProvider = App.Settings.ChatProvider;
+        private string _lastKnownModelName = string.Empty;
 
         public IntegrationsViewModel(IEnumerable<Companion> companions)
         {
             Companions = new ObservableCollection<Companion>(companions);
+            _lastKnownModelName = GetActiveModel();
+            ModelName = _lastKnownModelName;
+            App.AIProviderStatusChanged += OnAIProviderStatusChanged;
         }
 
         // --- Navigation (hub + dedicated pages) ---
@@ -93,7 +98,7 @@ namespace Aurora.App.ViewModels
 
         // --- Voice ---
         // Windows SAPI voices - only relevant when TtsProvider == "windows".
-        public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice.GetAvailableVoices());
+        public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice?.GetAvailableVoices() ?? []);
         [ObservableProperty] private VoiceOption? _selectedVoice;
         [ObservableProperty] private bool _speakRepliesByDefault = App.Settings.SpeakRepliesByDefault;
         [ObservableProperty] private string _voiceStatus = "";
@@ -197,6 +202,34 @@ namespace Aurora.App.ViewModels
             }
         }
 
+        private void RefreshProviderDependentState()
+        {
+            var chatProvider = App.Settings.ChatProvider;
+            var activeModel = GetActiveModel();
+            var providerChanged = !string.Equals(_lastKnownChatProvider, chatProvider, StringComparison.OrdinalIgnoreCase);
+            var modelChanged = !string.Equals(_lastKnownModelName, activeModel, StringComparison.Ordinal);
+
+            OnPropertyChanged(nameof(CurrentEngineDescription));
+            OnPropertyChanged(nameof(ModelFieldLabel));
+
+            if (providerChanged || modelChanged)
+            {
+                if (!string.Equals(ModelName, activeModel, StringComparison.Ordinal))
+                    ModelName = activeModel;
+
+                if (ModelSuggestions.Count > 0)
+                    ModelSuggestions.Clear();
+
+                ModelListStatus = "";
+                ModelStatus = "";
+            }
+
+            _lastKnownChatProvider = chatProvider;
+            _lastKnownModelName = activeModel;
+            if (IsLoadingModels)
+                IsLoadingModels = false;
+        }
+
         // --- Model name - kept as free text rather than a fixed dropdown, so Aurora
         // isn't pinned to whichever model happened to be current when this was built.
         // Works with any model name the active provider actually serves - point it at
@@ -250,6 +283,10 @@ namespace Aurora.App.ViewModels
                 IsLoadingModels = false;
             }
         }
+
+        private void OnAIProviderStatusChanged(object? sender, EventArgs e) => RefreshProviderDependentState();
+
+        public void Dispose() => App.AIProviderStatusChanged -= OnAIProviderStatusChanged;
 
         private static string GetActiveModel() => ActiveProvider.Key switch
         {
