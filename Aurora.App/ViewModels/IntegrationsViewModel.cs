@@ -196,7 +196,7 @@ namespace Aurora.App.ViewModels
                 return p.Key switch
                 {
                     "gemini" => "Chat runs on Gemini - image generation is included with the same key.",
-                    "openai" or "claude" => $"Chat runs on {p.DisplayName}. This is a paid, metered API - keep an eye on usage in their dashboard.",
+                    "openai" or "claude" or "copilot" => $"Chat runs on {p.DisplayName}. This is a paid, metered API - keep an eye on usage in their dashboard.",
                     _ => $"Chat runs on {p.DisplayName}."
                 };
             }
@@ -293,6 +293,7 @@ namespace Aurora.App.ViewModels
             "groq" => App.Settings.GroqModel,
             "openai" => App.Settings.OpenAIModel,
             "claude" => App.Settings.ClaudeModel,
+            "copilot" => App.Settings.GitHubCopilotModel,
             _ => App.Settings.GeminiModel
         };
 
@@ -319,6 +320,7 @@ namespace Aurora.App.ViewModels
                 case "groq": App.Settings.GroqModel = trimmed; break;
                 case "openai": App.Settings.OpenAIModel = trimmed; break;
                 case "claude": App.Settings.ClaudeModel = trimmed; break;
+                case "copilot": App.Settings.GitHubCopilotModel = trimmed; break;
                 default: App.Settings.GeminiModel = trimmed; break;
             }
 

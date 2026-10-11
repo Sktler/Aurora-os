@@ -80,7 +80,9 @@ public class ProviderCatalogTests
                 GeminiApiKey = "gemini-key",
                 GeminiModel = "gemini-3.6-flash",
                 GroqApiKey = "groq-key",
-                GroqModel = "llama-3.3-70b-versatile"
+                GroqModel = "llama-3.3-70b-versatile",
+                GitHubCopilotApiKey = "ghp-key",
+                GitHubCopilotModel = "gpt-4o"
             };
 
             App.RefreshIntegrationClients();
@@ -96,6 +98,15 @@ public class ProviderCatalogTests
             Assert.Equal("Groq model", vm.ModelFieldLabel);
             Assert.Equal("llama-3.3-70b-versatile", vm.ModelName);
             Assert.Contains("Groq", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
+
+            App.Settings.ChatProvider = "copilot";
+            App.RefreshIntegrationClients();
+
+            Assert.Equal("GitHub Copilot (unofficial) model", vm.ModelFieldLabel);
+            Assert.Equal("gpt-4o", vm.ModelName);
+            vm.ModelName = "gpt-4o-mini";
+            vm.SaveModelCommand.Execute(null);
+            Assert.Equal("gpt-4o-mini", App.Settings.GitHubCopilotModel);
         }
         finally
         {
