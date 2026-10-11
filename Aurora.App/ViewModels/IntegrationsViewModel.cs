@@ -98,7 +98,7 @@ namespace Aurora.App.ViewModels
 
         // --- Voice ---
         // Windows SAPI voices - only relevant when TtsProvider == "windows".
-        public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice.GetAvailableVoices());
+        public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice?.GetAvailableVoices() ?? []);
         [ObservableProperty] private VoiceOption? _selectedVoice;
         [ObservableProperty] private bool _speakRepliesByDefault = App.Settings.SpeakRepliesByDefault;
         [ObservableProperty] private string _voiceStatus = "";
