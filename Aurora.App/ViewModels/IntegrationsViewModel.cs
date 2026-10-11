@@ -515,6 +515,30 @@ namespace Aurora.App.ViewModels
         }
 
         [RelayCommand]
+        private void DisconnectHomeAssistant()
+        {
+            App.Settings.HomeAssistantUrl = "";
+            App.Settings.HomeAssistantToken = "";
+            App.Settings.Save();
+            App.RefreshIntegrationClients();
+
+            HomeAssistantUrl = "";
+            HomeAssistantToken = "";
+            HomeAssistantVerified = false;
+            HomeAssistantStatus = "Disconnected from Home Assistant.";
+            HomeAssistantCatalogCount = 0;
+            HomeAssistantCatalogStatus = "Not connected.";
+
+            for (var i = Devices.Count - 1; i >= 0; i--)
+            {
+                if (string.Equals(Devices[i].Source, "Home Assistant", StringComparison.OrdinalIgnoreCase))
+                    Devices.RemoveAt(i);
+            }
+
+            StatusMessage = "Disconnected from Home Assistant.";
+        }
+
+        [RelayCommand]
         private async Task SaveAndTestHubitatAsync()
         {
             if (IsTestingHubitat) return;

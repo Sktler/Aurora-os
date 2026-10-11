@@ -681,6 +681,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding HomeAssistantToken, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
@@ -689,6 +690,10 @@
                                     Command="{Binding SaveAndTestHomeAssistantCommand}"
                                     Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                            <Button Grid.Column="2" Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
+                                    Command="{Binding DisconnectHomeAssistantCommand}"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource TextMutedBrush}"/>
                         </Grid>
                         <TextBlock Text="{Binding HomeAssistantStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
