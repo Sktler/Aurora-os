@@ -11,6 +11,7 @@ public class CompanionToolAccessTests
         var companion = new Companion { ToolAccess = CompanionToolAccess.General };
 
         Assert.True(CompanionToolAccessExtensions.IsToolAllowed("get_weather", companion.ToolAccess));
+        Assert.True(CompanionToolAccessExtensions.IsToolAllowed("generate_image", companion.ToolAccess));
         Assert.True(CompanionToolAccessExtensions.IsToolAllowed("camera_status", companion.ToolAccess));
         Assert.False(CompanionToolAccessExtensions.IsToolAllowed("control_smart_home_device", companion.ToolAccess));
 
@@ -20,6 +21,7 @@ public class CompanionToolAccessTests
             .ToList();
 
         Assert.Contains("get_weather", toolNames, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("generate_image", toolNames, StringComparer.OrdinalIgnoreCase);
         Assert.DoesNotContain("control_smart_home_device", toolNames, StringComparer.OrdinalIgnoreCase);
     }
 

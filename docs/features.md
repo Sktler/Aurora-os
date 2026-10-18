@@ -43,7 +43,8 @@
   through Gemini's free image model by default, using the *same* Gemini key
   as chat (no separate provider key needed). Can be pointed at OpenAI
   instead by changing `ImageProvider` to `"openai"` and supplying
-  `ImageProviderApiKey`.
+  `ImageProviderApiKey`. The `generate_image` chat tool routes through this
+  client.
 - **VoiceService** (`Services/VoiceService.cs`) — wraps Windows' built-in
   speech recognition/synthesis, fully local and free (no API key). The mic
   button in the composer transcribes a spoken message into the text box; the

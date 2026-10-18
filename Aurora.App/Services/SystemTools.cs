@@ -14,6 +14,7 @@ namespace Aurora.App.Services
             new { name = "get_weather", description = "Gets current real-time weather conditions for a place.", input_schema = new { type = "object", properties = new { location = new { type = "string" } }, required = new[] { "location" } } },
             new { name = "get_weather_alerts", description = "Gets active National Weather Service alerts affecting a U.S. place.", input_schema = new { type = "object", properties = new { location = new { type = "string", description = "A U.S. city, ZIP code, or place name." } }, required = new[] { "location" } } },
             new { name = "web_search", description = "Searches the web for a query.", input_schema = new { type = "object", properties = new { query = new { type = "string" } }, required = new[] { "query" } } },
+            new { name = "generate_image", description = "Generates an image from a text prompt.", input_schema = new { type = "object", properties = new { prompt = new { type = "string", description = "A text description of the image to generate." } }, required = new[] { "prompt" } } },
             new { name = "get_now_playing", description = "Gets the Windows media currently playing.", input_schema = new { type = "object", properties = new { } } },
             new { name = "list_media_sessions", description = "Lists Windows media sessions.", input_schema = new { type = "object", properties = new { } } },
             new { name = "media_play", description = "Starts Windows media playback.", input_schema = new { type = "object", properties = new { app = new { type = "string" } } } },
@@ -76,6 +77,7 @@ namespace Aurora.App.Services
                 case "get_weather": return await App.Weather.GetCurrentWeatherAsync(input.GetProperty("location").GetString() ?? "");
                 case "get_weather_alerts": return await App.Weather.GetActiveAlertsAsync(input.GetProperty("location").GetString() ?? "");
                 case "web_search": { var q = input.GetProperty("query").GetString() ?? ""; return await App.WebSearch.TryInstantAnswerAsync(q) ?? App.WebSearch.OpenSearchInBrowser(q); }
+                case "generate_image": return await App.ImageGen.GenerateImageAsync(input.GetProperty("prompt").GetString() ?? "");
                 case "get_now_playing": { var x = await Media.GetNowPlayingAsync(); return x == null ? "Nothing is currently playing." : $"App: {x.AppName}\nTitle: {x.Title}\nArtist: {x.Artist}\nPlayback: {x.PlaybackStatus}"; }
                 case "list_media_sessions": { var xs = await Media.ListSessionsAsync(); return xs.Count == 0 ? "No Windows media sessions." : string.Join("\n", xs.ConvertAll(x => $"{x.AppName}: {x.Title} — {x.Artist} — {x.PlaybackStatus}")); }
                 case "media_play": return (await Media.ControlAsync("play", GetApp(input))).Message;
