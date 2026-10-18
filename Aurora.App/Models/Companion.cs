@@ -22,7 +22,7 @@ namespace Aurora.App.Models
     public enum CompanionToolAccess
     {
         None = 0,
-        General = 1 << 0,          // weather, web search, media, system tools, camera
+        General = 1 << 0,          // weather, web search, media, image generation, system tools, camera
         InboxDocuments = 1 << 1,    // file and document access - Sift
         HomeAutomation = 1 << 2     // smart home control - Home
     }
@@ -57,6 +57,7 @@ namespace Aurora.App.Models
             if (string.IsNullOrEmpty(toolName)) return false;
             return toolName.StartsWith("get_weather", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("web_search", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("generate_image", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("get_now_playing", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("list_media_sessions", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("media_", StringComparison.OrdinalIgnoreCase)
