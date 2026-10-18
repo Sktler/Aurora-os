@@ -221,6 +221,18 @@ namespace Aurora.App.Services
             }
         }
 
-        public void Dispose() => _conn?.Dispose();
+        public void Dispose()
+        {
+            var connection = _conn;
+            _conn = null;
+
+            if (connection is not null)
+                connection.Dispose();
+
+            // Microsoft.Data.Sqlite may retain native SQLite handles in its pool
+            // after a managed connection is disposed. Reset deletes the database
+            // while this process is still alive, so release those handles first.
+            SqliteConnection.ClearAllPools();
+        }
     }
 }
