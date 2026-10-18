@@ -29,7 +29,6 @@ namespace Aurora.App.Views
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
-            UpdateProfileNameDisplay();
             if (DataContext is DashboardViewModel dvm)
                 await dvm.RefreshWeatherAsync();
         }
@@ -151,7 +150,6 @@ namespace Aurora.App.Views
         {
             if (DataContext is DashboardViewModel dvm)
                 dvm.ReloadForActiveProfile();
-            UpdateProfileNameDisplay();
         }
 
         private void OpenSettings(SettingsSection section = SettingsSection.Hub)
@@ -160,7 +158,6 @@ namespace Aurora.App.Views
             window.ShowDialog();
             if (DataContext is DashboardViewModel dvm)
                 dvm.RefreshUserName();
-            UpdateProfileNameDisplay();
         }
 
         private void OpenIntegrations_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -337,7 +334,6 @@ namespace Aurora.App.Views
                 App.Settings.Save();
                 if (DataContext is DashboardViewModel dashboard)
                     dashboard.RefreshUserName();
-                UpdateProfileNameDisplay();
                 dialog.DialogResult = true;
                 dialog.Close();
             };
@@ -351,22 +347,5 @@ namespace Aurora.App.Views
             dialog.ShowDialog();
         }
 
-        private void UpdateProfileNameDisplay()
-        {
-            var name = DataContext is DashboardViewModel dvm ? dvm.UserName : App.Settings.UserName;
-            var textBlock = FindVisualChild<TextBlock>(this, t => t.Text == "Adam" || t.Tag?.ToString() == "ProfileName");
-            if (textBlock != null) textBlock.Text = name;
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
-        {
-            if (root is T match && predicate(match)) return match;
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            {
-                var found = FindVisualChild<T>(VisualTreeHelper.GetChild(root, i), predicate);
-                if (found != null) return found;
-            }
-            return null;
-        }
     }
 }

@@ -1,5 +1,7 @@
 using System.IO;
+using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using Xunit;
 
 namespace AuroraUpdater.Tests;
@@ -29,6 +31,22 @@ public sealed class XamlWellFormedTests
             {
             }
         }
+    }
+
+    [Fact]
+    public void Main_window_profile_name_is_bound_to_the_dashboard_user_name()
+    {
+        var repoRoot = FindRepositoryRoot();
+        var document = XDocument.Load(Path.Combine(repoRoot, "Aurora.App", "Views", "MainWindow.xaml"));
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var profileName = document
+            .Descendants(presentation + "TextBlock")
+            .SingleOrDefault(element => (string?)element.Attribute(xaml + "Name") == "ProfileNameText");
+
+        Assert.NotNull(profileName);
+        Assert.Equal("{Binding UserName}", (string?)profileName.Attribute("Text"));
     }
 
     private static string FindRepositoryRoot()
