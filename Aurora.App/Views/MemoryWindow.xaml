@@ -4,12 +4,44 @@
         Title="Aurora Memory &amp; Data" Width="860" Height="650" MinWidth="600" MinHeight="450"
         Background="{StaticResource BgDeepBrush}" WindowStartupLocation="CenterOwner">
     <Grid Margin="22">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="Memory &amp; Data" FontSize="26" FontWeight="SemiBold"/>
             <TextBlock Text="Saved companions and conversation memory stored locally by Aurora." Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
         </StackPanel>
-        <Border Grid.Row="1" Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="16">
+        <Border x:Name="BrowserPanel" Grid.Row="1" Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="Find conversations" FontSize="16" FontWeight="SemiBold"/>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Search titles, tags and message text" Padding="8" Background="#151B27" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBox Grid.Column="1" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter by tag" Margin="8,0,0,0" Padding="8" Background="#151B27" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding FolderFilters}" SelectedItem="{Binding SelectedFolderFilter}" DisplayMemberPath="Name" Margin="8,0,0,0"/>
+                    <CheckBox Grid.Column="3" Content="★ Favorites" IsChecked="{Binding FavoritesOnly}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBox Width="180" Text="{Binding NewFolderName, UpdateSourceTrigger=PropertyChanged}" ToolTip="New folder name" Padding="6" Background="#151B27" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <Button Content="Add folder" Command="{Binding CreateFolderCommand}" Margin="8,0,0,0" Padding="10,5,10,5"/>
+                    <Button Content="Delete selected folder" Command="{Binding DeleteFolderCommand}" Margin="8,0,0,0" Padding="10,5,10,5" ToolTip="Conversations in the folder are kept"/>
+                    <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Results}" MaxHeight="170" Margin="0,8,0,0">
+                    <ItemsControl.Template><ControlTemplate TargetType="ItemsControl"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer></ControlTemplate></ItemsControl.Template>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Button Content="{Binding FavoriteGlyph}" Command="{Binding DataContext.ToggleFavoriteCommand, ElementName=BrowserPanel}" CommandParameter="{Binding}" Padding="8,2,8,2" Background="Transparent" BorderThickness="0" ToolTip="Toggle favorite"/>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                    <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="  ·  " Foreground="{StaticResource TextMutedBrush}"/><Run Text="{Binding FolderName, Mode=OneWay}" Foreground="{StaticResource TextMutedBrush}"/><Run Text="  " /><Run Text="{Binding TagsText, Mode=OneWay}" Foreground="{StaticResource AccentCyanBrush}"/>
+                                </TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="2" Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="16">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Companions}">
                     <ItemsControl.ItemTemplate>
