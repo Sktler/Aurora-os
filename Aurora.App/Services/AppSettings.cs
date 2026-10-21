@@ -136,6 +136,16 @@ namespace Aurora.App.Services
         public string UserName { get; set; } = "Adam";
         public string ProfileId { get; set; } = "primary";
         public bool LocalOnlyMode { get; set; } = false;
+        // Optional budgets; 0 = no limit. Tokens are estimated (~4 chars/token) when the provider reports none.
+        public int DailyRequestLimit { get; set; } = 0;
+        public int MonthlyRequestLimit { get; set; } = 0;
+        public long DailyTokenLimit { get; set; } = 0;
+        public long MonthlyTokenLimit { get; set; } = 0;
+        public decimal DailyCostLimit { get; set; } = 0;
+        public decimal MonthlyCostLimit { get; set; } = 0;
+        public decimal CostPer1KTokens { get; set; } = 0;
+        public bool StopAtBudgetLimit { get; set; } = true;
+        public int BudgetWarningPercent { get; set; } = 80;
         public bool SpeakerRecognitionEnabled { get; set; } = false;
         public string ChatProvider { get; set; } = "gemini";
 
