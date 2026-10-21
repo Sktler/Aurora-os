@@ -198,7 +198,8 @@ namespace Aurora.App
                 return new LocalOnlyChatEngine();
 
             var isLockedDown = Security?.IsLockedDown == true;
-            return Settings.ChatProvider switch
+            var provider = Settings.ChatProvider;
+            IChatEngine engine = provider switch
             {
                 "groq" => new GroqClient(isLockedDown ? "" : Settings.GroqApiKey, Settings.GroqModel),
                 "openai" => new OpenAIClient(isLockedDown ? "" : Settings.OpenAIApiKey, Settings.OpenAIModel),
@@ -206,7 +207,10 @@ namespace Aurora.App
                 "copilot" => new GitHubCopilotClient(isLockedDown ? "" : Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel),
                 _ => new GeminiClient(isLockedDown ? "" : Settings.GeminiApiKey, Settings.GeminiModel)
             };
+            Usage ??= new UsageBudgetService(System.IO.Path.Combine(AppSettings.ConfigDir, "usage.json"));
+            return new BudgetedChatEngine(engine, Usage, () => Settings, string.IsNullOrEmpty(provider) ? "gemini" : provider);
         }
+        public static UsageBudgetService? Usage { get; private set; }
         private static ImageGenClient BuildImageGenClient() { if (IsLocalOnlyModeEnabled) return new ImageGenClient("", Settings.ImageProvider); var key = Settings.ImageProvider == "openai" ? Settings.ImageProviderApiKey : Settings.GeminiApiKey; return new ImageGenClient(key, Settings.ImageProvider); }
         public static void ShowLockdownOverlay(Window? targetWindow = null)
         {
