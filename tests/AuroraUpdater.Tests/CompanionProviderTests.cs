@@ -48,8 +48,15 @@ public sealed class CompanionProviderTests
         var previous = App.Settings;
         var aiProp = typeof(App).GetProperty("AI")!;
         var previousAi = aiProp.GetValue(null);
+        var engines = (System.Collections.IDictionary)typeof(App)
+            .GetField("CompanionEngines", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .GetValue(null)!;
+        // Settings read secrets from the real credential vault, so isolate from any stored Claude key.
+        var previousClaudeKey = WindowsCredentialVault.GetSecret(nameof(AppSettings.ClaudeApiKey));
         try
         {
+            WindowsCredentialVault.RemoveSecret(nameof(AppSettings.ClaudeApiKey));
+            lock (engines) engines.Clear();
             App.Settings = new AppSettings { ChatProvider = "gemini" };
             var global = new FakeEngine();
             aiProp.SetValue(null, global);
@@ -62,6 +69,9 @@ public sealed class CompanionProviderTests
         }
         finally
         {
+            lock (engines) engines.Clear();
+            if (!string.IsNullOrWhiteSpace(previousClaudeKey))
+                WindowsCredentialVault.SetSecret(nameof(AppSettings.ClaudeApiKey), previousClaudeKey);
             App.Settings = previous;
             aiProp.SetValue(null, previousAi);
         }
