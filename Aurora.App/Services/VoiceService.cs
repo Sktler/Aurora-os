@@ -204,6 +204,7 @@ namespace Aurora.App.Services
             {
                 _synth!.SpeakAsyncCancelAll();
                 _synth.Rate = SpeechFormatter.WindowsSapiRateFor(App.Settings.SpeechPaceWpm); // per-user pace target
+                _synth.Volume = (int)Math.Round(SpeechFormatter.ClampVolumePercent(App.Settings.TtsVolumePercent));
                 _synth.SpeakProgress += ReportSpeechProgress;
                 _synth.SpeakCompleted += CompleteSpeech;
                 onSpeechActivityChanged?.Invoke(true);
@@ -367,6 +368,7 @@ namespace Aurora.App.Services
             using var reader = new WaveFileReader(stream);
             using var output = deviceNumber >= 0 ? new WaveOutEvent { DeviceNumber = deviceNumber } : new WaveOutEvent();
             output.Init(reader);
+            output.Volume = (float)(SpeechFormatter.ClampVolumePercent(App.Settings.TtsVolumePercent) / 100.0);
 
             var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             void OnPlaybackStopped(object? _, StoppedEventArgs __) => completed.TrySetResult();

@@ -301,6 +301,8 @@ namespace Aurora.App.Services
         /// Natural conversational pace is roughly 150-170 wpm; adjustable per user preference
         /// without changing the wording spoken.</summary>
         public double SpeechPaceWpm { get; set; } = Aurora.App.Services.SpeechFormatter.TargetWordsPerMinute;
+        /// <summary>Aurora's spoken-reply playback volume (0-100), independent of the system volume.</summary>
+        public double TtsVolumePercent { get; set; } = 100;
         public bool SpeakRepliesByDefault { get; set; } = true;
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";

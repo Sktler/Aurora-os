@@ -126,6 +126,7 @@ namespace Aurora.App.ViewModels
         /// <summary>Target speaking pace in words per minute for replies - the "output" half
         /// of the voice pipeline, applied to whichever TTS provider is active.</summary>
         [ObservableProperty] private double _speechPaceWpm = App.Settings.SpeechPaceWpm;
+        [ObservableProperty] private double _ttsVolumePercent = SpeechFormatter.ClampVolumePercent(App.Settings.TtsVolumePercent);
 
         [RelayCommand]
         private async Task LoadElevenLabsVoicesAsync()
@@ -802,6 +803,7 @@ namespace Aurora.App.ViewModels
             App.Settings.VoiceConfidenceThreshold = Services.VoiceTranscriptFilter
                 .ClampConfidenceThreshold(VoiceConfidenceThreshold);
             App.Settings.SpeechPaceWpm = SpeechFormatter.ClampWordsPerMinute(SpeechPaceWpm);
+            App.Settings.TtsVolumePercent = SpeechFormatter.ClampVolumePercent(TtsVolumePercent);
             App.Settings.Save();
             VoiceStatus = "Saved. New replies will use this voice.";
         }

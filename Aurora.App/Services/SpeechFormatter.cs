@@ -45,6 +45,10 @@ namespace Aurora.App.Services
         public static double ClampWordsPerMinute(double wpm) =>
             Math.Clamp(wpm, MinWordsPerMinute, MaxWordsPerMinute);
 
+        /// <summary>Clamps a TTS playback volume percentage to 0-100.</summary>
+        public static double ClampVolumePercent(double percent) =>
+            double.IsNaN(percent) ? 100 : Math.Clamp(percent, 0, 100);
+
         /// <summary>Converts a words-per-minute target into System.Speech's -10..10 Rate scale.</summary>
         public static int WindowsSapiRateFor(double wpm)
         {
