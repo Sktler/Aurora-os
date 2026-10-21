@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Speech.Recognition;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,11 +34,22 @@ namespace Aurora.App.Services
             IsAvailable = CanCreateRecognizer();
         }
 
+        private static SpeechRecognitionEngine CreateEngine()
+        {
+            var installed = SpeechRecognitionEngine.InstalledRecognizers();
+            var info = installed.FirstOrDefault(r => r.Culture.Equals(CultureInfo.CurrentCulture))
+                ?? installed.FirstOrDefault(r => r.Culture.TwoLetterISOLanguageName == "en")
+                ?? installed.FirstOrDefault();
+            return info == null
+                ? new SpeechRecognitionEngine(CultureInfo.CurrentCulture)
+                : new SpeechRecognitionEngine(info);
+        }
+
         private static bool CanCreateRecognizer()
         {
             try
             {
-                using var recognizer = new SpeechRecognitionEngine(CultureInfo.CurrentCulture);
+                using var recognizer = CreateEngine();
                 recognizer.SetInputToDefaultAudioDevice();
                 return true;
             }
@@ -89,12 +101,12 @@ namespace Aurora.App.Services
 
         private SpeechRecognitionEngine CreateWakeRecognizer()
         {
-            var recognizer = new SpeechRecognitionEngine(CultureInfo.CurrentCulture);
+            var recognizer = CreateEngine();
             recognizer.SetInputToDefaultAudioDevice();
 
             // A tightly constrained grammar is deliberately used here instead of dictation.
             // This substantially reduces false activations from ordinary conversation.
-            var choices = new Choices("hey aurora");
+            var choices = new Choices(WakeWordMatcher.Phrases);
             var grammar = new Grammar(new GrammarBuilder(choices)) { Name = "AuroraWakeWord" };
             recognizer.LoadGrammar(grammar);
             recognizer.SpeechRecognized += OnWakeRecognized;
@@ -104,7 +116,7 @@ namespace Aurora.App.Services
 
         private void OnWakeRecognized(object? sender, SpeechRecognizedEventArgs e)
         {
-            if (e.Result == null || e.Result.Confidence < 0.72f) return;
+            if (e.Result == null || !WakeWordMatcher.IsWakeWord(e.Result.Text, e.Result.Confidence)) return;
 
             lock (_gate)
             {
@@ -124,7 +136,7 @@ namespace Aurora.App.Services
             SpeechRecognitionEngine? recognizer = null;
             try
             {
-                recognizer = new SpeechRecognitionEngine(CultureInfo.CurrentCulture);
+                recognizer = CreateEngine();
                 recognizer.SetInputToDefaultAudioDevice();
                 recognizer.LoadGrammar(new DictationGrammar());
 
@@ -231,6 +243,23 @@ namespace Aurora.App.Services
                 _waitingForCommand = false;
                 StopRecognizersLocked();
             }
+        }
+    }
+}
+
+namespace Aurora.App.Services
+{
+    public static class WakeWordMatcher
+    {
+        public const float MinConfidence = 0.5f;
+
+        public static readonly string[] Phrases = { "hey aurora", "hi aurora", "hey, aurora", "okay aurora" };
+
+        public static bool IsWakeWord(string? text, float confidence)
+        {
+            if (confidence < MinConfidence || string.IsNullOrWhiteSpace(text)) return false;
+            var normalized = text.Replace(",", "").Trim();
+            return Phrases.Any(p => string.Equals(p.Replace(",", ""), normalized, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
