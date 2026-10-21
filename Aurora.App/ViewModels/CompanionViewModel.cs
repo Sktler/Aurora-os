@@ -36,6 +36,55 @@ namespace Aurora.App.ViewModels
             Companion = companion;
             foreach (var m in App.Memory.LoadHistory(companion.Id)) Messages.Add(m);
             LoadOrganization();
+            LoadProviderChoice();
+        }
+
+        // ---- Per-companion provider/model ----
+        public const string GlobalProviderKey = "";
+        public ObservableCollection<ProviderOption> ProviderChoices { get; } = new();
+        [ObservableProperty] private ProviderOption? _selectedProviderChoice;
+        [ObservableProperty] private string _modelDraft = "";
+        [ObservableProperty] private string _providerModelLabel = "";
+        private bool _loadingProvider;
+
+        public sealed class ProviderOption
+        {
+            public string Key { get; init; } = "";
+            public string Name { get; init; } = "";
+        }
+
+        private void LoadProviderChoice()
+        {
+            _loadingProvider = true;
+            try
+            {
+                ProviderChoices.Clear();
+                ProviderChoices.Add(new ProviderOption { Key = GlobalProviderKey, Name = "Default (global)" });
+                foreach (var p in AIProviderCatalog.All)
+                    ProviderChoices.Add(new ProviderOption { Key = p.Key, Name = p.DisplayName });
+                SelectedProviderChoice = ProviderChoices.FirstOrDefault(p => p.Key == Companion.ProviderOverride) ?? ProviderChoices[0];
+                ModelDraft = Companion.ModelOverride;
+            }
+            finally { _loadingProvider = false; }
+            RefreshProviderModelLabel();
+        }
+
+        private void RefreshProviderModelLabel()
+        {
+            if (App.Settings == null) return;
+            var (provider, model) = App.ResolveCompanionModel(Companion);
+            var configured = App.GetChatEngineFor(Companion)?.IsConfigured == true;
+            ProviderModelLabel = $"{AIProviderCatalog.Get(provider).DisplayName} · {model}" + (configured ? "" : " · no API key");
+        }
+
+        [RelayCommand]
+        private void ApplyProviderModel()
+        {
+            if (_loadingProvider) return;
+            Companion.ProviderOverride = SelectedProviderChoice?.Key ?? GlobalProviderKey;
+            Companion.ModelOverride = (ModelDraft ?? "").Trim();
+            App.Memory.SaveCompanion(Companion);
+            RefreshProviderModelLabel();
         }
 
         // ---- Conversation organization (favorite, tags, folder) ----
@@ -287,7 +336,8 @@ namespace Aurora.App.ViewModels
                     "When the user asks what day, date, or time it is, answer from this system context rather than guessing.";
                 var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext;
 
-                var reply = await App.AI.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
+                var engine = App.GetChatEngineFor(Companion);
+                var reply = await engine.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
                 var assistantMsg = new ChatMessage { CompanionId = Companion.Id, Role = "assistant", Content = reply };
                 Messages.Add(assistantMsg);
                 App.Memory.AppendMessage(assistantMsg);

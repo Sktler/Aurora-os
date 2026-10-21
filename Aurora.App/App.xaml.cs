@@ -192,20 +192,58 @@ namespace Aurora.App
         public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); AppAdapters = new AppAdapterService(WindowsAutomation); }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
-        private static IChatEngine BuildChatEngine()
+        private static IChatEngine BuildChatEngine() => BuildChatEngine(Settings.ChatProvider, null);
+
+        private static string ConfiguredModelFor(string provider) => provider switch
+        {
+            "groq" => Settings.GroqModel,
+            "openai" => Settings.OpenAIModel,
+            "claude" => Settings.ClaudeModel,
+            "copilot" => Settings.GitHubCopilotModel,
+            _ => Settings.GeminiModel
+        };
+
+        /// <summary>Provider/model a companion actually uses: its own override, else the global setting.</summary>
+        public static (string Provider, string Model) ResolveCompanionModel(Companion companion)
+        {
+            var provider = AIProviderCatalog.All.Any(p => p.Key == companion.ProviderOverride) ? companion.ProviderOverride : Settings.ChatProvider;
+            if (string.IsNullOrEmpty(provider)) provider = "gemini";
+            var model = !string.IsNullOrWhiteSpace(companion.ModelOverride) ? companion.ModelOverride.Trim() : ConfiguredModelFor(provider);
+            return (provider, model);
+        }
+
+        private static readonly Dictionary<string, IChatEngine> CompanionEngines = new();
+
+        /// <summary>Engine for one companion. Companions without an override share the global engine.</summary>
+        public static IChatEngine GetChatEngineFor(Companion companion)
+        {
+            if (IsLocalOnlyModeEnabled
+                || (string.IsNullOrWhiteSpace(companion.ProviderOverride) && string.IsNullOrWhiteSpace(companion.ModelOverride)))
+                return AI;
+            var (provider, model) = ResolveCompanionModel(companion);
+            var key = provider + "|" + model;
+            lock (CompanionEngines)
+            {
+                if (!CompanionEngines.TryGetValue(key, out var engine))
+                    CompanionEngines[key] = engine = BuildChatEngine(provider, model);
+                return engine;
+            }
+        }
+
+        private static IChatEngine BuildChatEngine(string provider, string? modelOverride)
         {
             if (IsLocalOnlyModeEnabled)
                 return new LocalOnlyChatEngine();
 
             var isLockedDown = Security?.IsLockedDown == true;
-            var provider = Settings.ChatProvider;
+            var model = string.IsNullOrWhiteSpace(modelOverride) ? ConfiguredModelFor(provider) : modelOverride;
             IChatEngine engine = provider switch
             {
-                "groq" => new GroqClient(isLockedDown ? "" : Settings.GroqApiKey, Settings.GroqModel),
-                "openai" => new OpenAIClient(isLockedDown ? "" : Settings.OpenAIApiKey, Settings.OpenAIModel),
-                "claude" => new ClaudeClient(isLockedDown ? "" : Settings.ClaudeApiKey, Settings.ClaudeModel),
-                "copilot" => new GitHubCopilotClient(isLockedDown ? "" : Settings.GitHubCopilotApiKey, Settings.GitHubCopilotModel),
-                _ => new GeminiClient(isLockedDown ? "" : Settings.GeminiApiKey, Settings.GeminiModel)
+                "groq" => new GroqClient(isLockedDown ? "" : Settings.GroqApiKey, model),
+                "openai" => new OpenAIClient(isLockedDown ? "" : Settings.OpenAIApiKey, model),
+                "claude" => new ClaudeClient(isLockedDown ? "" : Settings.ClaudeApiKey, model),
+                "copilot" => new GitHubCopilotClient(isLockedDown ? "" : Settings.GitHubCopilotApiKey, model),
+                _ => new GeminiClient(isLockedDown ? "" : Settings.GeminiApiKey, model)
             };
             Usage ??= new UsageBudgetService(System.IO.Path.Combine(AppSettings.ConfigDir, "usage.json"));
             return new BudgetedChatEngine(engine, Usage, () => Settings, string.IsNullOrEmpty(provider) ? "gemini" : provider);
@@ -354,6 +392,7 @@ namespace Aurora.App
             ImageGen = BuildImageGenClient();
             Spotify = IsLocalOnlyModeEnabled ? new SpotifyClient("", "") : BuildSpotifyClient();
             AI = BuildChatEngine();
+            lock (CompanionEngines) CompanionEngines.Clear();
             AIProviderStatusChanged?.Invoke(null, EventArgs.Empty);
             RefreshWindowsPermissions();
         }
