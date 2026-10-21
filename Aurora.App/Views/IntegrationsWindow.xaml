@@ -208,7 +208,7 @@
                                       ItemsSource="{Binding ModelSuggestions}"
                                       IsEditable="True" IsTextSearchEnabled="True"
                                       IsEnabled="{Binding CanEditModel}"
-                                      Width="280" Padding="8,6,8,6"
+                                      MaxDropDownHeight="360" Width="280" Padding="8,6,8,6"
                                       Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
                                       BorderThickness="0"/>
                             <Button Content="Save model" Margin="10,0,0,0" Padding="16,6,16,6"
