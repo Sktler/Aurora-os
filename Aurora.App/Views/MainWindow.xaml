@@ -95,7 +95,15 @@
                 </Grid>
                 <Border Grid.Row="2" Margin="34,0,34,16" Background="#0E131D" BorderBrush="#293245" BorderThickness="1" CornerRadius="24" Padding="10">
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/><ColumnDefinition Width="42"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Button Grid.Column="5" Width="40" Height="40" Margin="4,0,0,0" Background="#7A1F2B" Foreground="White" BorderThickness="0" Content="■" FontSize="16" Command="{Binding SelectedCompanion.StopSpeakingCommand}" ToolTip="Stop speaking" AutomationProperties.Name="Stop speaking">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers><DataTrigger Binding="{Binding SelectedCompanion.IsSpeechPlaying}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button Grid.Column="0" Width="38" Height="38" Background="#171D29" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" Content="♩" FontSize="19" Command="{Binding SelectedCompanion.ListenCommand}" ToolTip="Voice input"/>
                         <Button Grid.Column="1" Width="40" Height="40" Margin="4,0,4,0" Background="#101620" Foreground="{StaticResource AccentCyanBrush}" BorderBrush="#2C3446" BorderThickness="1" Content="＋" FontSize="20" Click="OpenComposerMenu_Click" ToolTip="Add files, tools, and actions"/>
                         <TextBox x:Name="ComposerTextBox" Grid.Column="2" BorderThickness="0" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" VerticalContentAlignment="Center" FontSize="14" Padding="12,0,12,0" ToolTip="Ask Aurora anything"/>

@@ -54,6 +54,12 @@ namespace Aurora.App.Services
         private Action? _onStoppedExternally;
         private byte[]? _lastVoiceSamplePcm16k;
         private string? _enrollmentProfileId;
+        private int _speechGeneration;
+        private readonly System.Threading.AsyncLocal<int> _callGeneration = new();
+        private readonly object _outputLock = new();
+        private WaveOutEvent? _activeOutput;
+
+        private bool IsStopRequested => _callGeneration.Value != System.Threading.Volatile.Read(ref _speechGeneration);
 
         public byte[]? ConsumeLastVoiceSample()
         {
@@ -151,8 +157,12 @@ namespace Aurora.App.Services
         {
             if (string.IsNullOrWhiteSpace(text)) return;
 
+            _callGeneration.Value = System.Threading.Volatile.Read(ref _speechGeneration);
             foreach (var sentence in SpeechFormatter.SplitIntoSentences(text))
+            {
+                if (IsStopRequested) break;
                 await SpeakSentenceAsync(sentence, onSpeechActivityChanged);
+            }
         }
 
         private async Task SpeakSentenceAsync(string text, Action<bool>? onSpeechActivityChanged)
@@ -177,7 +187,7 @@ namespace Aurora.App.Services
 
         private Task SpeakWindowsAsync(string text, Action<bool>? onSpeechActivityChanged)
         {
-            if (!_synthAvailable || string.IsNullOrWhiteSpace(text)) return Task.CompletedTask;
+            if (!_synthAvailable || string.IsNullOrWhiteSpace(text) || IsStopRequested) return Task.CompletedTask;
 
             var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var isPaused = false;
@@ -356,7 +366,7 @@ namespace Aurora.App.Services
             return result.OrderBy(v => v.Locale).ThenBy(v => v.ShortName).ToList();
         }
 
-        private static async Task PlayWavAsync(byte[] wavBytes, Action<bool>? onSpeechActivityChanged)
+        private async Task PlayWavAsync(byte[] wavBytes, Action<bool>? onSpeechActivityChanged)
         {
             // Only the cloud voices (OpenAI/ElevenLabs/Azure) go through here, so the
             // user's chosen speaker device applies to all three uniformly - the offline
@@ -374,14 +384,19 @@ namespace Aurora.App.Services
             void OnPlaybackStopped(object? _, StoppedEventArgs __) => completed.TrySetResult();
             output.PlaybackStopped += OnPlaybackStopped;
 
+            if (IsStopRequested) return;
+            lock (_outputLock) _activeOutput = output;
             onSpeechActivityChanged?.Invoke(true);
             try
             {
+                if (IsStopRequested) return;
                 output.Play();
+                if (IsStopRequested) output.Stop();
                 await completed.Task.ConfigureAwait(false);
             }
             finally
             {
+                lock (_outputLock) _activeOutput = null;
                 output.PlaybackStopped -= OnPlaybackStopped;
                 onSpeechActivityChanged?.Invoke(false);
             }
@@ -418,7 +433,12 @@ namespace Aurora.App.Services
 
         public void StopSpeaking()
         {
+            System.Threading.Interlocked.Increment(ref _speechGeneration);
             try { _synth?.SpeakAsyncCancelAll(); } catch { /* ignore */ }
+            lock (_outputLock)
+            {
+                try { _activeOutput?.Stop(); } catch { /* ignore */ }
+            }
         }
 
         /// <summary>
