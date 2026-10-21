@@ -12,14 +12,19 @@ namespace Aurora.App.Views
     {
         private readonly bool _restartOnSave;
         private string? _generatedRecoveryCode;
+        private bool _loadingLanguage;
         public bool KeySaved { get; private set; }
 
         public SetupWindow(bool restartOnSave = true)
         {
             InitializeComponent();
             _restartOnSave = restartOnSave;
+            _loadingLanguage = true;
+            LanguageBox.ItemsSource = Localizer.SupportedLanguages;
+            LanguageBox.SelectedValue = Localizer.NormalizeLanguage(App.Settings.Language);
+            _loadingLanguage = false;
             Title = "Aurora - Initial Setup";
-            ProfileNameBox.Text = !_restartOnSave ? "New User" : (string.IsNullOrWhiteSpace(App.Settings.UserName) ? "New User" : App.Settings.UserName);
+            ProfileNameBox.Text = !_restartOnSave ? Localizer.GetUiText("New User") : (string.IsNullOrWhiteSpace(App.Settings.UserName) ? Localizer.GetUiText("New User") : App.Settings.UserName);
 
             ProviderCombo.ItemsSource = AIProviderCatalog.All;
             var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
@@ -30,6 +35,7 @@ namespace Aurora.App.Views
             // change the presence or label of either action.
             SkipButton.Content = "Cancel";
             SaveContinueButton.Content = "Save and Continue";
+            UpdateProviderText();
 
             var alreadyConfigured = !string.IsNullOrWhiteSpace(App.Settings.GeminiApiKey) ||
                                      !string.IsNullOrWhiteSpace(App.Settings.GroqApiKey) ||
@@ -41,6 +47,27 @@ namespace Aurora.App.Views
         }
 
         private AIProviderInfo SelectedProvider => (AIProviderInfo)ProviderCombo.SelectedItem;
+
+        private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingLanguage || LanguageBox.SelectedValue is not string code) return;
+            var usesDefaultName = string.Equals(ProfileNameBox.Text, Localizer.GetUiText("New User", Localizer.Language), StringComparison.Ordinal);
+            App.Settings.Language = Localizer.NormalizeLanguage(code);
+            Localizer.SetLanguage(App.Settings.Language);
+            if (usesDefaultName) ProfileNameBox.Text = Localizer.GetUiText("New User");
+            UpdateProviderText();
+        }
+
+        private void UpdateProviderText()
+        {
+            if (ProviderCombo.SelectedItem is not AIProviderInfo p) return;
+            KeyLabel.Text = string.Format(Localizer.Get("Setup.KeyRequired"), p.DisplayName);
+            GetKeyButton.ToolTip = string.Format(Localizer.Get("Setup.GetKeyTooltip"), p.DisplayName);
+            GetKeyButton.Content = Localizer.GetUiText(p.GetKeyButtonText);
+            KeyHintText.Text = Localizer.GetUiText(p.KeyHint);
+            CostNoteText.Text = Localizer.GetUiText(p.CostNote);
+            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
+        }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -75,18 +102,18 @@ namespace Aurora.App.Views
             ErrorText.Visibility = Visibility.Collapsed;
             ClipboardHint.Visibility = Visibility.Collapsed;
 
-            KeyLabel.Text = $"{p.DisplayName} API key (required)";
-            KeyHintText.Text = p.KeyHint;
-            GetKeyButton.Content = p.GetKeyButtonText;
-            GetKeyButton.ToolTip = $"Opens {p.DisplayName}'s key page in your browser so you can sign in and create a key";
+            KeyLabel.Text = string.Format(Localizer.Get("Setup.KeyRequired"), p.DisplayName);
+            KeyHintText.Text = Localizer.GetUiText(p.KeyHint);
+            GetKeyButton.Content = Localizer.GetUiText(p.GetKeyButtonText);
+            GetKeyButton.ToolTip = string.Format(Localizer.Get("Setup.GetKeyTooltip"), p.DisplayName);
             ImageGenNote.Visibility = p.BundlesImageGen ? Visibility.Visible : Visibility.Collapsed;
-            CostNoteText.Text = p.CostNote;
+            CostNoteText.Text = Localizer.GetUiText(p.CostNote);
 
             ApiKeyBox.Password = GetApiKeyFor(p.Key);
             var existingModel = GetModelFor(p.Key);
             ModelBox.ItemsSource = p.ModelExamples.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             ModelBox.Text = string.IsNullOrWhiteSpace(existingModel) ? p.DefaultModel : existingModel;
-            ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
+            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
 
             DocsLink.NavigateUri = new Uri(p.DocsUrl);
             RateLimitsLink.NavigateUri = new Uri(p.RateLimitsUrl);
@@ -108,7 +135,7 @@ namespace Aurora.App.Views
             }
             catch (Exception ex)
             {
-                ErrorText.Text = $"Couldn't open the browser automatically ({ex.Message}). Go to {url} manually.";
+                ErrorText.Text = string.Format(Localizer.Get("Setup.OpenBrowserError"), ex.Message, url);
                 ErrorText.Visibility = Visibility.Visible;
             }
         }
@@ -172,15 +199,15 @@ namespace Aurora.App.Views
                 var dialog = new Window
                 {
                     Owner = this,
-                    Title = "Aurora Recovery Code",
+                    Title = Localizer.Get("Setup.RecoveryTitle"),
                     Width = 560,
                     Height = 360,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Background = System.Windows.Media.Brushes.Black
                 };
                 var panel = new StackPanel { Margin = new Thickness(24, 24, 24, 24) };
-                panel.Children.Add(new TextBlock { Text = "Save this recovery code somewhere safe.", FontSize = 18, FontWeight = FontWeights.SemiBold });
-                panel.Children.Add(new TextBlock { Text = "It can be used to recover this profile. Aurora will store only a verifier.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
+                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryLead"), FontSize = 18, FontWeight = FontWeights.SemiBold });
+                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryBody"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
                 var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10, 10, 10, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
                 panel.Children.Add(box);
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
@@ -196,7 +223,7 @@ namespace Aurora.App.Views
             }
             catch (Exception ex)
             {
-                ErrorText.Text = $"Couldn't generate a recovery code: {ex.Message}";
+                ErrorText.Text = string.Format(Localizer.Get("Setup.RecoveryError"), ex.Message);
                 ErrorText.Visibility = Visibility.Visible;
             }
         }
@@ -214,7 +241,7 @@ namespace Aurora.App.Views
             var p = SelectedProvider;
             _checkingKey = true;
             ModelBox.IsEnabled = false;
-            ModelExamplesText.Text = $"Checking your {p.DisplayName} key...";
+            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.CheckingKey"), p.DisplayName);
             try
             {
                 IChatEngine client = p.Key switch
@@ -229,16 +256,16 @@ namespace Aurora.App.Views
                 if (models.Count > 0)
                 {
                     ModelBox.ItemsSource = models;
-                    ModelExamplesText.Text = $"{models.Count} models loaded live from {p.DisplayName}.";
+                    ModelExamplesText.Text = string.Format(Localizer.Get("Setup.ModelsLoaded"), models.Count, p.DisplayName);
                 }
                 else
                 {
-                    ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
+                    ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
                 }
             }
             catch
             {
-                ModelExamplesText.Text = $"Examples: {p.ModelExamples}";
+                ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
             }
             finally
             {
@@ -256,21 +283,21 @@ namespace Aurora.App.Views
 
             if (string.IsNullOrWhiteSpace(profileName))
             {
-                ErrorText.Text = "Enter a profile name before continuing.";
+                ErrorText.Text = Localizer.Get("Setup.ProfileNameRequired");
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(profilePassword))
             {
-                ErrorText.Text = "Create or generate a profile password before continuing.";
+                ErrorText.Text = Localizer.Get("Setup.ProfilePasswordRequired");
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                ErrorText.Text = $"A {p.DisplayName} API key is required to bring your companions online. Use \"Cancel\" if you'd rather add it later.";
+                ErrorText.Text = string.Format(Localizer.Get("Setup.ApiKeyRequired"), p.DisplayName);
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }

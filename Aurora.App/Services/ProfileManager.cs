@@ -103,6 +103,8 @@ namespace Aurora.App.Services
             SaveActiveSettings();
             App.Settings = JsonSerializer.Deserialize<AppSettings>(target.SettingsJson) ?? new AppSettings();
             App.Settings.ProfileId = target.Id;
+            App.Settings.Language = Localizer.NormalizeLanguage(App.Settings.Language);
+            Localizer.SetLanguage(App.Settings.Language);
             App.Settings.SaveGlobalOnly();
             _catalog.ActiveProfileId = target.Id;
             SaveCatalog();

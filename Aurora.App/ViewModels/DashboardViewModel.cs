@@ -46,6 +46,7 @@ namespace Aurora.App.ViewModels
             GreetingText = BuildGreeting();
             RefreshAIProviderStatus();
             App.AIProviderStatusChanged += OnAIProviderStatusChanged;
+            Localizer.LanguageChanged += OnLanguageChanged;
 
             var existing = App.Memory?.LoadCompanions();
             if (existing == null || existing.Count == 0)
@@ -83,14 +84,25 @@ namespace Aurora.App.ViewModels
 
         private void OnAIProviderStatusChanged(object? sender, EventArgs e) => RefreshAIProviderStatus();
 
+        private void OnLanguageChanged(object? sender, EventArgs e)
+        {
+            _ = DispatchToUiAsync(() =>
+            {
+                GreetingText = BuildGreeting();
+                RefreshAIProviderStatus();
+                WakeWordStatus = Localizer.GetUiText(WakeWordStatus);
+                WeatherLocation = Localizer.GetUiText(WeatherLocation);
+                WeatherCondition = Localizer.GetUiText(WeatherCondition);
+                WeatherSummary = Localizer.GetUiText(WeatherSummary);
+            });
+        }
+
         private void RefreshAIProviderStatus()
         {
             var providerName = App.Settings == null
                 ? "AI provider"
                 : AIProviderCatalog.Get(App.Settings.ChatProvider).DisplayName;
-            AiProviderStatus = App.AI?.IsConfigured == true
-                ? $"{providerName} configured"
-                : $"{providerName} disconnected";
+            AiProviderStatus = Localizer.FormatUiText(App.AI?.IsConfigured == true ? "{0} configured" : "{0} disconnected", providerName);
         }
 
         public void ReloadForActiveProfile()
@@ -118,8 +130,8 @@ namespace Aurora.App.ViewModels
         private string BuildGreeting()
         {
             var hour = DateTime.Now.Hour;
-            var part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-            return $"Good {part}, {UserName}";
+            var key = hour < 12 ? "Good morning, {0}" : hour < 17 ? "Good afternoon, {0}" : "Good evening, {0}";
+            return Localizer.FormatUiText(key, UserName);
         }
 
         public async System.Threading.Tasks.Task RefreshWeatherAsync()
@@ -131,20 +143,20 @@ namespace Aurora.App.ViewModels
             {
                 if (App.Weather == null)
                 {
-                    WeatherLocation = "Location unavailable";
+                    WeatherLocation = Localizer.GetUiText("Location unavailable");
                     WeatherTemperature = "—";
-                    WeatherCondition = "Weather unavailable";
-                    WeatherSummary = "Weather service is not available.";
+                    WeatherCondition = Localizer.GetUiText("Weather unavailable");
+                    WeatherSummary = Localizer.GetUiText("Weather service is not available.");
                     return;
                 }
 
                 var location = await new LocationService().GetCurrentLocationAsync();
                 if (location == null)
                 {
-                    WeatherLocation = "Location unavailable";
+                    WeatherLocation = Localizer.GetUiText("Location unavailable");
                     WeatherTemperature = "—";
-                    WeatherCondition = "Location permission required";
-                    WeatherSummary = "Allow Aurora to use Windows location services to show local NWS weather.";
+                    WeatherCondition = Localizer.GetUiText("Location permission required");
+                    WeatherSummary = Localizer.GetUiText("Allow Aurora to use Windows location services to show local NWS weather.");
                     return;
                 }
 
@@ -154,14 +166,14 @@ namespace Aurora.App.ViewModels
                 WeatherCondition = weather.Condition;
                 WeatherSummary = $"{weather.Condition}, {weather.TemperatureF:0}°F • wind {weather.Wind}" +
                                  (weather.PrecipitationChance.HasValue ? $" • {weather.PrecipitationChance.Value:0}% precipitation" : "") +
-                                 $" • {(weather.IsObserved ? "NWS observation" : "NWS forecast")} • {weather.ActiveAlertSummary}";
+                                 $" • {Localizer.GetUiText(weather.IsObserved ? "NWS observation" : "NWS forecast")} • {weather.ActiveAlertSummary}";
             }
             catch (Exception ex)
             {
-                WeatherLocation = "Location unavailable";
+                WeatherLocation = Localizer.GetUiText("Location unavailable");
                 WeatherTemperature = "—";
-                WeatherCondition = "Weather unavailable";
-                WeatherSummary = $"Unable to load National Weather Service data: {ex.Message}";
+                WeatherCondition = Localizer.GetUiText("Weather unavailable");
+                WeatherSummary = Localizer.FormatUiText("Unable to load National Weather Service data: {0}", ex.Message);
             }
             finally
             {
@@ -191,7 +203,7 @@ namespace Aurora.App.ViewModels
             {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
-                    WakeWordStatus = "What can I do for you?";
+                    WakeWordStatus = Localizer.GetUiText("What can I do for you?");
                     WakeWordFlash = true;
                     OnPropertyChanged(nameof(WakeWordFlash));
                     await System.Threading.Tasks.Task.Delay(450);
@@ -216,7 +228,7 @@ namespace Aurora.App.ViewModels
 
         private void OnWakeStatusChanged(string status)
         {
-            _ = DispatchToUiAsync(() => WakeWordStatus = status);
+            _ = DispatchToUiAsync(() => WakeWordStatus = Localizer.GetUiText(status));
         }
 
         private static async System.Threading.Tasks.Task DispatchToUiAsync(Action action)

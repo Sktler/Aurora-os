@@ -5,43 +5,55 @@
     <Grid Margin="24">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                <TextBlock Text="{local:Loc Settings.Title}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
+
+                <!-- Language -->
+                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{local:Loc Settings.Language.Title}" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="{local:Loc Settings.Language.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+
+                        <TextBlock Text="{local:Loc Settings.Language.Label}" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="LanguageBox" DisplayMemberPath="NativeName" SelectedValuePath="Code" MaxDropDownHeight="360" Margin="0,0,0,8" SelectionChanged="LanguageBox_SelectionChanged"/>
+                        <TextBlock x:Name="LanguageStatusText" Opacity="0.75" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Privacy -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Privacy and local-only mode" FontSize="22" FontWeight="SemiBold"/>
-                        <TextBlock Text="Keep Aurora on your device by disabling cloud AI, external integrations, and internet-backed tools while leaving local capabilities available." TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+                        <TextBlock Text="{local:Loc Settings.Privacy.Title}" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="{local:Loc Settings.Privacy.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
 
-                        <CheckBox x:Name="LocalOnlyModeToggle" Content="Enable local-only mode" Margin="0,0,0,8" Checked="LocalOnlyModeToggle_Checked" Unchecked="LocalOnlyModeToggle_Checked"/>
-                        <TextBlock x:Name="LocalOnlyModeStatusText" Text="Cloud AI and external integrations are available." Opacity="0.75" Margin="0,0,0,0"/>
+                        <CheckBox x:Name="LocalOnlyModeToggle" Content="{local:Loc Settings.Privacy.Toggle}" Margin="0,0,0,8" Checked="LocalOnlyModeToggle_Checked" Unchecked="LocalOnlyModeToggle_Checked"/>
+                        <TextBlock x:Name="LocalOnlyModeStatusText" Text="{local:Loc Settings.Privacy.StatusOff}" Opacity="0.75" Margin="0,0,0,0"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Security -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="High-impact action approval" FontSize="22" FontWeight="SemiBold"/>
-                        <TextBlock Text="Control when Aurora asks for confirmation before risky side effects such as terminal commands, file writes, clipboard changes, and MCP tool calls." TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+                        <TextBlock Text="{local:Loc Settings.Approval.Title}" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="{local:Loc Settings.Approval.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
 
-                        <TextBlock Text="Approval policy" Margin="0,0,0,5"/>
+                        <TextBlock Text="{local:Loc Settings.Approval.Policy}" Margin="0,0,0,5"/>
                         <ComboBox x:Name="ApprovalModeBox" SelectedValuePath="Tag" Margin="0,0,0,12">
-                            <ComboBoxItem Tag="AskForRisky" IsSelected="True">Ask for risky actions</ComboBoxItem>
-                            <ComboBoxItem Tag="AlwaysAsk">Always ask before any side effect</ComboBoxItem>
-                            <ComboBoxItem Tag="AllowTrusted">Allow trusted tools; ask for everything else</ComboBoxItem>
+                            <ComboBoxItem Tag="AskForRisky" IsSelected="True" Content="{local:Loc Settings.Approval.AskForRisky}"/>
+                            <ComboBoxItem Tag="AlwaysAsk" Content="{local:Loc Settings.Approval.AlwaysAsk}"/>
+                            <ComboBoxItem Tag="AllowTrusted" Content="{local:Loc Settings.Approval.AllowTrusted}"/>
                         </ComboBox>
 
-                        <TextBlock Text="Trusted tools (comma-separated)" Margin="0,0,0,5"/>
+                        <TextBlock Text="{local:Loc Settings.Approval.TrustedTools}" Margin="0,0,0,5"/>
                         <TextBox x:Name="TrustedToolsBox" Padding="10" Margin="0,0,0,12"/>
 
-                        <Button Content="Save approval policy" Padding="16,9,16,9" Width="180" HorizontalAlignment="Left" Click="SaveApprovalPolicy_Click"/>
+                        <Button Content="{local:Loc Settings.Approval.Save}" Padding="16,9,16,9" Width="180" HorizontalAlignment="Left" Click="SaveApprovalPolicy_Click"/>
                     </StackPanel>
                 </Border>
 
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Action audit log" FontSize="22" FontWeight="SemiBold"/>
-                        <TextBlock Text="Review recent side-effecting actions, approval outcomes, and tool calls with search and redaction applied to sensitive values." TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
+                        <TextBlock Text="{local:Loc Settings.Audit.Title}" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="{local:Loc Settings.Audit.Description}"  TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
 
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -49,10 +61,10 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="AuditLogSearchBox" Grid.Column="0" Padding="10" TextChanged="AuditLogSearchBox_TextChanged"/>
-                            <Button Grid.Column="1" Content="Clear log" Padding="14,8,14,8" Margin="10,0,0,0" Click="ClearAuditLog_Click"/>
+                            <Button Grid.Column="1" Content="{local:Loc Settings.Audit.Clear}" Padding="14,8,14,8" Margin="10,0,0,0" Click="ClearAuditLog_Click"/>
                         </Grid>
 
-                        <TextBlock x:Name="NoAuditEntriesText" Text="No recent actions recorded yet." Opacity="0.7" Margin="0,0,0,8" Visibility="Collapsed"/>
+                        <TextBlock x:Name="NoAuditEntriesText" Text="{local:Loc Settings.Audit.Empty}" Opacity="0.7" Margin="0,0,0,8" Visibility="Collapsed"/>
 
                         <ListBox x:Name="AuditLogListBox" MaxHeight="360" ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ItemTemplate>
@@ -69,9 +81,9 @@
                                             <TextBlock Text="{Binding DisplaySummary}" TextWrapping="Wrap" Margin="0,0,0,4"/>
                                             <TextBlock Text="{Binding DisplayDetails}" TextWrapping="Wrap" Foreground="#D9D9D9" Margin="0,0,0,4"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock Text="Status: " Opacity="0.75"/>
-                                                <TextBlock Text="Approved" Foreground="#79E7A7" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
-                                                <TextBlock Text="Denied" Foreground="#FFB3B3" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}"/>
+                                                <TextBlock Text="{local:Loc Settings.Audit.Status}" Opacity="0.75"/>
+                                                                                                <TextBlock Text="{local:Loc Settings.Audit.Approved}" Foreground="#79E7A7" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
+                                                                                                <TextBlock Text="{local:Loc Settings.Audit.Denied}"  Foreground="#FFB3B3" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
                                                 <TextBlock Text="{Binding Success, StringFormat=Success: {0}}"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
@@ -88,26 +100,26 @@
                 <!-- Music -->
                 <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Music" FontSize="22" FontWeight="SemiBold"/>
+                        <TextBlock Text="{local:Loc Settings.Music.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="Jamendo" FontSize="16" FontWeight="Medium" Margin="0,14,0,4"/>
-                        <TextBlock Text="Search and play music directly in Aurora using the Jamendo catalog." TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,14"/>
+                        <TextBlock Text="{local:Loc Settings.Music.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,14"/>
 
-                        <TextBlock Text="Jamendo Client ID" Margin="0,0,0,5"/>
+                        <TextBlock Text="{local:Loc Settings.Music.ClientId}" Margin="0,0,0,5"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <PasswordBox x:Name="JamendoClientIdBox" Grid.Column="0" Padding="10"/>
-                            <Button Grid.Column="1" Content="Get Client ID" Padding="14,8,14,8" Margin="10,0,0,0" Click="GetJamendoClientId_Click"/>
+                            <Button Grid.Column="1" Content="{local:Loc Settings.Music.GetClientId}" Padding="14,8,14,8" Margin="10,0,0,0" Click="GetJamendoClientId_Click"/>
                         </Grid>
 
                         <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                            <Button Content="Save &amp; Connect" Padding="16,9,16,9" Click="SaveJamendo_Click"/>
-                            <TextBlock x:Name="JamendoStatusText" Text="Not connected" VerticalAlignment="Center" Margin="14,0,0,0" Opacity="0.75"/>
+                            <Button Content="{local:Loc Settings.Music.SaveConnect}" Padding="16,9,16,9" Click="SaveJamendo_Click"/>
+                            <TextBlock x:Name="JamendoStatusText" Text="{local:Loc Settings.Music.NotConnected}" VerticalAlignment="Center" Margin="14,0,0,0" Opacity="0.75"/>
                         </StackPanel>
 
-                        <TextBlock Text="Jamendo is intended for supported non-commercial use. Track licensing and attribution requirements apply." TextWrapping="Wrap" FontSize="12" Opacity="0.6" Margin="0,14,0,0"/>
+                        <TextBlock Text="{local:Loc Settings.Music.Notice}" TextWrapping="Wrap" FontSize="12" Opacity="0.6" Margin="0,14,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

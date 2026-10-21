@@ -45,8 +45,8 @@ public partial class LockdownWindow : Window
     private void UpdateRecoveryHint()
     {
         RecoveryCodeDisplay.Text = _recoveryCodeAvailable()
-            ? "Enter the recovery code saved for the active profile."
-            : "No recovery code is saved for the active profile. Aurora remains locked until one is created and confirmed.";
+            ? Localizer.GetUiText("Enter the recovery code saved for the active profile.")
+            : Localizer.GetUiText("No recovery code is saved for the active profile. Aurora remains locked until one is created and confirmed.");
     }
 
     private void RecoveryCodeBox_KeyDown(object sender, KeyEventArgs e)
@@ -61,7 +61,7 @@ public partial class LockdownWindow : Window
         var code = RecoveryCodeBox.Password;
         if (string.IsNullOrWhiteSpace(code))
         {
-            StatusText.Text = "Enter a recovery code.";
+            StatusText.Text = Localizer.GetUiText("Enter a recovery code.");
             return;
         }
 
@@ -70,7 +70,7 @@ public partial class LockdownWindow : Window
             var userValid = _userRecoveryCheck(code);
             if (!_security.TryRecover(softwareSignatureValid: true, userRecoveryValid: userValid))
             {
-                StatusText.Text = "Recovery code rejected. Aurora remains locked.";
+                StatusText.Text = Localizer.GetUiText("Recovery code rejected. Aurora remains locked.");
                 RecoveryCodeBox.Clear();
                 return;
             }
@@ -80,7 +80,7 @@ public partial class LockdownWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Recovery failed: {ex.Message}";
+            StatusText.Text = Localizer.FormatUiText("Recovery failed: {0}", ex.Message);
             RecoveryCodeBox.Clear();
         }
     }

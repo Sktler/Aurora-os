@@ -825,7 +825,7 @@ namespace Aurora.App.ViewModels
             }
 
             VoiceStatus = "Speaking a sample now...";
-            await App.Voice.SpeakAsync("Hi, this is Aurora. This is what I sound like.");
+            await App.Voice.SpeakAsync(Localizer.GetUiText("Hi, this is Aurora. This is what I sound like."));
         }
 
         /// <summary>Pulls the current device/entity list from every verified integration - no per-device setup needed.</summary>

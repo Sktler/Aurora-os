@@ -15,7 +15,7 @@ namespace Aurora.App.Views
             InitializeComponent();
             RefreshList();
             SpeakerSuggestionsBox.IsChecked = App.Settings.SpeakerRecognitionEnabled;
-            RecoveryStoragePathText.Text = RecoveryStorageSettings.DirectoryPath;
+            RecoveryStoragePathText.Text = Localizer.FormatUiText("Recovery storage: {0}", RecoveryStorageSettings.DirectoryPath);
         }
 
         private void RefreshList()
@@ -30,7 +30,7 @@ namespace Aurora.App.Views
 
         private void AddProfile_Click(object sender, RoutedEventArgs e)
         {
-            var input = new TextBox { Text = "New User", Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8) };
+            var input = new TextBox { Text = Localizer.GetUiText("New User"), Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8) };
             var panel = new StackPanel { Margin = new Thickness(18, 18, 18, 18) };
             var dialog = new Window { Owner = this, Title = "New profile", Width = 340, Height = 170, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = panel };
             panel.Children.Add(new TextBlock { Text = "Profile name" });
@@ -69,7 +69,7 @@ namespace Aurora.App.Views
             var panel = new StackPanel { Margin = new Thickness(28), VerticalAlignment = VerticalAlignment.Stretch };
             panel.Children.Add(new TextBlock
             {
-                Text = $"Delete profile \"{username}\"? This permanently removes the profile and its profile-scoped Aurora data.",
+                Text = Localizer.FormatUiText("Delete profile \"{0}\"? This permanently removes the profile and its profile-scoped Aurora data.", username),
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = 440,
                 FontSize = 16,
@@ -77,7 +77,7 @@ namespace Aurora.App.Views
             });
             panel.Children.Add(new TextBlock
             {
-                Text = $"Type {username} exactly to enable deletion.",
+                Text = Localizer.FormatUiText("Type {0} exactly to enable deletion.", username),
                 Foreground = brushConverter.ConvertFromString("#9AA8B8") as System.Windows.Media.Brush,
                 Margin = new Thickness(0, 14, 0, 0),
                 TextWrapping = TextWrapping.Wrap
@@ -93,17 +93,17 @@ namespace Aurora.App.Views
                 {
                     if (!App.Profiles.DeleteProfile(p.Id))
                     {
-                        MessageBox.Show(this, "Aurora must keep at least one profile, and the selected profile could not be deleted.", "Delete profile", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show(this, Localizer.GetUiText("Aurora must keep at least one profile, and the selected profile could not be deleted."), Localizer.GetUiText("Delete profile"), MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
 
                     RefreshList();
-                    MessageBox.Show(this, $"Profile \"{username}\" was deleted.", "Profile deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(this, Localizer.FormatUiText("Profile \"{0}\" was deleted.", username), Localizer.GetUiText("Profile deleted"), MessageBoxButton.OK, MessageBoxImage.Information);
                     dialog.Close();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, $"Aurora could not delete profile \"{username}\". No partial deletion was intended.\n\n{ex.Message}", "Delete profile", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(this, Localizer.FormatUiText("Aurora could not delete profile \"{0}\". No partial deletion was intended.\n\n{1}", username, ex.Message), Localizer.GetUiText("Delete profile"), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             };
 
@@ -126,14 +126,14 @@ namespace Aurora.App.Views
                 var dialog = new Window
                 {
                     Owner = this,
-                    Title = $"Unlock {p.DisplayName}",
+                    Title = Localizer.FormatUiText("Unlock {0}", p.DisplayName),
                     Width = 380,
                     Height = 190,
                     ResizeMode = ResizeMode.NoResize,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
                 var panel = new StackPanel { Margin = new Thickness(20) };
-                panel.Children.Add(new TextBlock { Text = $"Enter the password for {p.DisplayName} to switch profiles.", TextWrapping = TextWrapping.Wrap });
+                panel.Children.Add(new TextBlock { Text = Localizer.FormatUiText("Enter the password for {0} to switch profiles.", p.DisplayName), TextWrapping = TextWrapping.Wrap });
                 panel.Children.Add(passwordBox);
                 var unlock = new Button { Content = "Unlock", Padding = new Thickness(12, 8, 12, 8), HorizontalAlignment = HorizontalAlignment.Right };
                 panel.Children.Add(unlock);
@@ -145,7 +145,7 @@ namespace Aurora.App.Views
                     verified = new ProfilePasswordStore().VerifyPassword(p.Id, passwordBox.Password);
                     if (!verified)
                     {
-                        MessageBox.Show(dialog, "That password is not valid for this profile.", "Profile password", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show(dialog, Localizer.GetUiText("That password is not valid for this profile."), Localizer.GetUiText("Profile password"), MessageBoxButton.OK, MessageBoxImage.Warning);
                         passwordBox.Clear();
                         passwordBox.Focus();
                         return;
@@ -175,7 +175,7 @@ namespace Aurora.App.Views
         {
             if (ProfilesList.SelectedItem is not UserProfile p || p.Id != App.Profiles.ActiveProfile.Id)
             {
-                MessageBox.Show(this, "Select the active profile to manage its recovery code.", "Recovery code", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, Localizer.GetUiText("Select the active profile to manage its recovery code."), Localizer.GetUiText("Recovery code"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -186,7 +186,7 @@ namespace Aurora.App.Views
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = "Choose where Aurora stores recovery-code verifiers",
+                Title = Localizer.GetUiText("Choose where Aurora stores recovery-code verifiers"),
                 Multiselect = false,
                 InitialDirectory = RecoveryStorageSettings.DirectoryPath
             };
@@ -195,12 +195,12 @@ namespace Aurora.App.Views
             try
             {
                 RecoveryStorageSettings.ChangeDirectory(dialog.FolderName);
-                RecoveryStoragePathText.Text = RecoveryStorageSettings.DirectoryPath;
-                MessageBox.Show(this, "Recovery-code verifier files were moved to the selected folder. The recovery codes themselves are never stored there in plaintext.", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Information);
+                RecoveryStoragePathText.Text = Localizer.FormatUiText("Recovery storage: {0}", RecoveryStorageSettings.DirectoryPath);
+                MessageBox.Show(this, Localizer.GetUiText("Recovery-code verifier files were moved to the selected folder. The recovery codes themselves are never stored there in plaintext."), Localizer.GetUiText("Recovery storage"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"Aurora could not change the recovery storage folder. No recovery code was changed.\n\n{ex.Message}", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, Localizer.FormatUiText("Aurora could not change the recovery storage folder. No recovery code was changed.\n\n{0}", ex.Message), Localizer.GetUiText("Recovery storage"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -219,7 +219,7 @@ namespace Aurora.App.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"Aurora could not open the recovery storage folder.\n\n{ex.Message}", "Recovery storage", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, Localizer.FormatUiText("Aurora could not open the recovery storage folder.\n\n{0}", ex.Message), Localizer.GetUiText("Recovery storage"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -227,7 +227,7 @@ namespace Aurora.App.Views
         {
             if (ProfilesList.SelectedItem is not UserProfile p) return;
             App.Voice.BeginSpeakerEnrollment(p.Id);
-            MessageBox.Show(this, "Speak a normal sentence using Aurora's microphone after closing this window. Aurora will store only a local voice signature for this profile. Voice matching is not authentication.", "Voice profile", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Localizer.GetUiText("Speak a normal sentence using Aurora's microphone after closing this window. Aurora will store only a local voice signature for this profile. Voice matching is not authentication."), Localizer.GetUiText("Voice profile"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnClosed(EventArgs e)

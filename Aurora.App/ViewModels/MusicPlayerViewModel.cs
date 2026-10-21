@@ -27,7 +27,7 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _albumArtUrl = "";
         [ObservableProperty] private bool _isPlaying;
         [ObservableProperty] private bool _isBusy;
-        [ObservableProperty] private string _statusText = "Checking what's playing...";
+        [ObservableProperty] private string _statusText = Localizer.GetUiText("Checking what's playing...");
 
         // Spotify is initialized after MainWindow is shown, so this must remain safe
         // during dashboard construction and while the optional integration is offline.
@@ -38,8 +38,12 @@ namespace Aurora.App.ViewModels
             _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             _pollTimer.Tick += (_, _) => Refresh();
             _pollTimer.Start();
+            Localizer.LanguageChanged += OnLanguageChanged;
             _ = RefreshAsync();
         }
+
+        private void OnLanguageChanged(object? sender, EventArgs e) =>
+            StatusText = Localizer.GetUiText(StatusText);
 
         private void Refresh() => _ = RefreshAsync();
 
@@ -73,7 +77,7 @@ namespace Aurora.App.ViewModels
                     System.Diagnostics.Debug.WriteLine($"[Music] Spotify refresh failed: {ex}");
                     ApplyIdleState();
                     _playbackSource = PlaybackSource.Spotify;
-                    StatusText = "Spotify couldn't be reached right now.";
+                    StatusText = Localizer.GetUiText("Spotify couldn't be reached right now.");
                     return;
                 }
             }
@@ -95,7 +99,7 @@ namespace Aurora.App.ViewModels
                 {
                     ApplyIdleState();
                     _playbackSource = PlaybackSource.None;
-                    StatusText = "Nothing is currently playing.";
+                    StatusText = Localizer.GetUiText("Nothing is currently playing.");
                     return;
                 }
 
@@ -114,7 +118,7 @@ namespace Aurora.App.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[Music] Windows media refresh failed: {ex}");
                 ApplyIdleState();
                 _playbackSource = PlaybackSource.None;
-                StatusText = "Music controls unavailable.";
+                StatusText = Localizer.GetUiText("Music controls unavailable.");
             }
         }
 

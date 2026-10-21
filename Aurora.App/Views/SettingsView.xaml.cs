@@ -15,8 +15,14 @@ namespace Aurora.App.Views
             Loaded += SettingsView_Loaded;
         }
 
+        private bool _loadingLanguage;
+
         private void SettingsView_Loaded(object sender, RoutedEventArgs e)
         {
+            _loadingLanguage = true;
+            LanguageBox.ItemsSource = Localizer.SupportedLanguages;
+            LanguageBox.SelectedValue = Localizer.NormalizeLanguage(App.Settings.Language);
+            _loadingLanguage = false;
             JamendoClientIdBox.Password = App.Settings.JamendoClientId ?? "";
             LocalOnlyModeToggle.IsChecked = App.Settings.LocalOnlyMode;
             UpdateLocalOnlyModeStatus();
@@ -38,11 +44,22 @@ namespace Aurora.App.Views
             App.RefreshIntegrationClients();
         }
 
+        private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingLanguage || LanguageBox.SelectedValue is not string code) return;
+            App.Settings.Language = Localizer.NormalizeLanguage(code);
+            App.Settings.Save();
+            Localizer.SetLanguage(App.Settings.Language);
+            LanguageStatusText.Text = Localizer.Get("Settings.Language.RestartNote");
+            UpdateLocalOnlyModeStatus();
+            UpdateJamendoStatus();
+        }
+
         private void UpdateLocalOnlyModeStatus()
         {
-            LocalOnlyModeStatusText.Text = App.Settings.LocalOnlyMode
-                ? "Enabled: Aurora will only use local capabilities and block cloud AI and external integrations."
-                : "Cloud AI and external integrations are available.";
+            LocalOnlyModeStatusText.Text = Localizer.Get(App.Settings.LocalOnlyMode
+                ? "Settings.Privacy.StatusOn"
+                : "Settings.Privacy.StatusOff");
         }
 
         private void AuditLogSearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -114,8 +131,8 @@ namespace Aurora.App.Views
         private void UpdateJamendoStatus()
         {
             JamendoStatusText.Text = App.Settings.JamendoConnected && !string.IsNullOrWhiteSpace(App.Settings.JamendoClientId)
-                ? "Connected"
-                : "Not connected";
+                ? Localizer.Get("Settings.Music.Connected")
+                : Localizer.Get("Settings.Music.NotConnected");
         }
 
         private static void OpenUrl(string url)

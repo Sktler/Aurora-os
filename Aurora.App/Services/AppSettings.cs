@@ -133,6 +133,7 @@ namespace Aurora.App.Services
             nameof(AzureSpeechKey)
         };
 
+        public string Language { get; set; } = Localizer.DefaultLanguage;
         public string UserName { get; set; } = "Adam";
         public string DashboardLayoutPreset { get; set; } = "Default";
         public bool DashboardLeftVisible { get; set; } = true;

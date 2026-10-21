@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Documents;
+using Aurora.App.Services;
 
 namespace Aurora.App.Views;
 
@@ -13,7 +14,7 @@ public partial class RecoveryCodeWindow : Window
     public RecoveryCodeWindow()
     {
         InitializeComponent();
-        ProfileLabel.Text = $"Profile: {App.Profiles.ActiveProfile.DisplayName}";
+        ProfileLabel.Text = Localizer.FormatUiText("Profile: {0}", App.Profiles.ActiveProfile.DisplayName);
     }
 
     private void Generate_Click(object sender, RoutedEventArgs e)
@@ -35,13 +36,13 @@ public partial class RecoveryCodeWindow : Window
         if (_plainCode == null) return;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save Aurora recovery code",
+            Title = Localizer.GetUiText("Save Aurora recovery code"),
             FileName = "Aurora-Recovery-Code.txt",
-            Filter = "Text file (*.txt)|*.txt",
+            Filter = Localizer.GetUiText("Text file (*.txt)|*.txt"),
             AddExtension = true
         };
         if (dialog.ShowDialog(this) == true)
-            File.WriteAllText(dialog.FileName, $"Aurora profile recovery code{Environment.NewLine}{Environment.NewLine}{_plainCode}{Environment.NewLine}", new System.Text.UTF8Encoding(false));
+            File.WriteAllText(dialog.FileName, $"{Localizer.GetUiText("Aurora profile recovery code")}{Environment.NewLine}{Environment.NewLine}{_plainCode}{Environment.NewLine}", new System.Text.UTF8Encoding(false));
     }
 
     private void Print_Click(object sender, RoutedEventArgs e)
@@ -49,9 +50,9 @@ public partial class RecoveryCodeWindow : Window
         if (_plainCode == null) return;
         var dialog = new System.Windows.Controls.PrintDialog();
         if (dialog.ShowDialog() != true) return;
-        var document = new FlowDocument(new Paragraph(new Run($"Aurora profile recovery code{Environment.NewLine}{Environment.NewLine}{_plainCode}")))
+        var document = new FlowDocument(new Paragraph(new Run($"{Localizer.GetUiText("Aurora profile recovery code")}{Environment.NewLine}{Environment.NewLine}{_plainCode}")))
         { PagePadding = new Thickness(60, 60, 60, 60), FontSize = 18 };
-        dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, "Aurora Recovery Code");
+        dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, Localizer.GetUiText("Aurora Recovery Code"));
     }
 
     private void SavedCheckBox_Checked(object sender, RoutedEventArgs e) =>
@@ -64,12 +65,12 @@ public partial class RecoveryCodeWindow : Window
         {
             _store.SetCode(App.Profiles.ActiveProfile.Id, _plainCode);
             ClearPlaintext();
-            MessageBox.Show(this, "Your recovery code is now protected for this profile. Aurora does not store the plaintext code.",
-                "Recovery code saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Localizer.GetUiText("Your recovery code is now protected for this profile. Aurora does not store the plaintext code."),
+                Localizer.GetUiText("Recovery code saved"), MessageBoxButton.OK, MessageBoxImage.Information);
             DialogResult = true;
             Close();
         }
-        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Recovery code", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        catch (Exception ex) { MessageBox.Show(this, ex.Message, Localizer.GetUiText("Recovery code"), MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) { ClearPlaintext(); Close(); }

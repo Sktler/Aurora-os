@@ -59,7 +59,7 @@ namespace Aurora.App.ViewModels
             try
             {
                 ProviderChoices.Clear();
-                ProviderChoices.Add(new ProviderOption { Key = GlobalProviderKey, Name = "Default (global)" });
+                ProviderChoices.Add(new ProviderOption { Key = GlobalProviderKey, Name = Localizer.GetUiText("Default (global)") });
                 foreach (var p in AIProviderCatalog.All)
                     ProviderChoices.Add(new ProviderOption { Key = p.Key, Name = p.DisplayName });
                 SelectedProviderChoice = ProviderChoices.FirstOrDefault(p => p.Key == Companion.ProviderOverride) ?? ProviderChoices[0];
@@ -160,8 +160,8 @@ namespace Aurora.App.ViewModels
             App.Memory.ClearHistory(Companion.Id);
             Messages.Clear();
             DraftMessage = "";
-            AttachStatus = "Chat history cleared.";
-            Companion.LastActivitySummary = "New conversation ready.";
+            AttachStatus = Localizer.GetUiText("Chat history cleared.");
+            Companion.LastActivitySummary = Localizer.GetUiText("New conversation ready.");
             Companion.Status = CompanionStatus.Idle;
         }
 
@@ -307,7 +307,7 @@ namespace Aurora.App.ViewModels
             App.Memory.AppendMessage(userMsg);
             IsBusy = true;
             Companion.Status = CompanionStatus.Thinking;
-            Companion.LastActivitySummary = "Thinking...";
+            Companion.LastActivitySummary = Localizer.GetUiText("Thinking...");
 
             try
             {
@@ -334,7 +334,8 @@ namespace Aurora.App.ViewModels
                     $"LOCAL TIME ZONE: {TimeZoneInfo.Local.Id} ({TimeZoneInfo.Local.DisplayName}). " +
                     "Use this as the authoritative current date and time for this request. " +
                     "When the user asks what day, date, or time it is, answer from this system context rather than guessing.";
-                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext;
+                var responseLanguageContext = Localizer.GetResponseLanguageInstruction();
+                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext + "\n\n" + responseLanguageContext;
 
                 var engine = App.GetChatEngineFor(Companion);
                 var reply = await engine.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
@@ -362,7 +363,7 @@ namespace Aurora.App.ViewModels
                     Messages.Add(errMsg);
                     App.Memory.AppendMessage(errMsg);
                 }
-                else Companion.LastActivitySummary = "Something went wrong on the last request.";
+                else Companion.LastActivitySummary = Localizer.GetUiText("Something went wrong on the last request.");
             }
             finally
             {

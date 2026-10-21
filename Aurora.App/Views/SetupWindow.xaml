@@ -1,6 +1,7 @@
 <Window x:Class="Aurora.App.Views.SetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Aurora.App.Views"
         Title="Aurora - AI Provider Setup" Height="900" Width="560"
         MinHeight="700" MinWidth="520"
         Background="{StaticResource BgDeepBrush}"
@@ -21,7 +22,13 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock x:Name="HeaderText" Text="Aurora AI Provider Setup" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,4">
+                <TextBlock x:Name="HeaderText" Text="Aurora AI Provider Setup" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                <ComboBox x:Name="LanguageBox" Width="128" HorizontalAlignment="Right" DisplayMemberPath="NativeName"
+                          SelectedValuePath="Code" SelectionChanged="LanguageBox_SelectionChanged">
+                    <ComboBox.ToolTip>Interface language</ComboBox.ToolTip>
+                </ComboBox>
+            </Grid>
             <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,0,0,14"
                        Text="Pick an engine and paste your key - no need to touch settings.json by hand."/>
         </StackPanel>
