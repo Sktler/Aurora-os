@@ -27,6 +27,21 @@ public sealed class VoicePipelineTests
     }
 
     [Fact]
+    public void Stop_speaking_control_cancels_synth_and_cloud_playback_and_is_wired_to_the_ui()
+    {
+        var repoRoot = FindRepositoryRoot();
+        var voice = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "Services", "VoiceService.cs"));
+        var viewModel = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "ViewModels", "CompanionViewModel.cs"));
+        var xaml = File.ReadAllText(Path.Combine(repoRoot, "Aurora.App", "Views", "MainWindow.xaml"));
+
+        Assert.Contains("_activeOutput?.Stop()", voice);
+        Assert.Contains("if (IsStopRequested) break;", voice);
+        Assert.Contains("App.Voice?.StopSpeaking()", viewModel);
+        Assert.Contains("SelectedCompanion.StopSpeakingCommand", xaml);
+        Assert.Contains("Stop speaking", xaml);
+    }
+
+    [Fact]
     public void Reply_speech_is_chunked_by_sentence_before_being_spoken()
     {
         var repoRoot = FindRepositoryRoot();

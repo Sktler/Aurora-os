@@ -20,6 +20,14 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _renameDraft = "";
         [ObservableProperty] private bool _isListening;
         [ObservableProperty] private bool _isSpeaking;
+        [ObservableProperty] private bool _isSpeechPlaying;
+
+        [RelayCommand]
+        private void StopSpeaking()
+        {
+            App.Voice?.StopSpeaking();
+            SetSpeaking(false);
+        }
         [ObservableProperty] private bool _speakRepliesEnabled = App.Settings.SpeakRepliesByDefault;
 
         public CompanionViewModel(Companion companion)
@@ -222,7 +230,11 @@ namespace Aurora.App.ViewModels
                 Companion.LastActivitySummary = Truncate(reply, 60);
                 Companion.Status = CompanionStatus.Idle;
                 if (SpeakRepliesEnabled)
-                    await App.Voice.SpeakAsync(reply, SetSpeaking);
+                {
+                    IsSpeechPlaying = true;
+                    try { await App.Voice.SpeakAsync(reply, SetSpeaking); }
+                    finally { IsSpeechPlaying = false; }
+                }
             }
             catch (Exception ex)
             {
