@@ -73,6 +73,7 @@ namespace Aurora.App
                 Profiles.Initialize(Settings);
                 Settings.Language = Localizer.NormalizeLanguage(Settings.Language);
                 Localizer.SetLanguage(Settings.Language);
+                ThemeCatalog.Apply(Settings.ThemeName);
                 Updater = new WindowsUpdaterService();
                 Security = new InstallationSecurityService(System.IO.Path.Combine(AppSettings.ConfigDir, "security.lock"));
                 EmergencyStopButtons = new EmergencyStopButtonService();

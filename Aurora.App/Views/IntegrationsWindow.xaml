@@ -95,6 +95,13 @@
                         </StackPanel>
                     </Button>
 
+                    <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Appearance}">
+                        <StackPanel>
+                            <TextBlock Text="🎨 Appearance" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="Themes &amp; orb skins" Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button Style="{StaticResource HubTileStyle}" Command="{Binding GoToSectionCommand}" CommandParameter="{x:Static models:SettingsSection.Documents}">
                         <StackPanel>
                             <TextBlock Text="📄 Documents" FontWeight="SemiBold" FontSize="14"/>
@@ -492,6 +499,31 @@
                                     Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
                         <TextBlock Text="{Binding VoiceStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ============================== APPEARANCE ============================== -->
+        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Appearance}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
+                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Appearance" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="Theme" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding ThemeNames}" SelectedItem="{Binding SelectedTheme}"
+                                  AutomationProperties.Name="Theme" HorizontalAlignment="Left" MinWidth="200" Margin="0,0,0,14"/>
+                        <TextBlock Text="Companion orb skin (each companion's color still applies)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding OrbSkinNames}" SelectedItem="{Binding SelectedOrbSkin}"
+                                  AutomationProperties.Name="Orb skin" HorizontalAlignment="Left" MinWidth="200" Margin="0,0,0,14"/>
+                        <Button Content="Reset to default" Command="{Binding ResetAppearanceCommand}" HorizontalAlignment="Left" Padding="16,8,16,8"
+                                Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextMutedBrush}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

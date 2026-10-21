@@ -339,6 +339,34 @@ namespace Aurora.App.ViewModels
         // --- Sift's documents folder ---
         [ObservableProperty] private string _trustedFolderPath = App.Settings.TrustedFolderPath;
 
+        public string[] ThemeNames { get; } = ThemeCatalog.Themes.Select(t => t.Name).ToArray();
+        public string[] OrbSkinNames { get; } = ThemeCatalog.OrbSkins;
+        [ObservableProperty] private string _selectedTheme = ThemeCatalog.Resolve(App.Settings.ThemeName).Name;
+        [ObservableProperty] private string _selectedOrbSkin = ThemeCatalog.NormalizeOrbSkin(App.Settings.OrbSkin);
+
+        partial void OnSelectedThemeChanged(string value)
+        {
+            var name = ThemeCatalog.Resolve(value).Name;
+            App.Settings.ThemeName = name;
+            App.Settings.Save();
+            ThemeCatalog.Apply(name);
+        }
+
+        partial void OnSelectedOrbSkinChanged(string value)
+        {
+            App.Settings.OrbSkin = ThemeCatalog.NormalizeOrbSkin(value);
+            App.Settings.Save();
+            Views.Globe3D.NotifyOrbSkinChanged();
+        }
+
+        [RelayCommand]
+        private void ResetAppearance()
+        {
+            SelectedTheme = ThemeCatalog.DefaultThemeName;
+            SelectedOrbSkin = ThemeCatalog.DefaultOrbSkin;
+            StatusMessage = "Appearance reset to default.";
+        }
+
         [RelayCommand]
         private void ClearTrustedFolder()
         {

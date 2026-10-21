@@ -18,6 +18,6 @@ namespace Aurora.App.Models
         ImageGeneration,
         Mcp,
         Camera,
-        Permissions
-    }
+        Permissions,
+        Appearance    }
 }

@@ -324,6 +324,8 @@ namespace Aurora.App.Services
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";
         public string TrustedFolderPath { get; set; } = "";
+        public string ThemeName { get; set; } = ThemeCatalog.DefaultThemeName;
+        public string OrbSkin { get; set; } = ThemeCatalog.DefaultOrbSkin;
         public bool WindowsFilesEnabled { get; set; } = false;
         public bool WindowsScreenEnabled { get; set; } = false;
         public bool WindowsClipboardEnabled { get; set; } = false;
