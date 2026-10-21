@@ -15,8 +15,8 @@ namespace Aurora.App.Views
     public partial class MainWindow : Window
     {
         private MiniCompanionWindow? _miniCompanion;
-        private bool _leftCollapsed;
-        private bool _rightCollapsed;
+        private DashboardLayoutPreset _preset = DashboardLayoutPreset.Default;
+        private DashboardLayout _layout = DashboardLayout.ForPreset(DashboardLayoutPreset.Default);
 
         public MainWindow()
         {
@@ -24,6 +24,99 @@ namespace Aurora.App.Views
             AuroraOrbLoader.Apply(this);
             ComposerTextBox.KeyDown += ComposerTextBox_KeyDown;
             Loaded += MainWindow_Loaded;
+            LoadSavedLayout();
+        }
+
+        private void LoadSavedLayout()
+        {
+            try
+            {
+                var s = App.Settings;
+                if (s == null) return;
+                _preset = DashboardLayout.ParsePreset(s.DashboardLayoutPreset);
+                _layout = new DashboardLayout(s.DashboardLeftVisible, s.DashboardRightVisible, s.DashboardLeftWidth, s.DashboardRightWidth).Normalize();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] Layout load failed: {ex}");
+                _preset = DashboardLayoutPreset.Default;
+                _layout = DashboardLayout.ForPreset(_preset);
+            }
+            ApplyLayout(save: false);
+        }
+
+        private void ApplyLayout(bool save)
+        {
+            _layout = _layout.Normalize();
+            LeftSidebarColumn.Width = new GridLength(_layout.LeftVisible ? _layout.LeftWidth : 0);
+            RightSidebarColumn.Width = new GridLength(_layout.RightVisible ? _layout.RightWidth : 0);
+            LeftSplitter.Visibility = _layout.LeftVisible ? Visibility.Visible : Visibility.Collapsed;
+            RightSplitter.Visibility = _layout.RightVisible ? Visibility.Visible : Visibility.Collapsed;
+            ToggleLeftSidebarButton.ToolTip = _layout.LeftVisible ? "Hide navigation" : "Show navigation";
+            ToggleRightSidebarButton.ToolTip = _layout.RightVisible ? "Hide information panel" : "Show information panel";
+            if (save) SaveLayout();
+        }
+
+        private void SaveLayout()
+        {
+            try
+            {
+                var s = App.Settings;
+                if (s == null) return;
+                s.DashboardLayoutPreset = _preset.ToString();
+                s.DashboardLeftVisible = _layout.LeftVisible;
+                s.DashboardRightVisible = _layout.RightVisible;
+                s.DashboardLeftWidth = _layout.LeftWidth;
+                s.DashboardRightWidth = _layout.RightWidth;
+                s.Save();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] Layout save failed: {ex}");
+            }
+        }
+
+        private void SetPreset(DashboardLayoutPreset preset)
+        {
+            _preset = preset;
+            _layout = DashboardLayout.ForPreset(preset);
+            ApplyLayout(save: true);
+        }
+
+        private void LayoutMenu_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenu
+            {
+                PlacementTarget = sender as UIElement,
+                Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+                StaysOpen = false
+            };
+            void Add(string header, DashboardLayoutPreset preset)
+            {
+                var item = new MenuItem { Header = header, IsCheckable = true, IsChecked = _preset == preset };
+                item.Click += (_, _) => SetPreset(preset);
+                menu.Items.Add(item);
+            }
+            Add("Default", DashboardLayoutPreset.Default);
+            Add("Compact", DashboardLayoutPreset.Compact);
+            Add("Chat focused", DashboardLayoutPreset.ChatFocused);
+            Add("Companion focused", DashboardLayoutPreset.CompanionFocused);
+            menu.Items.Add(new Separator());
+            var reset = new MenuItem { Header = "Reset to default" };
+            reset.Click += (_, _) => SetPreset(DashboardLayoutPreset.Default);
+            menu.Items.Add(reset);
+            menu.IsOpen = true;
+        }
+
+        private void Splitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            _preset = DashboardLayoutPreset.Custom;
+            _layout = _layout with
+            {
+                LeftWidth = _layout.LeftVisible ? LeftSidebarColumn.ActualWidth : _layout.LeftWidth,
+                RightWidth = _layout.RightVisible ? RightSidebarColumn.ActualWidth : _layout.RightWidth
+            };
+            ApplyLayout(save: true);
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -63,16 +156,16 @@ namespace Aurora.App.Views
 
         private void ToggleLeftSidebar_Click(object sender, RoutedEventArgs e)
         {
-            _leftCollapsed = !_leftCollapsed;
-            LeftSidebarColumn.Width = _leftCollapsed ? new GridLength(0) : new GridLength(230);
-            ToggleLeftSidebarButton.ToolTip = _leftCollapsed ? "Show navigation" : "Hide navigation";
+            _preset = DashboardLayoutPreset.Custom;
+            _layout = _layout with { LeftVisible = !_layout.LeftVisible };
+            ApplyLayout(save: true);
         }
 
         private void ToggleRightSidebar_Click(object sender, RoutedEventArgs e)
         {
-            _rightCollapsed = !_rightCollapsed;
-            RightSidebarColumn.Width = _rightCollapsed ? new GridLength(0) : new GridLength(350);
-            ToggleRightSidebarButton.ToolTip = _rightCollapsed ? "Show information panel" : "Hide information panel";
+            _preset = DashboardLayoutPreset.Custom;
+            _layout = _layout with { RightVisible = !_layout.RightVisible };
+            ApplyLayout(save: true);
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e) => EnterMiniMode();
