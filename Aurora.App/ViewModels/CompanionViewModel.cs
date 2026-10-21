@@ -21,6 +21,7 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private bool _isListening;
         [ObservableProperty] private bool _isSpeaking;
         [ObservableProperty] private bool _isSpeechPlaying;
+        [ObservableProperty] private EmotionCue _currentEmotion = EmotionCue.Neutral;
 
         [RelayCommand]
         private void StopSpeaking()
@@ -292,6 +293,7 @@ namespace Aurora.App.ViewModels
                 App.Memory.AppendMessage(assistantMsg);
                 Companion.LastActivitySummary = Truncate(reply, 60);
                 Companion.Status = CompanionStatus.Idle;
+                CurrentEmotion = EmotionCues.Detect(reply, App.Settings.EmotionCueMode);
                 if (SpeakRepliesEnabled)
                 {
                     IsSpeechPlaying = true;
@@ -301,6 +303,7 @@ namespace Aurora.App.ViewModels
             }
             catch (Exception ex)
             {
+                CurrentEmotion = EmotionCue.Neutral;
                 Companion.Status = CompanionStatus.Error;
                 if (App.Settings.DevModeEnabled)
                 {
@@ -311,7 +314,21 @@ namespace Aurora.App.ViewModels
                 }
                 else Companion.LastActivitySummary = "Something went wrong on the last request.";
             }
-            finally { IsBusy = false; }
+            finally
+            {
+                IsBusy = false;
+                _ = ResetEmotionAsync();
+            }
+        }
+
+        private async Task ResetEmotionAsync()
+        {
+            try
+            {
+                if (CurrentEmotion != EmotionCue.Neutral) await Task.Delay(2500);
+            }
+            catch { }
+            finally { CurrentEmotion = EmotionCue.Neutral; }
         }
 
         private Task<string> ExecuteToolAsync(string toolName, System.Text.Json.JsonElement input)

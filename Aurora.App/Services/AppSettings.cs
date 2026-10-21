@@ -314,6 +314,7 @@ namespace Aurora.App.Services
         /// <summary>Aurora's spoken-reply playback volume (0-100), independent of the system volume.</summary>
         public double TtsVolumePercent { get; set; } = 100;
         public bool SpeakRepliesByDefault { get; set; } = true;
+        public string EmotionCueMode { get; set; } = EmotionCues.ModeSubtle;
         public bool DevModeEnabled { get; set; } = false;
         public string DeveloperOverrideCode { get; set; } = "";
         public string TrustedFolderPath { get; set; } = "";

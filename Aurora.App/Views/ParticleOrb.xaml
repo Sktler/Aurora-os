@@ -7,7 +7,7 @@
               Margin="8"
               RenderTransformOrigin="0.5,0.5">
             <Grid.Effect>
-                <DropShadowEffect Color="#4FD8E8"
+                <DropShadowEffect x:Name="OrbGlow" Color="#4FD8E8"
                                   BlurRadius="28"
                                   ShadowDepth="0"
                                   Opacity="0.48"/>

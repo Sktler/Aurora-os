@@ -31,6 +31,39 @@ namespace Aurora.App.Views
             set => SetValue(IsRespondingProperty, value);
         }
 
+        public static readonly DependencyProperty EmotionProperty =
+            DependencyProperty.Register(
+                nameof(Emotion),
+                typeof(Aurora.App.Services.EmotionCue),
+                typeof(ParticleOrb),
+                new PropertyMetadata(Aurora.App.Services.EmotionCue.Neutral, (d, _) => ((ParticleOrb)d).ApplyEmotion()));
+
+        public Aurora.App.Services.EmotionCue Emotion
+        {
+            get => (Aurora.App.Services.EmotionCue)GetValue(EmotionProperty);
+            set => SetValue(EmotionProperty, value);
+        }
+
+        // Only the glow hue shifts, with no flashing, so the cue stays subtle and accessible.
+        private void ApplyEmotion()
+        {
+            try
+            {
+                var mode = Aurora.App.App.Settings?.EmotionCueMode;
+                var cue = Aurora.App.Services.EmotionCues.Intensity(mode) > 0
+                    ? Emotion
+                    : Aurora.App.Services.EmotionCue.Neutral;
+                OrbGlow.Color = (Color)ColorConverter.ConvertFromString(Aurora.App.Services.EmotionCues.GlowColor(cue));
+                OrbGlow.Opacity = cue == Aurora.App.Services.EmotionCue.Neutral
+                    ? 0.48
+                    : 0.48 + 0.2 * Aurora.App.Services.EmotionCues.Intensity(mode);
+            }
+            catch
+            {
+                // Cosmetic only; never let a cue failure affect the orb.
+            }
+        }
+
         public ParticleOrb()
         {
             InitializeComponent();
