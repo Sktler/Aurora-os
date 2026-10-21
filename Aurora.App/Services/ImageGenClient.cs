@@ -26,9 +26,19 @@ namespace Aurora.App.Services
         private const string GeminiImageModel = "gemini-3.1-flash-image";
         private const string GeminiEndpointBase = "https://generativelanguage.googleapis.com/v1beta/models/";
 
+        private const int MaxAttempts = 4;
+        private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(30);
+        private readonly Func<TimeSpan, Task> _delay;
+
         public ImageGenClient(string apiKey, string provider)
+            : this(apiKey, provider, new HttpClient(), null)
         {
-            _http = new HttpClient();
+        }
+
+        public ImageGenClient(string apiKey, string provider, HttpClient http, Func<TimeSpan, Task>? delay)
+        {
+            _http = http;
+            _delay = delay ?? (t => Task.Delay(t));
             _provider = string.IsNullOrWhiteSpace(provider) ? "gemini" : provider;
             _apiKey = apiKey ?? "";
             _configured = !string.IsNullOrWhiteSpace(_apiKey);
@@ -62,6 +72,32 @@ namespace Aurora.App.Services
             };
         }
 
+        private async Task<HttpResponseMessage> PostWithRetryAsync(string url, string json)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _http.PostAsync(url, content);
+                if ((int)response.StatusCode != 429 || attempt >= MaxAttempts)
+                    return response;
+
+                var delay = response.Headers.RetryAfter?.Delta
+                    ?? (response.Headers.RetryAfter?.Date is { } date ? date - DateTimeOffset.UtcNow : (TimeSpan?)null)
+                    ?? TimeSpan.FromSeconds(2 * Math.Pow(2, attempt - 1));
+                if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
+                if (delay > MaxRetryDelay) delay = MaxRetryDelay;
+                response.Dispose();
+                await _delay(delay);
+            }
+        }
+
+        private static string FormatError(string service, HttpResponseMessage response, string body)
+        {
+            if ((int)response.StatusCode == 429)
+                return $"[{service} is rate limited (HTTP 429 / RESOURCE_EXHAUSTED) even after retrying. Wait a minute and try again, or check your provider quota and billing.]";
+            return $"[{service} error {(int)response.StatusCode}: {body}]";
+        }
+
         private async Task<string> GenerateWithGeminiAsync(string prompt)
         {
             var body = new
@@ -78,11 +114,11 @@ namespace Aurora.App.Services
 
             try
             {
-                var response = await _http.PostAsync(endpoint, content);
+                using var response = await PostWithRetryAsync(endpoint, json);
                 var text = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Google image generation error {(int)response.StatusCode}: {text}]";
+                    return FormatError("Google image generation", response, text);
 
                 using var doc = JsonDocument.Parse(text);
                 if (!doc.RootElement.TryGetProperty("candidates", out var candidates))
@@ -126,11 +162,11 @@ namespace Aurora.App.Services
 
             try
             {
-                var response = await _http.PostAsync("https://api.openai.com/v1/images/generations", content);
+                using var response = await PostWithRetryAsync("https://api.openai.com/v1/images/generations", json);
                 var text = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Image gen error {(int)response.StatusCode}: {text}]";
+                    return FormatError("Image generation", response, text);
 
                 using var doc = JsonDocument.Parse(text);
                 var url = doc.RootElement.GetProperty("data")[0].GetProperty("url").GetString();
