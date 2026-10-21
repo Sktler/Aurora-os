@@ -9,6 +9,7 @@ namespace Aurora.App.Views
         {
             InitializeComponent();
             DataContext = new DashboardViewModel();
+            BrowserPanel.DataContext = new ConversationBrowserViewModel();
         }
     }
 }

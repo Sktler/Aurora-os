@@ -34,6 +34,69 @@ namespace Aurora.App.ViewModels
         {
             Companion = companion;
             foreach (var m in App.Memory.LoadHistory(companion.Id)) Messages.Add(m);
+            LoadOrganization();
+        }
+
+        // ---- Conversation organization (favorite, tags, folder) ----
+        public ObservableCollection<FolderOption> FolderChoices { get; } = new();
+        [ObservableProperty] private bool _isFavorite;
+        [ObservableProperty] private string _tagsText = "";
+        [ObservableProperty] private FolderOption? _selectedFolder;
+        private bool _loadingOrganization;
+
+        private void LoadOrganization()
+        {
+            if (App.Memory == null) return;
+            _loadingOrganization = true;
+            try
+            {
+                var meta = App.Memory.GetConversation(Companion.Id);
+                IsFavorite = meta.IsFavorite;
+                TagsText = string.Join(", ", meta.Tags);
+                FolderChoices.Clear();
+                FolderChoices.Add(new FolderOption { Id = null, Name = ConversationBrowserViewModel.NoFolderLabel });
+                foreach (var f in App.Memory.LoadFolders())
+                    FolderChoices.Add(new FolderOption { Id = f.Id, Name = f.Name });
+                SelectedFolder = FolderChoices.FirstOrDefault(f => f.Id == meta.FolderId) ?? FolderChoices[0];
+            }
+            finally { _loadingOrganization = false; }
+        }
+
+        partial void OnIsFavoriteChanged(bool value)
+        {
+            if (!_loadingOrganization) App.Memory?.SetConversationFavorite(Companion.Id, value);
+        }
+
+        partial void OnSelectedFolderChanged(FolderOption? value)
+        {
+            if (!_loadingOrganization && value != null) App.Memory?.SetConversationFolder(Companion.Id, value.Id);
+        }
+
+        [RelayCommand]
+        private void SaveTags()
+        {
+            if (App.Memory == null) return;
+            App.Memory.SetConversationTags(Companion.Id, TagsText.Split(','));
+            _loadingOrganization = true;
+            TagsText = string.Join(", ", App.Memory.GetConversation(Companion.Id).Tags);
+            _loadingOrganization = false;
+        }
+
+        [RelayCommand]
+        private void RefreshFolders()
+        {
+            if (App.Memory == null) return;
+            var current = SelectedFolder?.Id;
+            _loadingOrganization = true;
+            try
+            {
+                FolderChoices.Clear();
+                FolderChoices.Add(new FolderOption { Id = null, Name = ConversationBrowserViewModel.NoFolderLabel });
+                foreach (var f in App.Memory.LoadFolders())
+                    FolderChoices.Add(new FolderOption { Id = f.Id, Name = f.Name });
+                SelectedFolder = FolderChoices.FirstOrDefault(f => f.Id == current) ?? FolderChoices[0];
+            }
+            finally { _loadingOrganization = false; }
         }
 
         [RelayCommand] private void BeginRename() { RenameDraft = Companion.Name; IsRenaming = true; }
