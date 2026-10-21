@@ -101,6 +101,8 @@ namespace Aurora.App.ViewModels
         public ObservableCollection<VoiceOption> Voices { get; } = new(App.Voice?.GetAvailableVoices() ?? []);
         [ObservableProperty] private VoiceOption? _selectedVoice;
         [ObservableProperty] private bool _speakRepliesByDefault = App.Settings.SpeakRepliesByDefault;
+        public string[] EmotionCueModes { get; } = [EmotionCues.ModeSubtle, EmotionCues.ModeReduced, EmotionCues.ModeOff];
+        [ObservableProperty] private string _emotionCueMode = EmotionCues.NormalizeMode(App.Settings.EmotionCueMode);
         [ObservableProperty] private string _voiceStatus = "";
 
         [ObservableProperty] private string _ttsProvider = App.Settings.TtsProvider;
@@ -800,6 +802,7 @@ namespace Aurora.App.ViewModels
             }
 
             App.Settings.SpeakRepliesByDefault = SpeakRepliesByDefault;
+            App.Settings.EmotionCueMode = EmotionCues.NormalizeMode(EmotionCueMode);
             App.Settings.VoiceConfidenceThreshold = Services.VoiceTranscriptFilter
                 .ClampConfidenceThreshold(VoiceConfidenceThreshold);
             App.Settings.SpeechPaceWpm = SpeechFormatter.ClampWordsPerMinute(SpeechPaceWpm);

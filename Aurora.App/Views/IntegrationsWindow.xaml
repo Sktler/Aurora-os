@@ -282,6 +282,10 @@
                         <CheckBox Content="Companions speak their replies out loud by default" IsChecked="{Binding SpeakRepliesByDefault}"
                                   Margin="0,0,0,14"/>
 
+                        <TextBlock Text="Emotion cues (subtle orb glow tint; reply text is never changed)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding EmotionCueModes}" SelectedItem="{Binding EmotionCueMode}"
+                                  AutomationProperties.Name="Emotion cues" HorizontalAlignment="Left" MinWidth="160" Margin="0,0,0,14"/>
+
                         <TextBlock Text="Voice input sensitivity (confidence threshold)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <Grid Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
