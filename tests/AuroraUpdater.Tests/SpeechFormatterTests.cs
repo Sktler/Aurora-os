@@ -87,6 +87,15 @@ public class SpeechFormatterTests
     }
 
     [Fact]
+    public void ClampVolumePercent_keeps_values_within_0_and_100_and_defaults_to_full()
+    {
+        Assert.Equal(0, SpeechFormatter.ClampVolumePercent(-5));
+        Assert.Equal(100, SpeechFormatter.ClampVolumePercent(250));
+        Assert.Equal(40, SpeechFormatter.ClampVolumePercent(40));
+        Assert.Equal(100, new AppSettings().TtsVolumePercent);
+    }
+
+    [Fact]
     public void AppSettings_defaults_the_speech_pace_to_the_natural_target()
     {
         var settings = new AppSettings();
