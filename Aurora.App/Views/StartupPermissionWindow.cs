@@ -89,26 +89,27 @@ namespace Aurora.App.Views
         public async Task<bool> AskPermissionAsync(string name, Func<Task<PermissionResult>> request)
         {
             _countdownText.Visibility = Visibility.Collapsed;
-            _statusText.Text = $"Aurora would like to use your {name.ToLowerInvariant()}.";
+            var localizedName = Localizer.GetUiText(name);
+            _statusText.Text = Localizer.FormatUiText("Aurora would like to use your {0}.", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture));
 
-            var allowed = await ShowChoiceDialogAsync(name, $"Allow Aurora to access your {name.ToLowerInvariant()}?", true);
+            var allowed = await ShowChoiceDialogAsync(name, Localizer.FormatUiText("Allow Aurora to access your {0}?", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture)), true);
             if (!allowed)
             {
-                _statusText.Text = $"{name} access denied. Continuing...";
+                _statusText.Text = Localizer.FormatUiText("{0} access denied. Continuing...", localizedName);
                 await Task.Delay(250);
                 return false;
             }
 
-            _statusText.Text = $"Allow selected. Waiting for Windows to finish the {name.ToLowerInvariant()} permission request...";
+            _statusText.Text = Localizer.FormatUiText("Allow selected. Waiting for Windows to finish the {0} permission request...", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture));
 
             try
             {
                 var permission = await request();
                 _statusText.Text = permission switch
                 {
-                    PermissionResult.Allowed => $"{name} access allowed. Continuing...",
-                    PermissionResult.Denied => $"Windows denied {name.ToLowerInvariant()} access. Continuing...",
-                    _ => $"Windows could not grant {name.ToLowerInvariant()} access. Continuing..."
+                    PermissionResult.Allowed => Localizer.FormatUiText("{0} access allowed. Continuing...", localizedName),
+                    PermissionResult.Denied => Localizer.FormatUiText("Windows denied {0} access. Continuing...", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture)),
+                    _ => Localizer.FormatUiText("Windows could not grant {0} access. Continuing...", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture))
                 };
                 await Task.Delay(250);
                 return permission == PermissionResult.Allowed;
@@ -116,7 +117,7 @@ namespace Aurora.App.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[StartupPermissionWindow] {name} request failed: {ex}");
-                _statusText.Text = $"{name} access could not be granted. Continuing...";
+                _statusText.Text = Localizer.FormatUiText("{0} access could not be granted. Continuing...", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture));
                 await Task.Delay(250);
                 return false;
             }
@@ -125,12 +126,13 @@ namespace Aurora.App.Views
         public async Task<bool> AskCapabilityPermissionAsync(string name)
         {
             _countdownText.Visibility = Visibility.Collapsed;
-            _statusText.Text = $"Aurora would like to use {name.ToLowerInvariant()}.";
+            var localizedName = Localizer.GetUiText(name);
+            _statusText.Text = Localizer.FormatUiText("Aurora would like to use {0}.", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture));
 
-            var allowed = await ShowChoiceDialogAsync(name, $"Allow Aurora to access {name.ToLowerInvariant()}?", false);
+            var allowed = await ShowChoiceDialogAsync(name, Localizer.FormatUiText("Allow Aurora to access {0}?", localizedName.ToLower(System.Globalization.CultureInfo.CurrentUICulture)), false);
             _statusText.Text = allowed
-                ? $"{name} access allowed. Continuing..."
-                : $"{name} access denied. Continuing...";
+                ? Localizer.FormatUiText("{0} access allowed. Continuing...", localizedName)
+                : Localizer.FormatUiText("{0} access denied. Continuing...", localizedName);
             await Task.Delay(150);
             return allowed;
         }
@@ -141,7 +143,7 @@ namespace Aurora.App.Views
             var dialog = new Window
             {
                 Owner = this,
-                Title = $"Aurora — {name} permission",
+                Title = Localizer.FormatUiText("Aurora — {0} permission", Localizer.GetUiText(name)),
                 Width = 460,
                 Height = 230,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -162,7 +164,7 @@ namespace Aurora.App.Views
 
             var allowButton = new Button
             {
-                Content = "Allow",
+                Content = Localizer.GetUiText("Allow"),
                 Width = 150,
                 Height = 42,
                 FontSize = 14,
@@ -172,7 +174,7 @@ namespace Aurora.App.Views
             };
             var denyButton = new Button
             {
-                Content = "Deny",
+                Content = Localizer.GetUiText("Deny"),
                 Width = 150,
                 Height = 42,
                 FontSize = 14,
@@ -185,8 +187,8 @@ namespace Aurora.App.Views
             dialog.Closed += (_, _) => decision.TrySetResult(false);
 
             var helperText = includeWindowsHint
-                ? "Aurora uses this capability for features that depend on it. Your choice can also be controlled later in Windows privacy settings."
-                : "You can change this permission later in Windows capabilities settings.";
+                ? Localizer.GetUiText("Aurora uses this capability for features that depend on it. Your choice can also be controlled later in Windows privacy settings.")
+                : Localizer.GetUiText("You can change this permission later in Windows capabilities settings.");
 
             dialog.Content = new Border
             {
@@ -231,7 +233,7 @@ namespace Aurora.App.Views
 
         public void SetStatus(string text)
         {
-            _statusText.Text = text;
+            _statusText.Text = Localizer.GetUiText(text);
             _countdownText.Visibility = Visibility.Collapsed;
         }
 
@@ -243,8 +245,8 @@ namespace Aurora.App.Views
                 return;
             }
 
-            _statusText.Text = "Permissions complete — Aurora is starting soon.";
-            _countdownText.Text = $"Startup delay remaining: {remaining.TotalSeconds:0} seconds";
+            _statusText.Text = Localizer.GetUiText("Permissions complete — Aurora is starting soon.");
+            _countdownText.Text = Localizer.FormatUiText("Startup delay remaining: {0} seconds", remaining.TotalSeconds.ToString("0", System.Globalization.CultureInfo.CurrentUICulture));
             _countdownText.Visibility = Visibility.Visible;
         }
     }

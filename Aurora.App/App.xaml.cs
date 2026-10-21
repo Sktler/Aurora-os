@@ -62,8 +62,17 @@ namespace Aurora.App
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var firstRun = !AppSettings.HasSavedConfiguration;
                 Settings = AppSettings.LoadOrCreate();
+                EventManager.RegisterClassHandler(
+                    typeof(Window),
+                    FrameworkElement.LoadedEvent,
+                    new RoutedEventHandler((sender, _) =>
+                    {
+                        if (sender is Window window) Localizer.ApplyToWindow(window);
+                    }));
                 Profiles = new ProfileManager();
                 Profiles.Initialize(Settings);
+                Settings.Language = Localizer.NormalizeLanguage(Settings.Language);
+                Localizer.SetLanguage(Settings.Language);
                 Updater = new WindowsUpdaterService();
                 Security = new InstallationSecurityService(System.IO.Path.Combine(AppSettings.ConfigDir, "security.lock"));
                 EmergencyStopButtons = new EmergencyStopButtonService();

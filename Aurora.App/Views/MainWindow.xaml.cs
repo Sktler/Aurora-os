@@ -52,8 +52,8 @@ namespace Aurora.App.Views
             RightSidebarColumn.Width = new GridLength(_layout.RightVisible ? _layout.RightWidth : 0);
             LeftSplitter.Visibility = _layout.LeftVisible ? Visibility.Visible : Visibility.Collapsed;
             RightSplitter.Visibility = _layout.RightVisible ? Visibility.Visible : Visibility.Collapsed;
-            ToggleLeftSidebarButton.ToolTip = _layout.LeftVisible ? "Hide navigation" : "Show navigation";
-            ToggleRightSidebarButton.ToolTip = _layout.RightVisible ? "Hide information panel" : "Show information panel";
+            ToggleLeftSidebarButton.ToolTip = Localizer.GetUiText(_layout.LeftVisible ? "Hide navigation" : "Show navigation");
+            ToggleRightSidebarButton.ToolTip = Localizer.GetUiText(_layout.RightVisible ? "Hide information panel" : "Show information panel");
             if (save) SaveLayout();
         }
 
@@ -105,6 +105,7 @@ namespace Aurora.App.Views
             var reset = new MenuItem { Header = "Reset to default" };
             reset.Click += (_, _) => SetPreset(DashboardLayoutPreset.Default);
             menu.Items.Add(reset);
+            Localizer.ApplyToElement(menu);
             menu.IsOpen = true;
         }
 
@@ -190,7 +191,7 @@ namespace Aurora.App.Views
         {
             var maximized = WindowState == WindowState.Maximized;
             MaximizeRestoreButton.Content = maximized ? "🗗" : "🗖";
-            MaximizeRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
+            MaximizeRestoreButton.ToolTip = Localizer.GetUiText(maximized ? "Restore" : "Maximize");
         }
 
         private void ShowMiniCompanion()
@@ -279,7 +280,7 @@ namespace Aurora.App.Views
 
         private void SetPrompt(string prompt)
         {
-            ComposerTextBox.Text = prompt;
+            ComposerTextBox.Text = Localizer.GetUiText(prompt);
             ComposerTextBox.CaretIndex = ComposerTextBox.Text.Length;
             ComposerTextBox.Focus();
         }
@@ -301,9 +302,9 @@ namespace Aurora.App.Views
                 if (!App.Settings.WindowsCameraEnabled) { OpenCapabilities_Click(sender, e); return; }
                 if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync();
                 var file = await App.Camera.CapturePhotoAsync();
-                MessageBox.Show(this, $"Photo saved to:\n{file.Path}", "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, $"{Localizer.GetUiText("Photo saved to:")}\n{file.Path}", Localizer.GetUiText("Aurora Camera"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, Localizer.GetUiText("Aurora Camera"), MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private async void RecordVideo_Click(object sender, RoutedEventArgs e)
@@ -319,7 +320,7 @@ namespace Aurora.App.Views
                 }
                 await App.Camera.StartRecordingAsync();
             }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Aurora Camera", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, Localizer.GetUiText("Aurora Camera"), MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         private void SmartHome_Click(object sender, RoutedEventArgs e) => OpenSettings(SettingsSection.SmartHome);
@@ -339,6 +340,7 @@ namespace Aurora.App.Views
             if (FindResource("ComposerMenu") is ContextMenu menu)
             {
                 menu.PlacementTarget = sender as UIElement;
+                Localizer.ApplyToElement(menu);
                 menu.IsOpen = true;
             }
         }
@@ -371,6 +373,7 @@ namespace Aurora.App.Views
             var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" };
             capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
             menu.Items.Add(capabilities);
+            Localizer.ApplyToElement(menu);
             menu.IsOpen = true;
         }
 
@@ -417,7 +420,7 @@ namespace Aurora.App.Views
                 var name = input.Text.Trim();
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    MessageBox.Show(dialog, "Please enter a name.", "Your name", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(dialog, Localizer.GetUiText("Please enter a name."), Localizer.GetUiText("Your name"), MessageBoxButton.OK, MessageBoxImage.Information);
                     input.Focus();
                     return;
                 }

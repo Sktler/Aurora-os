@@ -15,8 +15,8 @@ namespace Aurora.App.ViewModels
     /// <summary>Search/filter view over saved conversations plus folder management.</summary>
     public partial class ConversationBrowserViewModel : ObservableObject
     {
-        public const string NoFolderLabel = "No folder";
-        public const string AllFoldersLabel = "All folders";
+        public static string NoFolderLabel => Localizer.GetUiText("No folder");
+        public static string AllFoldersLabel => Localizer.GetUiText("All folders");
 
         public ObservableCollection<ConversationSummary> Results { get; } = new();
         public ObservableCollection<FolderOption> FolderFilters { get; } = new();
@@ -29,6 +29,13 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private string _status = "";
 
         public ConversationBrowserViewModel()
+        {
+            Localizer.LanguageChanged += OnLanguageChanged;
+            ReloadFolders();
+            Refresh();
+        }
+
+        private void OnLanguageChanged(object? sender, System.EventArgs e)
         {
             ReloadFolders();
             Refresh();
@@ -70,18 +77,18 @@ namespace Aurora.App.ViewModels
             App.Memory.CreateFolder(NewFolderName);
             NewFolderName = "";
             ReloadFolders();
-            Status = "Folder created.";
+            Status = Localizer.GetUiText("Folder created.");
         }
 
         [RelayCommand]
         private void DeleteFolder()
         {
             var id = SelectedFolderFilter?.Id;
-            if (App.Memory == null || id == null) { Status = "Select a folder to delete."; return; }
+            if (App.Memory == null || id == null) { Status = Localizer.GetUiText("Select a folder to delete."); return; }
             App.Memory.DeleteFolder(id.Value);
             ReloadFolders();
             Refresh();
-            Status = "Folder deleted. Its conversations were kept.";
+            Status = Localizer.GetUiText("Folder deleted. Its conversations were kept.");
         }
 
         [RelayCommand]

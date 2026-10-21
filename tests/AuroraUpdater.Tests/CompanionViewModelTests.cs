@@ -62,6 +62,7 @@ public sealed class CompanionViewModelTests
             Assert.Empty(engine.History);
             Assert.Contains("AUTHORITATIVE AURORA TOOL INVENTORY FOR THIS REQUEST:", engine.SystemPrompt);
             Assert.Contains("AUTHORITATIVE WINDOWS SYSTEM DATE/TIME:", engine.SystemPrompt);
+            Assert.Contains(Localizer.GetResponseLanguageInstruction(), engine.SystemPrompt);
             Assert.Contains("get_weather", engine.ToolNames);
             Assert.Contains("windows_run_powershell", engine.ToolNames);
             Assert.Contains("camera_status", engine.ToolNames);
