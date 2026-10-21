@@ -19,11 +19,18 @@ namespace Aurora.App.Views
             set => SetValue(AccentColorProperty, value);
         }
 
+        private BitmapSource? _originalSource;
+
+        /// <summary>Raised when the orb skin setting changes so open orbs re-render.</summary>
+        public static event Action? OrbSkinChanged;
+        public static void NotifyOrbSkinChanged() => OrbSkinChanged?.Invoke();
+
         public Globe3D()
         {
             InitializeComponent();
             AuroraOrbLoader.Apply(this);
-            Loaded += (_, _) => ApplyTint();
+            Loaded += (_, _) => { OrbSkinChanged += ApplyTint; ApplyTint(); };
+            Unloaded += (_, _) => OrbSkinChanged -= ApplyTint;
         }
 
         private static void OnAccentColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -33,7 +40,17 @@ namespace Aurora.App.Views
 
         private void ApplyTint()
         {
-            if (AuroraOrbImage.Source is not BitmapSource source) return;
+            _originalSource ??= AuroraOrbImage.Source as BitmapSource;
+            if (_originalSource is not BitmapSource source) return;
+
+            var skin = ThemeCatalog.NormalizeOrbSkin(App.Settings?.OrbSkin);
+            if (skin == ThemeCatalog.OriginalOrbSkin)
+            {
+                AuroraOrbImage.Source = source;
+                return;
+            }
+            var floor = skin == ThemeCatalog.VividOrbSkin ? 0.45f : 0.25f;
+            var gain = skin == ThemeCatalog.VividOrbSkin ? 1.1f : 0.9f;
 
             var color = ParseColor(AccentColor);
             var converted = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
@@ -52,7 +69,7 @@ namespace Aurora.App.Views
                 if (alpha == 0) continue;
 
                 var luminance = (red + green + blue) / (255f * 3f);
-                luminance = Math.Clamp(0.25f + luminance * 0.9f, 0f, 1f);
+                luminance = Math.Clamp(floor + luminance * gain, 0f, 1f);
                 pixels[i] = (byte)(color.B * luminance);
                 pixels[i + 1] = (byte)(color.G * luminance);
                 pixels[i + 2] = (byte)(color.R * luminance);
