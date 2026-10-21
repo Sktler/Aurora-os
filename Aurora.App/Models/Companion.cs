@@ -133,6 +133,14 @@ namespace Aurora.App.Models
         [ObservableProperty]
         private string _lastActivitySummary = "Waiting for a task.";
 
+        /// <summary>Provider key (see AIProviderCatalog) this companion uses; empty = follow the global provider.</summary>
+        [ObservableProperty]
+        private string _providerOverride = "";
+
+        /// <summary>Model for this companion; empty = that provider's configured default model.</summary>
+        [ObservableProperty]
+        private string _modelOverride = "";
+
         /// <summary>True if this companion can be dispatched to run in the background unattended.</summary>
         [ObservableProperty]
         private bool _canRunInBackground = true;

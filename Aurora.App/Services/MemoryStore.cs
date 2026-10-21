@@ -87,6 +87,8 @@ namespace Aurora.App.Services
             // Profile migration for databases created before multi-user profiles existed.
             EnsureColumn("Companions", "ProfileId", "TEXT NOT NULL DEFAULT 'primary'");
             EnsureColumn("Messages", "ProfileId", "TEXT NOT NULL DEFAULT 'primary'");
+            EnsureColumn("Companions", "ProviderOverride", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn("Companions", "ModelOverride", "TEXT NOT NULL DEFAULT ''");
 
             // Migration: databases created before ToolAccess existed won't have the column -
             // CREATE TABLE IF NOT EXISTS only affects brand-new tables, so add it explicitly
@@ -129,11 +131,13 @@ namespace Aurora.App.Services
         {
             var cmd = _conn!.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO Companions (Id, ProfileId, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess)
-                VALUES ($id, $profile, $name, $role, $prompt, $accent, $bg, $tools)
+                INSERT INTO Companions (Id, ProfileId, Name, Role, SystemPrompt, AccentHex,                 CanRunInBackground, ToolAccess, ProviderOverride, ModelOverride)
+                                VALUES ($id, $profile, $name, $role, $prompt, $accent, $bg, $tools, $provider, $model)
                 ON CONFLICT(Id) DO UPDATE SET
-                    ProfileId=$profile, Name=$name, Role=$role, SystemPrompt=$prompt, AccentHex=$accent, CanRunInBackground=$bg, ToolAccess=$tools;
+                                    ProfileId=$profile, Name=$name, Role=$role, SystemPrompt=$prompt, AccentHex=$accent, CanRunInBackground=$bg, ToolAccess=$tools, ProviderOverride=$provider, ModelOverride=$model;
             ";
+                            cmd.Parameters.AddWithValue("$provider", c.ProviderOverride ?? "");
+                            cmd.Parameters.AddWithValue("$model", c.ModelOverride ?? "");
             cmd.Parameters.AddWithValue("$id", c.Id);
             cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             cmd.Parameters.AddWithValue("$name", c.Name);
@@ -149,7 +153,7 @@ namespace Aurora.App.Services
         {
             var result = new List<Companion>();
             var cmd = _conn!.CreateCommand();
-            cmd.CommandText = "SELECT Id, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess FROM Companions WHERE ProfileId = $profile;";
+            cmd.CommandText = "SELECT Id, Name, Role, SystemPrompt, AccentHex, CanRunInBackground, ToolAccess, ProviderOverride, ModelOverride FROM Companions WHERE ProfileId = $profile;";
             cmd.Parameters.AddWithValue("$profile", ActiveProfileId);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -166,7 +170,9 @@ namespace Aurora.App.Services
                     SystemPrompt = reader.GetString(3),
                     AccentHex = reader.GetString(4),
                     CanRunInBackground = reader.GetInt32(5) == 1,
-                    ToolAccess = toolAccess
+                    ToolAccess = toolAccess,
+                    ProviderOverride = reader.GetString(7),
+                    ModelOverride = reader.GetString(8)
                 });
             }
             return result;
