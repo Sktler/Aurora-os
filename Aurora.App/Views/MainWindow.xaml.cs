@@ -307,7 +307,7 @@ namespace Aurora.App.Views
                 Owner = this,
                 Title = "Your name",
                 Width = 340,
-                Height = 180,
+                SizeToContent = SizeToContent.Height,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
                 Background = Brushes.Transparent,

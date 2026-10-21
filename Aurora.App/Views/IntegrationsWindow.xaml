@@ -4,7 +4,7 @@
         xmlns:vm="clr-namespace:Aurora.App.ViewModels"
         xmlns:local="clr-namespace:Aurora.App.Views"
         xmlns:models="clr-namespace:Aurora.App.Models"
-        Title="Settings" Height="760" Width="720" MinHeight="560" MinWidth="620"
+        Title="Settings" Height="840" Width="720" MinHeight="560" MinWidth="620"
         Background="{StaticResource BgDeepTranslucentBrush}"
         WindowStartupLocation="CenterOwner">
 
