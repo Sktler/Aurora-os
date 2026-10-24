@@ -1,248 +1,232 @@
 using System;
-using System.Globalization;
 using System.Linq;
-using System.Speech.Recognition;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Aurora.App.Services
 {
-    /// <summary>
-    /// Local, offline wake-word and dictation pipeline. The recognizer never sends audio to
-    /// the cloud: SAPI listens only for the explicit "Hey Aurora" grammar, then captures one
-    /// dictation utterance and hands only the resulting text to the model layer.
-    /// </summary>
+    /// <summary>Local, offline wake-word detection followed by one bounded dictation utterance.</summary>
     public sealed class WakeWordService : IDisposable
     {
+        private enum ListeningPhase { WakeWord, CommandPending, Command }
+
         private readonly object _gate = new();
-        private SpeechRecognitionEngine? _wakeRecognizer;
-        private SpeechRecognitionEngine? _dictationRecognizer;
+        private readonly Func<bool> _microphoneAllowed;
+        private readonly Func<double> _commandConfidence;
+        private readonly Func<IWakeWordRecognizer> _createRecognizer;
+        private IWakeWordRecognizer? _recognizer;
+        private Timer? _commandTimeout;
+        private int _commandGeneration;
+        private ListeningPhase _phase;
+        private bool _commandTimedOut;
         private bool _enabled;
         private bool _disposed;
-        private bool _waitingForCommand;
 
         public bool IsAvailable { get; private set; }
         public bool IsEnabled => _enabled;
         public string WakePhrase => "Hey Aurora";
+        public string Status { get; private set; } = "Wake word is off.";
 
         public event Action? WakeWordDetected;
         public event Action<string>? CommandRecognized;
         public event Action<string>? StatusChanged;
 
-        public WakeWordService()
+        public WakeWordService() : this(
+            () => App.Settings?.WindowsMicrophoneEnabled == true,
+            () => App.Settings?.VoiceConfidenceThreshold ?? VoiceTranscriptFilter.DefaultConfidenceThreshold,
+            () => new WakeWordRecognizer(App.Settings?.MicrophoneDeviceName))
         {
-            IsAvailable = CanCreateRecognizer();
         }
 
-        private static SpeechRecognitionEngine CreateEngine()
+        internal WakeWordService(Func<bool> microphoneAllowed, Func<double> commandConfidence,
+            Func<IWakeWordRecognizer> createRecognizer)
         {
-            var installed = SpeechRecognitionEngine.InstalledRecognizers();
-            var info = installed.FirstOrDefault(r => r.Culture.Equals(CultureInfo.CurrentCulture))
-                ?? installed.FirstOrDefault(r => r.Culture.TwoLetterISOLanguageName == "en")
-                ?? installed.FirstOrDefault();
-            return info == null
-                ? new SpeechRecognitionEngine(CultureInfo.CurrentCulture)
-                : new SpeechRecognitionEngine(info);
-        }
-
-        private static bool CanCreateRecognizer()
-        {
-            try
-            {
-                using var recognizer = CreateEngine();
-                recognizer.SetInputToDefaultAudioDevice();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            // Construction must not open the microphone or cache a failed permission probe.
+            _microphoneAllowed = microphoneAllowed;
+            _commandConfidence = commandConfidence;
+            _createRecognizer = createRecognizer;
         }
 
         public bool Start()
         {
+            IWakeWordRecognizer? failedRecognizer = null;
             lock (_gate)
             {
-                if (_disposed || _enabled) return IsAvailable;
-                if (!IsAvailable)
+                if (_disposed) return false;
+                if (!_microphoneAllowed())
                 {
-                    StatusChanged?.Invoke("Wake word unavailable: no compatible microphone or speech recognizer was found.");
-                    return false;
+                    failedRecognizer = DetachRecognizerLocked();
+                    SetStatus("Wake word is off. Enable microphone access in Windows capabilities to use voice input.");
                 }
-
-                try
+                else if (_enabled)
                 {
-                    _wakeRecognizer = CreateWakeRecognizer();
-                    _wakeRecognizer.RecognizeAsync(RecognizeMode.Multiple);
-                    _enabled = true;
-                    StatusChanged?.Invoke("Listening for “Hey Aurora”.");
                     return true;
                 }
-                catch
+                else
                 {
-                    StopRecognizersLocked();
-                    _enabled = false;
-                    StatusChanged?.Invoke("Wake word could not start. Check microphone permissions and the default input device.");
-                    return false;
+                    try
+                    {
+                        var recognizer = _createRecognizer();
+                        _recognizer = recognizer;
+                        recognizer.SpeechRecognized += (text, confidence) => OnSpeechRecognized(recognizer, text, confidence);
+                        recognizer.RecognitionCompleted += (text, confidence, cancelled, error) =>
+                            OnRecognitionCompleted(recognizer, text, confidence, cancelled, error);
+                        _phase = ListeningPhase.WakeWord;
+                        _enabled = true;
+                        recognizer.StartWakeWord();
+                        IsAvailable = true;
+                        SetStatus("Listening for “Hey Aurora”.");
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        failedRecognizer = DetachRecognizerLocked();
+                        IsAvailable = false;
+                        System.Diagnostics.Debug.WriteLine($"[WakeWord] Start failed: {ex}");
+                        SetStatus("Wake word could not start. Check Windows microphone privacy settings, the selected input device, and installed speech recognition languages.");
+                    }
                 }
             }
+            // SAPI may wait for callbacks to finish during disposal. Never hold _gate here.
+            failedRecognizer?.Dispose();
+            return false;
         }
 
         public void Stop()
         {
+            IWakeWordRecognizer? recognizer;
             lock (_gate)
             {
-                _enabled = false;
-                _waitingForCommand = false;
-                StopRecognizersLocked();
-                if (!_disposed) StatusChanged?.Invoke("Wake word is off.");
+                recognizer = DetachRecognizerLocked();
+                if (!_disposed) SetStatus("Wake word is off.");
+            }
+            recognizer?.Dispose();
+        }
+
+        private void OnSpeechRecognized(IWakeWordRecognizer recognizer, string text, float confidence)
+        {
+            lock (_gate)
+            {
+                if (!IsCurrent(recognizer) || _phase != ListeningPhase.WakeWord ||
+                    !WakeWordMatcher.IsWakeWord(text, confidence)) return;
+                try
+                {
+                    _phase = ListeningPhase.CommandPending;
+                    // Wait for RecognizeCompleted before changing grammars. Disposing SAPI
+                    // inside SpeechRecognized can deadlock its callback thread.
+                    recognizer.Cancel();
+                    WakeWordDetected?.Invoke();
+                    SetStatus("Wake word detected. Listening for your command…");
+                }
+                catch (Exception ex)
+                {
+                    FailLocked(ex);
+                }
             }
         }
 
-        private SpeechRecognitionEngine CreateWakeRecognizer()
+        private void OnRecognitionCompleted(IWakeWordRecognizer recognizer, string? text,
+            float confidence, bool cancelled, Exception? error)
         {
-            var recognizer = CreateEngine();
-            recognizer.SetInputToDefaultAudioDevice();
+            lock (_gate)
+            {
+                if (!IsCurrent(recognizer)) return;
+                if (error != null)
+                {
+                    FailLocked(error);
+                    return;
+                }
 
-            // A tightly constrained grammar is deliberately used here instead of dictation.
-            // This substantially reduces false activations from ordinary conversation.
-            var choices = new Choices(WakeWordMatcher.Phrases);
-            var grammar = new Grammar(new GrammarBuilder(choices)) { Name = "AuroraWakeWord" };
-            recognizer.LoadGrammar(grammar);
-            recognizer.SpeechRecognized += OnWakeRecognized;
-            recognizer.RecognizeCompleted += OnWakeCompleted;
+                try
+                {
+                    if (_phase == ListeningPhase.CommandPending)
+                    {
+                        _phase = ListeningPhase.Command;
+                        _commandTimedOut = false;
+                        recognizer.StartCommand();
+                        var generation = ++_commandGeneration;
+                        _commandTimeout = new Timer(_ => TimeoutCommand(recognizer, generation), null,
+                            TimeSpan.FromSeconds(8), Timeout.InfiniteTimeSpan);
+                        return;
+                    }
+
+                    var wasCommand = _phase == ListeningPhase.Command;
+                    _commandTimeout?.Dispose();
+                    _commandTimeout = null;
+                    var command = wasCommand && !cancelled && !_commandTimedOut &&
+                        !string.IsNullOrWhiteSpace(text) && VoiceTranscriptFilter.MeetsConfidenceThreshold(
+                            confidence, VoiceTranscriptFilter.ClampConfidenceThreshold(_commandConfidence()))
+                        ? text.Trim() : null;
+
+                    _phase = ListeningPhase.WakeWord;
+                    recognizer.StartWakeWord();
+                    SetStatus(_commandTimedOut ? "Listening timed out. Listening for “Hey Aurora”."
+                        : wasCommand && command == null ? "I didn't catch a command. Listening for “Hey Aurora”."
+                        : "Listening for “Hey Aurora”.");
+                    if (command != null) CommandRecognized?.Invoke(command);
+                }
+                catch (Exception ex)
+                {
+                    FailLocked(ex);
+                }
+            }
+        }
+
+        private void TimeoutCommand(IWakeWordRecognizer recognizer, int generation)
+        {
+            lock (_gate)
+            {
+                if (!IsCurrent(recognizer) || _phase != ListeningPhase.Command || generation != _commandGeneration) return;
+                try
+                {
+                    _commandTimedOut = true;
+                    recognizer.Cancel();
+                }
+                catch (Exception ex) { FailLocked(ex); }
+            }
+        }
+
+        private bool IsCurrent(IWakeWordRecognizer recognizer) =>
+            _enabled && !_disposed && ReferenceEquals(_recognizer, recognizer) && _microphoneAllowed();
+
+        private void FailLocked(Exception error)
+        {
+            System.Diagnostics.Debug.WriteLine($"[WakeWord] Recognition failed: {error}");
+            var recognizer = DetachRecognizerLocked();
+            IsAvailable = false;
+            SetStatus("Wake word stopped. Check Windows microphone privacy settings, the selected input device, and speech recognition settings.");
+            // This path runs in a recognition callback; dispose on a different thread.
+            if (recognizer != null) _ = Task.Run(recognizer.Dispose);
+        }
+
+        private IWakeWordRecognizer? DetachRecognizerLocked()
+        {
+            var recognizer = _recognizer;
+            _recognizer = null;
+            _enabled = false;
+            _phase = ListeningPhase.WakeWord;
+            _commandGeneration++;
+            _commandTimeout?.Dispose();
+            _commandTimeout = null;
             return recognizer;
         }
 
-        private void OnWakeRecognized(object? sender, SpeechRecognizedEventArgs e)
+        private void SetStatus(string status)
         {
-            if (e.Result == null || !WakeWordMatcher.IsWakeWord(e.Result.Text, e.Result.Confidence)) return;
-
-            lock (_gate)
-            {
-                if (!_enabled || _waitingForCommand || _disposed) return;
-                _waitingForCommand = true;
-                StopRecognizer(_wakeRecognizer);
-                _wakeRecognizer = null;
-            }
-
-            WakeWordDetected?.Invoke();
-            StatusChanged?.Invoke("Wake word detected. Listening for your command…");
-            _ = CaptureCommandAsync();
-        }
-
-        private async Task CaptureCommandAsync()
-        {
-            SpeechRecognitionEngine? recognizer = null;
-            try
-            {
-                recognizer = CreateEngine();
-                recognizer.SetInputToDefaultAudioDevice();
-                recognizer.LoadGrammar(new DictationGrammar());
-
-                var completion = new TaskCompletionSource<RecognitionResult?>(TaskCreationOptions.RunContinuationsAsynchronously);
-                recognizer.SpeechRecognized += (_, e) =>
-                {
-                    if (e.Result != null && e.Result.Confidence >= 0.45f)
-                        completion.TrySetResult(e.Result);
-                };
-                recognizer.RecognizeCompleted += (_, e) =>
-                {
-                    if (e.Error == null || e.Cancelled)
-                        completion.TrySetResult(e.Result);
-                    else
-                        completion.TrySetResult(null);
-                };
-
-                lock (_gate)
-                {
-                    if (!_enabled || _disposed) return;
-                    _dictationRecognizer = recognizer;
-                }
-
-                recognizer.RecognizeAsync(RecognizeMode.Single);
-
-                // Never leave the microphone open indefinitely if the user doesn't speak.
-                var result = await completion.Task.WaitAsync(TimeSpan.FromSeconds(8));
-                var text = result?.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(text))
-                    CommandRecognized?.Invoke(text);
-                else
-                    StatusChanged?.Invoke("I didn't catch a command.");
-            }
-            catch (TimeoutException)
-            {
-                StatusChanged?.Invoke("Listening timed out.");
-            }
-            catch
-            {
-                StatusChanged?.Invoke("Dictation failed. Check the microphone and speech settings.");
-            }
-            finally
-            {
-                lock (_gate)
-                {
-                    if (ReferenceEquals(_dictationRecognizer, recognizer))
-                        _dictationRecognizer = null;
-                    _waitingForCommand = false;
-                    if (_enabled && !_disposed)
-                    {
-                        try
-                        {
-                            _wakeRecognizer = CreateWakeRecognizer();
-                            _wakeRecognizer.RecognizeAsync(RecognizeMode.Multiple);
-                            StatusChanged?.Invoke("Listening for “Hey Aurora”.");
-                        }
-                        catch
-                        {
-                            _enabled = false;
-                            StatusChanged?.Invoke("Wake word stopped because the microphone could not be restarted.");
-                        }
-                    }
-                }
-                StopRecognizer(recognizer);
-            }
-        }
-
-        private void OnWakeCompleted(object? sender, RecognizeCompletedEventArgs e)
-        {
-            lock (_gate)
-            {
-                if (!_enabled || _waitingForCommand || _disposed) return;
-                try
-                {
-                    _wakeRecognizer?.RecognizeAsync(RecognizeMode.Multiple);
-                }
-                catch { }
-            }
-        }
-
-        private static void StopRecognizer(SpeechRecognitionEngine? recognizer)
-        {
-            if (recognizer == null) return;
-            try { recognizer.RecognizeAsyncCancel(); } catch { }
-            try { recognizer.RecognizeAsyncStop(); } catch { }
-            recognizer.Dispose();
-        }
-
-        private void StopRecognizersLocked()
-        {
-            StopRecognizer(_wakeRecognizer);
-            StopRecognizer(_dictationRecognizer);
-            _wakeRecognizer = null;
-            _dictationRecognizer = null;
+            Status = status;
+            StatusChanged?.Invoke(status);
         }
 
         public void Dispose()
         {
+            IWakeWordRecognizer? recognizer;
             lock (_gate)
             {
                 if (_disposed) return;
                 _disposed = true;
-                _enabled = false;
-                _waitingForCommand = false;
-                StopRecognizersLocked();
+                recognizer = DetachRecognizerLocked();
             }
+            recognizer?.Dispose();
         }
     }
 }

@@ -122,7 +122,7 @@ namespace Aurora.App
 
                 var permissions = new WindowsPermissionService();
                 await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
-                await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
+                Settings.WindowsMicrophoneEnabled = await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
                 await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
                 Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
                 Settings.WindowsScreenEnabled = await bootstrap.AskCapabilityPermissionAsync("Screen capture");
@@ -145,6 +145,11 @@ namespace Aurora.App
                 try { Metrics = new SystemMetricsService(); }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }
 
+                // The dashboard subscribes to voice events in its constructor. Create the
+                // services first, but start microphone capture only after it has subscribed.
+                Voice = new VoiceService(Settings.VoiceName);
+                WakeWord = new WakeWordService();
+
                 var mainWindow = new Views.MainWindow();
                 MainWindow = mainWindow;
                 ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -152,6 +157,7 @@ namespace Aurora.App
                 mainWindow.Activate();
                 bootstrap.Close();
                 if (Security.IsLockedDown) ShowLockdownOverlay(mainWindow);
+                RefreshVoiceActivation();
 
                 try
                 {
@@ -161,17 +167,12 @@ namespace Aurora.App
                     SmartThings = new SmartThingsClient(IsLocalOnlyModeEnabled ? "" : Settings.SmartThingsToken);
                     HomeAssistant = new HomeAssistantClient(IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantUrl, IsLocalOnlyModeEnabled ? "" : Settings.HomeAssistantToken);
                     Hubitat = new HubitatClient(IsLocalOnlyModeEnabled ? "" : Settings.HubitatUrl, IsLocalOnlyModeEnabled ? "" : Settings.HubitatToken);
-                    Voice = new VoiceService(Settings.VoiceName);
-                    WakeWord = new WakeWordService();
                     WebSearch = new WebSearchClient();
                     Spotify = IsLocalOnlyModeEnabled ? new SpotifyClient("", "") : BuildSpotifyClient();
                     Camera = new CameraService();
                     Mcp = new McpService();
                     WindowsAutomation = CreateWindowsService();
                     AppAdapters = new AppAdapterService(WindowsAutomation);
-
-                    try { WakeWord.Start(); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Wake word start failed: {ex}"); }
                 }
                 catch (Exception ex)
                 {
@@ -199,7 +200,20 @@ namespace Aurora.App
                 PowerEnabled = Settings.WindowsPowerEnabled
             };
         }
-        public static void RefreshWindowsPermissions() { WindowsAutomation = CreateWindowsService(); AppAdapters = new AppAdapterService(WindowsAutomation); }
+        public static void RefreshWindowsPermissions()
+        {
+            WindowsAutomation = CreateWindowsService();
+            AppAdapters = new AppAdapterService(WindowsAutomation);
+            RefreshVoiceActivation();
+        }
+
+        public static void RefreshVoiceActivation()
+        {
+            Voice?.ApplyMicrophonePermission();
+            // Start also handles denied permission without opening a device, and reports why.
+            if (Voice?.IsListening != true) WakeWord?.Start();
+            else WakeWord?.Stop();
+        }
         private static SpotifyClient BuildSpotifyClient() { var client = new SpotifyClient(Settings.SpotifyClientId, Settings.SpotifyRefreshToken); client.RefreshTokenRotated += newToken => { Settings.SpotifyRefreshToken = newToken; Settings.Save(); }; return client; }
         private static bool ActiveProviderIsConfigured() => Settings.ChatProvider switch { "groq" => !string.IsNullOrWhiteSpace(Settings.GroqApiKey), "openai" => !string.IsNullOrWhiteSpace(Settings.OpenAIApiKey), "claude" => !string.IsNullOrWhiteSpace(Settings.ClaudeApiKey), "copilot" => !string.IsNullOrWhiteSpace(Settings.GitHubCopilotApiKey), _ => !string.IsNullOrWhiteSpace(Settings.GeminiApiKey) };
         private static IChatEngine BuildChatEngine() => BuildChatEngine(Settings.ChatProvider, null);

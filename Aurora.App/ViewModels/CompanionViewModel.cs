@@ -175,7 +175,7 @@ namespace Aurora.App.ViewModels
             if (!IsListening) return;
             App.Voice.StopContinuousListening();
             IsListening = false;
-            App.WakeWord?.Start();
+            App.RefreshVoiceActivation();
         }
 
         [RelayCommand]
@@ -187,16 +187,29 @@ namespace Aurora.App.ViewModels
                 return;
             }
 
+            if (App.Settings.WindowsMicrophoneEnabled != true || App.Voice == null)
+            {
+                AttachStatus = Localizer.GetUiText("Enable microphone access in Windows capabilities and Windows privacy settings to use voice input.");
+                return;
+            }
+
             App.WakeWord?.Stop();
             var started = App.Voice.StartContinuousListening(
-                onUtteranceRecognized: heard => System.Windows.Application.Current?.Dispatcher.Invoke(() => EnqueueHeardUtterance(heard)),
-                onStoppedByAnotherListener: () => System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    IsListening = false;
-                    App.WakeWord?.Start();
-                }));
-            if (!started) App.WakeWord?.Start();
+                onUtteranceRecognized: heard => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => EnqueueHeardUtterance(heard)),
+                onStoppedByAnotherListener: OnListeningStopped);
+            if (!started)
+            {
+                AttachStatus = Localizer.GetUiText("Voice input could not start. Check microphone access, the selected input device, and installed speech recognition languages.");
+                App.RefreshVoiceActivation();
+            }
             IsListening = started;
+        }
+
+        private void OnListeningStopped()
+        {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher?.CheckAccess() == true) IsListening = false;
+            else dispatcher?.BeginInvoke(() => IsListening = false);
         }
 
         public void SubmitVoiceUtterance(string heard) =>
@@ -204,6 +217,7 @@ namespace Aurora.App.ViewModels
 
         private void EnqueueHeardUtterance(string heard)
         {
+            if (App.Settings.WindowsMicrophoneEnabled != true) return;
             var normalized = VoiceInputNormalizer.Normalize(heard);
             if (!VoiceInputNormalizer.IsUsable(normalized)) return;
 
