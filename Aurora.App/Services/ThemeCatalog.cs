@@ -32,7 +32,7 @@ namespace Aurora.App.Services
         public static string NormalizeOrbSkin(string? name) =>
             OrbSkins.FirstOrDefault(s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase)) ?? DefaultOrbSkin;
 
-        /// <summary>Updates the shared brushes in place so every open window restyles live.
+        /// <summary>Updates the shared brushes, replacing frozen ones for dynamic resource consumers.
         /// Failures leave the current look untouched.</summary>
         public static void Apply(string? name, ResourceDictionary? resources = null)
         {
@@ -65,8 +65,13 @@ namespace Aurora.App.Services
         private static void Set(ResourceDictionary resources, string key, string hex)
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
-            if (resources[key + "Brush"] is SolidColorBrush { IsFrozen: false } brush)
-                brush.Color = color;
+            if (resources[key + "Brush"] is SolidColorBrush brush)
+            {
+                if (brush.IsFrozen)
+                    resources[key + "Brush"] = new SolidColorBrush(color);
+                else
+                    brush.Color = color;
+            }
         }
     }
 }
