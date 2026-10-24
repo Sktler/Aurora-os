@@ -17,7 +17,7 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private SettingsNavigationViewModel _settingsNavigation = new(App.Settings ?? new AppSettings());
 
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
-        [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
+        [ObservableProperty] private string _wakeWordStatus = "Wake word is off.";
         [ObservableProperty] private bool _wakeWordFlash;
         [ObservableProperty] private string _userName = "Adam";
         [ObservableProperty] private string _greetingText = "Good evening, Adam";
@@ -64,6 +64,7 @@ namespace Aurora.App.ViewModels
                 App.WakeWord.WakeWordDetected += OnWakeWordDetected;
                 App.WakeWord.CommandRecognized += OnWakeCommandRecognized;
                 App.WakeWord.StatusChanged += OnWakeStatusChanged;
+                WakeWordStatus = Localizer.GetUiText(App.WakeWord.Status);
             }
 
             if (App.Metrics != null)
@@ -231,7 +232,11 @@ namespace Aurora.App.ViewModels
 
         private void OnWakeStatusChanged(string status)
         {
-            _ = DispatchToUiAsync(() => WakeWordStatus = Localizer.GetUiText(status));
+            _ = DispatchToUiAsync(() =>
+            {
+                WakeWordStatus = Localizer.GetUiText(status);
+                OnPropertyChanged(nameof(WakeWordAvailable));
+            });
         }
 
         private static async System.Threading.Tasks.Task DispatchToUiAsync(Action action)

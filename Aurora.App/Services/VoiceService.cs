@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -104,6 +103,7 @@ namespace Aurora.App.Services
         }
 
         public bool CanSpeak => _synthAvailable;
+        public bool IsListening => _continuousRecognizer != null;
 
         /// <summary>Every voice Windows currently has installed - typically at least one
         /// male and one female voice (e.g. "Microsoft David", "Microsoft Zira"), but this
@@ -453,6 +453,12 @@ namespace Aurora.App.Services
         /// </summary>
         public bool StartContinuousListening(Action<string> onUtteranceRecognized, Action onStoppedByAnotherListener)
         {
+            if (App.Settings?.WindowsMicrophoneEnabled != true)
+            {
+                ApplyMicrophonePermission();
+                return false;
+            }
+
             if (_continuousRecognizer != null)
             {
                 var previousNotify = _onStoppedExternally;
@@ -462,7 +468,8 @@ namespace Aurora.App.Services
 
             try
             {
-                var recognizer = new SpeechRecognitionEngine(CultureInfo.CurrentCulture);
+                var recognizer = WakeWordRecognizer.CreateEngine();
+                _continuousRecognizer = recognizer;
 
                 var micDeviceNumber = AudioDeviceCatalog.ResolveInputDeviceNumber(App.Settings.MicrophoneDeviceName);
                 WaveInEvent? micCapture = null;
@@ -473,13 +480,16 @@ namespace Aurora.App.Services
                     // pick a capture device, so NAudio captures from it directly and the
                     // recognizer reads that audio through a small bridging stream instead.
                     micStream = new LiveMicrophoneStream();
+                    _micStream = micStream;
                     micCapture = new WaveInEvent { DeviceNumber = micDeviceNumber, WaveFormat = new WaveFormat(16000, 16, 1) };
+                    _micCapture = micCapture;
                     micCapture.DataAvailable += (_, e) =>
                     {
                         if (e.BytesRecorded <= 0) return;
                         var chunk = new byte[e.BytesRecorded];
                         Array.Copy(e.Buffer, chunk, e.BytesRecorded);
-                        micStream.Push(chunk);
+                        try { micStream.Push(chunk); }
+                        catch (InvalidOperationException) { /* capture was stopped */ }
                     };
                     recognizer.SetInputToAudioStream(micStream,
                         new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, 16, 1, 32000, 2, null));
@@ -492,11 +502,10 @@ namespace Aurora.App.Services
                 recognizer.LoadGrammar(new DictationGrammar());
                 recognizer.SpeechRecognized += (s, e) =>
                 {
+                    if (App.Settings?.WindowsMicrophoneEnabled != true) return;
                     var text = e.Result?.Text;
                     var confidence = e.Result?.Confidence ?? 0;
-                    var threshold = App.Settings.VoiceConfidenceThreshold > 0
-                        ? App.Settings.VoiceConfidenceThreshold
-                        : VoiceTranscriptFilter.DefaultConfidenceThreshold;
+                    var threshold = VoiceTranscriptFilter.ClampConfidenceThreshold(App.Settings.VoiceConfidenceThreshold);
                     var accepted = !string.IsNullOrWhiteSpace(text) &&
                                     VoiceTranscriptFilter.MeetsConfidenceThreshold(confidence, threshold);
 
@@ -536,11 +545,7 @@ namespace Aurora.App.Services
             catch
             {
                 // No recognizer installed for this culture, or no microphone available.
-                _continuousRecognizer = null;
-                _micCapture?.Dispose();
-                _micCapture = null;
-                _micStream?.Dispose();
-                _micStream = null;
+                StopContinuousListeningInternal();
                 _onStoppedExternally = null;
                 return false;
             }
@@ -553,18 +558,25 @@ namespace Aurora.App.Services
             StopContinuousListeningInternal();
         }
 
+        internal void ApplyMicrophonePermission()
+        {
+            if (App.Settings?.WindowsMicrophoneEnabled == true) return;
+            var notify = _onStoppedExternally;
+            StopContinuousListening();
+            notify?.Invoke();
+        }
+
         private void StopContinuousListeningInternal()
         {
             if (_continuousRecognizer == null) return;
             var recognizer = _continuousRecognizer;
             _continuousRecognizer = null;
-            try { recognizer.RecognizeAsyncStop(); } catch { /* ignore */ }
-            recognizer.Dispose();
-
             try { _micCapture?.StopRecording(); } catch { /* ignore */ }
             _micCapture?.Dispose();
             _micCapture = null;
             _micStream?.Complete();
+            try { recognizer.RecognizeAsyncCancel(); } catch { /* ignore */ }
+            recognizer.Dispose();
             _micStream?.Dispose();
             _micStream = null;
         }
