@@ -74,16 +74,28 @@
                             <Button Grid.Column="2" Content="⌄" Width="28" Height="32" Background="Transparent" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" FontSize="18" Click="ProfileMenu_Click" ToolTip="Account menu"/>
                         </Grid>
                     </Border>
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="6,12,0,26"><Border Width="48" Height="48" CornerRadius="24" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="2" Background="#101722"><TextBlock Text="✦" FontSize="25" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/></StackPanel>
-                        <Button Tag="home" Style="{StaticResource NavButtonStyle}" Background="#251431" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Home" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="chat" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="17"/><TextBlock Text="Chat" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="memory" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="◇" Width="32" FontSize="19"/><TextBlock Text="Memory" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="music" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="♫" Width="32" FontSize="20"/><TextBlock Text="Music" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="smarthome" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20"/><TextBlock Text="Smart Home" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="tools" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⚒" Width="32" FontSize="18"/><TextBlock Text="Tools" VerticalAlignment="Center"/></StackPanel></Button>
-                        <Button Tag="camera" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="18" Foreground="{StaticResource AccentCyanBrush}"/><TextBlock Text="Camera" VerticalAlignment="Center"/></StackPanel></Button>
-                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="6,12,0,26"><Border Width="48" Height="48" CornerRadius="24" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="2" Background="#101722"><TextBlock Text="✦" FontSize="25" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/></StackPanel>
+                            <Button Tag="home" Style="{StaticResource NavButtonStyle}" Background="#251431" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="32" FontSize="20" Foreground="{StaticResource AccentVioletBrush}"/><TextBlock Text="Home" VerticalAlignment="Center"/></StackPanel></Button>
+                            <Button Tag="chat" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="▣" Width="32" FontSize="17"/><TextBlock Text="Chat" VerticalAlignment="Center"/></StackPanel></Button>
+                            <Button Tag="settings" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click" AutomationProperties.Name="Settings"><StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Width="32" FontSize="20"/><TextBlock Text="Settings" VerticalAlignment="Center"/></StackPanel></Button>
+                            <ItemsControl ItemsSource="{Binding SettingsNavigation.PinnedEntries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Tag="{Binding Section}" Style="{StaticResource NavButtonStyle}" Click="Navigation_Click"
+                                                HorizontalContentAlignment="Stretch" ToolTip="{Binding Title}" AutomationProperties.Name="{Binding Title}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Icon}" FontSize="18"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
             <Grid Grid.Column="1" Background="#080B11">

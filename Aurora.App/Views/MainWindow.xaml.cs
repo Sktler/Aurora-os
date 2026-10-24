@@ -248,7 +248,8 @@ namespace Aurora.App.Views
 
         private void OpenSettings(SettingsSection section = SettingsSection.Hub)
         {
-            var window = new IntegrationsWindow(GetCompanions(), section) { Owner = this };
+            var navigation = (DataContext as DashboardViewModel)?.SettingsNavigation;
+            var window = new IntegrationsWindow(GetCompanions(), section, navigation) { Owner = this };
             window.ShowDialog();
             if (DataContext is DashboardViewModel dvm)
                 dvm.RefreshUserName();
@@ -259,16 +260,17 @@ namespace Aurora.App.Views
 
         private void Navigation_Click(object sender, RoutedEventArgs e)
         {
+            if (sender is Button { Tag: SettingsSection section })
+            {
+                OpenSettings(section);
+                return;
+            }
             var target = (sender as Button)?.Tag?.ToString()?.ToLowerInvariant();
             switch (target)
             {
                 case "home": Activate(); break;
                 case "chat": OpenChatWindow(); break;
-                case "memory": new MemoryWindow { Owner = this }.ShowDialog(); break;
-                case "music": OpenSettings(SettingsSection.Music); break;
-                case "smarthome": OpenSettings(SettingsSection.SmartHome); break;
-                case "tools":
-                case "camera": OpenCapabilities_Click(sender, e); break;
+                case "settings": OpenSettings(); break;
             }
         }
 

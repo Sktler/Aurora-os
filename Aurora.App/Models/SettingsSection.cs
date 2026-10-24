@@ -19,5 +19,7 @@ namespace Aurora.App.Models
         Mcp,
         Camera,
         Permissions,
-        Appearance    }
+        Appearance,
+        Tools
+    }
 }
