@@ -19,11 +19,11 @@ namespace Aurora.App.Views
         {
         }
 
-        public IntegrationsWindow(IEnumerable<Companion> companions, SettingsSection initialSection)
+        public IntegrationsWindow(IEnumerable<Companion> companions, SettingsSection initialSection, SettingsNavigationViewModel? settingsNavigation = null)
         {
             InitializeComponent();
             _initialSection = initialSection;
-            DataContext = new IntegrationsViewModel(companions);
+            DataContext = new IntegrationsViewModel(companions, settingsNavigation);
 
             if (DataContext is IntegrationsViewModel vm && !string.IsNullOrEmpty(vm.GoogleClientSecret))
                 GoogleSecretBox.Password = vm.GoogleClientSecret;
@@ -48,6 +48,9 @@ namespace Aurora.App.Views
 
             base.OnClosed(e);
         }
+
+        private void OpenMemory_Click(object sender, RoutedEventArgs e) => new MemoryWindow { Owner = this }.ShowDialog();
+        private void OpenTools_Click(object sender, RoutedEventArgs e) => new CapabilitiesWindow { Owner = this }.ShowDialog();
 
         private void OpenUrl(string url)
         {

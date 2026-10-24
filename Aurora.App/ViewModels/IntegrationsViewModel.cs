@@ -19,8 +19,9 @@ namespace Aurora.App.ViewModels
         private string _lastKnownChatProvider = App.Settings.ChatProvider;
         private string _lastKnownModelName = string.Empty;
 
-        public IntegrationsViewModel(IEnumerable<Companion> companions)
+        public IntegrationsViewModel(IEnumerable<Companion> companions, SettingsNavigationViewModel? settingsNavigation = null)
         {
+            SettingsNavigation = settingsNavigation ?? new SettingsNavigationViewModel(App.Settings);
             Companions = new ObservableCollection<Companion>(companions);
             _lastKnownModelName = GetActiveModel();
             ModelName = _lastKnownModelName;
@@ -28,6 +29,7 @@ namespace Aurora.App.ViewModels
         }
 
         // --- Navigation (hub + dedicated pages) ---
+        public SettingsNavigationViewModel SettingsNavigation { get; }
         [ObservableProperty] private SettingsSection _currentSection = SettingsSection.Hub;
 
         [RelayCommand]

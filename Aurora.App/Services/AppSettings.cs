@@ -140,6 +140,7 @@ namespace Aurora.App.Services
         public bool DashboardRightVisible { get; set; } = true;
         public double DashboardLeftWidth { get; set; } = DashboardLayout.DefaultLeftWidth;
         public double DashboardRightWidth { get; set; } = DashboardLayout.DefaultRightWidth;
+        public List<string> PinnedSettingsSections { get; set; } = new();
         public string ProfileId { get; set; } = "primary";
         public bool LocalOnlyMode { get; set; } = false;
         // Optional budgets; 0 = no limit. Tokens are estimated (~4 chars/token) when the provider reports none.

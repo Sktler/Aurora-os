@@ -378,6 +378,18 @@ namespace Aurora.App.Services
             Add("Override-code-gated", "Protegido por código de autorización", "Protégé par un code d'accès", "Durch Freigabecode geschützt");
             Add("💾 Memory & data", "💾 Memoria y datos", "💾 Mémoire et données", "💾 Speicher und Daten");
             Add("Where everything is stored", "Dónde se almacena todo", "Où tout est stocké", "Speicherort aller Daten");
+            Add("Documents", "Documentos", "Documents", "Dokumente");
+            Add("Developer", "Desarrollador", "Développeur", "Entwickler");
+            Add("Star a Settings entry to pin it to Home.", "Marca una entrada de Configuración con una estrella para fijarla en Inicio.", "Marquez une entrée des paramètres d'une étoile pour l'épingler à l'accueil.", "Markiere einen Eintrag in den Einstellungen mit einem Stern, um ihn an der Startseite anzuheften.");
+            Add("Pin {0} to Home", "Fijar {0} en Inicio", "Épingler {0} à l'accueil", "{0} an der Startseite anheften");
+            Add("Unpin {0} from Home", "Desfijar {0} de Inicio", "Détacher {0} de l'accueil", "{0} von der Startseite lösen");
+            Add("Could not save sidebar shortcuts: {0}", "No se pudieron guardar los accesos directos: {0}", "Impossible d'enregistrer les raccourcis : {0}", "Verknüpfungen konnten nicht gespeichert werden: {0}");
+            Add("Conversations and local storage", "Conversaciones y almacenamiento local", "Conversations et stockage local", "Gespräche und lokaler Speicher");
+            Add("Permissions, camera, images & MCP", "Permisos, cámara, imágenes y MCP", "Autorisations, caméra, images et MCP", "Berechtigungen, Kamera, Bilder und MCP");
+            Add("Browse and search your saved conversations, favorites, folders, and tags.", "Explora y busca tus conversaciones guardadas, favoritos, carpetas y etiquetas.", "Parcourez et recherchez vos conversations, favoris, dossiers et étiquettes enregistrés.", "Durchsuche gespeicherte Gespräche, Favoriten, Ordner und Tags.");
+            Add("Open Memory", "Abrir Memoria", "Ouvrir la mémoire", "Speicher öffnen");
+            Add("Manage Windows permissions, camera, image generation, and MCP tools.", "Administra los permisos de Windows, la cámara, la generación de imágenes y las herramientas MCP.", "Gérez les autorisations Windows, la caméra, la génération d'images et les outils MCP.", "Verwalte Windows-Berechtigungen, Kamera, Bilderzeugung und MCP-Werkzeuge.");
+            Add("Open Tools & Capabilities", "Abrir Herramientas y capacidades", "Ouvrir les outils et fonctionnalités", "Werkzeuge und Funktionen öffnen");
             Add("← Settings", "← Configuración", "← Paramètres", "← Einstellungen");
             Add("AI engine", "Motor de IA", "Moteur d'IA", "KI-Engine");
             Add("Change API key / provider", "Cambiar clave de API o proveedor", "Changer la clé API ou le fournisseur", "API-Schlüssel/Anbieter ändern");

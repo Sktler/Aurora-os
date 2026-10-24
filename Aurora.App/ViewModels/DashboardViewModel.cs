@@ -14,6 +14,7 @@ namespace Aurora.App.ViewModels
     {
         public ObservableCollection<CompanionViewModel> Companions { get; } = new();
         public MusicPlayerViewModel MusicPlayer { get; } = new();
+        [ObservableProperty] private SettingsNavigationViewModel _settingsNavigation = new(App.Settings ?? new AppSettings());
 
         [ObservableProperty] private CompanionViewModel? _selectedCompanion;
         [ObservableProperty] private string _wakeWordStatus = "Listening for “Hey Aurora”";
@@ -90,6 +91,7 @@ namespace Aurora.App.ViewModels
             {
                 GreetingText = BuildGreeting();
                 RefreshAIProviderStatus();
+                SettingsNavigation.RefreshLabels();
                 WakeWordStatus = Localizer.GetUiText(WakeWordStatus);
                 WeatherLocation = Localizer.GetUiText(WeatherLocation);
                 WeatherCondition = Localizer.GetUiText(WeatherCondition);
@@ -107,6 +109,7 @@ namespace Aurora.App.ViewModels
 
         public void ReloadForActiveProfile()
         {
+            SettingsNavigation = new SettingsNavigationViewModel(App.Settings);
             foreach (var companion in Companions) companion.StopListening();
             Companions.Clear();
             var existing = App.Memory.LoadCompanions();
