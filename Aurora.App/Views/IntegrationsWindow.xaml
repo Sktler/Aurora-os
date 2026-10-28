@@ -259,6 +259,18 @@
                         <ComboBox ItemsSource="{Binding EmotionCueModes}" SelectedItem="{Binding EmotionCueMode}"
                                   AutomationProperties.Name="Emotion cues" HorizontalAlignment="Left" MinWidth="160" Margin="0,0,0,14"/>
 
+                        <TextBlock Text="Microphone" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <ComboBox ItemsSource="{Binding MicrophoneChoices}" SelectedItem="{Binding SelectedMicrophone}"
+                                      DisplayMemberPath="Label" AutomationProperties.Name="Microphone"
+                                      MinWidth="280" MaxWidth="420"/>
+                            <Button Content="Refresh" Command="{Binding RefreshMicrophonesCommand}" Margin="8,0,0,0" Padding="12,4,12,4"
+                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{StaticResource AccentCyanBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Choose which microphone Aurora listens to for voice input and the wake word. System default follows whatever Windows uses. Press Save to apply."/>
+
                         <TextBlock Text="Voice input sensitivity (confidence threshold)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <Grid Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>

@@ -338,6 +338,10 @@ namespace Aurora.App.Services
             Add("Search titles, tags and message text", "Buscar títulos, etiquetas y mensajes", "Rechercher dans les titres, étiquettes et messages", "Titel, Tags und Nachrichtentext durchsuchen");
             Add("Jamendo", "Jamendo", "Jamendo", "Jamendo");
             Add("Refresh", "Actualizar", "Actualiser", "Aktualisieren");
+            Add("Microphone", "Micrófono", "Microphone", "Mikrofon");
+            Add("System default", "Predeterminado del sistema", "Par défaut du système", "Systemstandard");
+            Add("{0} (not connected)", "{0} (no conectado)", "{0} (non connecté)", "{0} (nicht verbunden)");
+            Add("Choose which microphone Aurora listens to for voice input and the wake word. System default follows whatever Windows uses. Press Save to apply.", "Elige qué micrófono escucha Aurora para la entrada de voz y la palabra de activación. El predeterminado del sistema sigue el de Windows. Pulsa Guardar para aplicar.", "Choisissez le microphone qu'Aurora écoute pour la saisie vocale et le mot d'activation. Par défaut du système suit le choix de Windows. Cliquez sur Enregistrer pour appliquer.", "Wähle das Mikrofon, auf das Aurora für Spracheingabe und Aktivierungswort hört. Systemstandard folgt der Windows-Auswahl. Zum Übernehmen auf Speichern klicken.");
             Add("Use selected", "Usar el seleccionado", "Utiliser la sélection", "Ausgewähltes verwenden");
             Add("Enroll voice", "Registrar voz", "Enregistrer la voix", "Stimme registrieren");
             Add("🔐 Recovery code", "🔐 Código de recuperación", "🔐 Code de récupération", "🔐 Wiederherstellungscode");

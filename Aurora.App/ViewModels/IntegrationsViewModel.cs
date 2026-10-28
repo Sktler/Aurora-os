@@ -10,6 +10,12 @@ using Aurora.App.Services;
 
 namespace Aurora.App.ViewModels
 {
+    /// <summary>One entry in the microphone picker; a blank <see cref="Name"/> means the Windows default device.</summary>
+    public sealed record MicrophoneChoice(string Name, string Label)
+    {
+        public override string ToString() => Label;
+    }
+
     public partial class IntegrationsViewModel : ObservableObject, IDisposable
     {
         /// <summary>The live Companion instances already bound to the main window's sidebar -
@@ -25,6 +31,7 @@ namespace Aurora.App.ViewModels
             Companions = new ObservableCollection<Companion>(companions);
             _lastKnownModelName = GetActiveModel();
             ModelName = _lastKnownModelName;
+            LoadMicrophones(App.Settings.MicrophoneDeviceName);
             App.AIProviderStatusChanged += OnAIProviderStatusChanged;
         }
 
@@ -122,6 +129,28 @@ namespace Aurora.App.ViewModels
         [ObservableProperty] private AzureVoiceOption? _selectedAzureVoice;
 
         [ObservableProperty] private bool _isLoadingVoices;
+
+        /// <summary>Microphones Windows currently reports, led by the "System default" entry (blank name).</summary>
+        public ObservableCollection<MicrophoneChoice> MicrophoneChoices { get; } = new();
+        [ObservableProperty] private MicrophoneChoice? _selectedMicrophone;
+
+        private void LoadMicrophones(string? savedName)
+        {
+            MicrophoneChoices.Clear();
+            MicrophoneChoices.Add(new MicrophoneChoice(AudioDeviceCatalog.SystemDefaultDeviceName, Localizer.GetUiText("System default")));
+            foreach (var device in AudioDeviceCatalog.GetInputDevices())
+                MicrophoneChoices.Add(new MicrophoneChoice(device.Name, device.Name));
+
+            // A saved microphone that is currently unplugged stays selectable so Save doesn't silently drop it.
+            if (!string.IsNullOrWhiteSpace(savedName) && !MicrophoneChoices.Any(m => string.Equals(m.Name, savedName, StringComparison.OrdinalIgnoreCase)))
+                MicrophoneChoices.Add(new MicrophoneChoice(savedName, string.Format(Localizer.GetUiText("{0} (not connected)"), savedName)));
+
+            SelectedMicrophone = MicrophoneChoices.FirstOrDefault(m => string.Equals(m.Name, savedName ?? "", StringComparison.OrdinalIgnoreCase))
+                                 ?? MicrophoneChoices[0];
+        }
+
+        [RelayCommand]
+        private void RefreshMicrophones() => LoadMicrophones(SelectedMicrophone?.Name ?? App.Settings.MicrophoneDeviceName);
 
         /// <summary>Minimum SAPI recognition confidence (0.0-1.0) an utterance must clear
         /// before it's forwarded to the AI at all - the "input" half of the voice pipeline.</summary>
@@ -837,7 +866,17 @@ namespace Aurora.App.ViewModels
                 .ClampConfidenceThreshold(VoiceConfidenceThreshold);
             App.Settings.SpeechPaceWpm = SpeechFormatter.ClampWordsPerMinute(SpeechPaceWpm);
             App.Settings.TtsVolumePercent = SpeechFormatter.ClampVolumePercent(TtsVolumePercent);
+
+            var microphoneChanged = SelectedMicrophone != null &&
+                !string.Equals(App.Settings.MicrophoneDeviceName ?? "", SelectedMicrophone.Name, StringComparison.OrdinalIgnoreCase);
+            if (SelectedMicrophone != null) App.Settings.MicrophoneDeviceName = SelectedMicrophone.Name;
             App.Settings.Save();
+            if (microphoneChanged)
+            {
+                // The wake-word recognizer binds to its device when it starts, so restart it on the new one.
+                App.WakeWord?.Stop();
+                App.RefreshVoiceActivation();
+            }
             VoiceStatus = "Saved. New replies will use this voice.";
         }
 
