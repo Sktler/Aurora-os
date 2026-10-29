@@ -368,13 +368,6 @@ namespace Aurora.App.Views
             changeName.Click += (_, _) => ChangeUserName();
             menu.Items.Add(changeName);
 
-            var settings = new MenuItem { Header = "⚙  Settings" };
-            settings.Click += (_, _) => OpenSettings();
-            menu.Items.Add(settings);
-            menu.Items.Add(new Separator());
-            var capabilities = new MenuItem { Header = "⚒  Tools & Capabilities" };
-            capabilities.Click += (_, _) => OpenCapabilities_Click(button, e);
-            menu.Items.Add(capabilities);
             Localizer.ApplyToElement(menu);
             menu.IsOpen = true;
         }

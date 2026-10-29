@@ -67,13 +67,26 @@
             <GridSplitter x:Name="RightSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="Transparent" ResizeBehavior="CurrentAndNext" Panel.ZIndex="10" DragCompleted="Splitter_DragCompleted"/>
             <Border Grid.Column="0" Background="#0D111A" BorderBrush="#1B2230" BorderThickness="0,0,1,0" Padding="14">
                 <DockPanel>
-                    <Border DockPanel.Dock="Bottom" Background="#111722" CornerRadius="14" Padding="12" Margin="0,14,0,0">
+                    <Button x:Name="AccountProfileButton" DockPanel.Dock="Bottom" Background="#111722" BorderBrush="Transparent" BorderThickness="1" Padding="11" Margin="0,14,0,0"
+                            HorizontalContentAlignment="Stretch" Cursor="Hand" Click="ProfileMenu_Click" ToolTip="Account menu" AutomationProperties.Name="Account menu">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ProfileCardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="14" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ProfileCardBorder" Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/></Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ProfileCardBorder" Property="BorderBrush" Value="{StaticResource AccentCyanBrush}"/></Trigger>
+                                    <Trigger Property="IsPressed" Value="True"><Setter TargetName="ProfileCardBorder" Property="Opacity" Value="0.8"/></Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <Border Width="38" Height="38" CornerRadius="19" BorderBrush="{StaticResource AccentVioletBrush}" BorderThickness="2"><TextBlock Text="A" Foreground="{StaticResource AccentCyanBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0"><TextBlock x:Name="ProfileNameText" Text="{Binding UserName}" FontWeight="SemiBold"/><TextBlock Text="Local profile" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel>
-                            <Button Grid.Column="2" Content="⌄" Width="28" Height="32" Background="Transparent" Foreground="{StaticResource TextMutedBrush}" BorderThickness="0" FontSize="18" Click="ProfileMenu_Click" ToolTip="Account menu"/>
+                            <TextBlock Grid.Column="2" Text="⌄" Width="28" Foreground="{StaticResource TextMutedBrush}" FontSize="18" TextAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
-                    </Border>
+                    </Button>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="6,12,0,26"><Border Width="48" Height="48" CornerRadius="24" BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="2" Background="#101722"><TextBlock Text="✦" FontSize="25" Foreground="{StaticResource AccentCyanBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Aurora" FontSize="23" FontWeight="Bold" Foreground="{StaticResource AccentVioletBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/></StackPanel>
