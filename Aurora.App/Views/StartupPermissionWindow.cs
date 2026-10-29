@@ -21,9 +21,7 @@ namespace Aurora.App.Views
         {
             Title = "Aurora";
             Width = 560;
-            Height = 360;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            ResizeMode = ResizeMode.NoResize;
             Topmost = true;
             ShowInTaskbar = true;
             WindowState = WindowState.Normal;
@@ -67,6 +65,7 @@ namespace Aurora.App.Views
                         new TextBlock
                         {
                             Text = "Aurora needs your permission",
+                            TextWrapping = TextWrapping.Wrap,
                             FontSize = 26,
                             FontWeight = FontWeights.SemiBold,
                             Margin = new Thickness(0, 0, 0, 8)
@@ -84,6 +83,7 @@ namespace Aurora.App.Views
                     }
                 }
             };
+            DialogLayout.UseContentHeight(this);
         }
 
         public async Task<bool> AskPermissionAsync(string name, Func<Task<PermissionResult>> request)
@@ -145,9 +145,7 @@ namespace Aurora.App.Views
                 Owner = this,
                 Title = Localizer.FormatUiText("Aurora — {0} permission", Localizer.GetUiText(name)),
                 Width = 460,
-                Height = 230,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.NoResize,
                 Topmost = true,
                 ShowInTaskbar = true,
                 WindowState = WindowState.Normal,
@@ -165,8 +163,9 @@ namespace Aurora.App.Views
             var allowButton = new Button
             {
                 Content = Localizer.GetUiText("Allow"),
-                Width = 150,
-                Height = 42,
+                MinWidth = 150,
+                MinHeight = 42,
+                Padding = new Thickness(16, 8, 16, 8),
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 0, 10, 0),
@@ -175,8 +174,9 @@ namespace Aurora.App.Views
             var denyButton = new Button
             {
                 Content = Localizer.GetUiText("Deny"),
-                Width = 150,
-                Height = 42,
+                MinWidth = 150,
+                MinHeight = 42,
+                Padding = new Thickness(16, 8, 16, 8),
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
                 IsCancel = true
@@ -213,7 +213,7 @@ namespace Aurora.App.Views
                             Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                             Margin = new Thickness(0, 0, 0, 20)
                         },
-                        new StackPanel
+                        new WrapPanel
                         {
                             Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
@@ -223,6 +223,7 @@ namespace Aurora.App.Views
                 }
             };
 
+            DialogLayout.UseContentHeight(dialog);
             dialog.Show();
             dialog.Activate();
             var allowed = await decision.Task;

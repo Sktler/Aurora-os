@@ -178,12 +178,11 @@ namespace Aurora.App.Services
                     property != FrameworkElement.ToolTipProperty &&
                     property != System.Windows.Automation.AutomationProperties.NameProperty)
                     continue;
-                if (property.ReadOnly) continue;
+                if (property.ReadOnly || values.Current.Value is not string initial) continue;
                 if (!originals.Values.TryGetValue(property, out var original))
                 {
-                    if (values.Current.Value is not string initial || GetUiText(initial, DefaultLanguage) == initial)
-                        continue;
                     original = GetEnglishText(initial);
+                    if (!UiTranslations.ContainsKey(NormalizeUiText(original))) continue;
                     originals.Values[property] = original;
                 }
 

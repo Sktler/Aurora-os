@@ -18,6 +18,7 @@ namespace Aurora.App.Views
         public SetupWindow(bool restartOnSave = true)
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             _restartOnSave = restartOnSave;
             _loadingLanguage = true;
             LanguageBox.ItemsSource = Localizer.SupportedLanguages;
@@ -201,16 +202,15 @@ namespace Aurora.App.Views
                     Owner = this,
                     Title = Localizer.Get("Setup.RecoveryTitle"),
                     Width = 560,
-                    Height = 360,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Background = System.Windows.Media.Brushes.Black
                 };
                 var panel = new StackPanel { Margin = new Thickness(24, 24, 24, 24) };
-                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryLead"), FontSize = 18, FontWeight = FontWeights.SemiBold });
+                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryLead"), TextWrapping = TextWrapping.Wrap, FontSize = 18, FontWeight = FontWeights.SemiBold });
                 panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryBody"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
                 var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10, 10, 10, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
                 panel.Children.Add(box);
-                var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
+                var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
                 var copy = new Button { Content = "Copy", Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 0) };
                 var close = new Button { Content = "Done", Padding = new Thickness(14, 8, 14, 8) };
                 copy.Click += (_, _) => Clipboard.SetText(_generatedRecoveryCode);
@@ -219,6 +219,7 @@ namespace Aurora.App.Views
                 actions.Children.Add(close);
                 panel.Children.Add(actions);
                 dialog.Content = panel;
+                DialogLayout.UseContentHeight(dialog);
                 dialog.ShowDialog();
             }
             catch (Exception ex)

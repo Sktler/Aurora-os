@@ -407,13 +407,12 @@ namespace Aurora.App.Views
                 Width = 340,
                 SizeToContent = SizeToContent.Height,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.NoResize,
                 Background = Brushes.Transparent,
                 Content = new StackPanel { Margin = new Thickness(22) }
             };
 
             var panel = (StackPanel)dialog.Content;
-            panel.Children.Add(new TextBlock { Text = "What should Aurora call you?", FontSize = 16, FontWeight = FontWeights.SemiBold });
+            panel.Children.Add(new TextBlock { Text = "What should Aurora call you?", TextWrapping = TextWrapping.Wrap, FontSize = 16, FontWeight = FontWeights.SemiBold });
             panel.Children.Add(input);
             panel.Children.Add(save);
 
@@ -442,6 +441,7 @@ namespace Aurora.App.Views
                 else if (args.Key == Key.Escape) dialog.Close();
             };
 
+            DialogLayout.UseContentHeight(dialog);
             dialog.ShowDialog();
         }
 

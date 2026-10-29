@@ -22,6 +22,7 @@ namespace Aurora.App.Views
         public IntegrationsWindow(IEnumerable<Companion> companions, SettingsSection initialSection, SettingsNavigationViewModel? settingsNavigation = null)
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             _initialSection = initialSection;
             DataContext = new IntegrationsViewModel(companions, settingsNavigation);
 
@@ -120,7 +121,6 @@ namespace Aurora.App.Views
         {
             var credentialBox = new PasswordBox
             {
-                Width = 320,
                 Padding = new Thickness(8, 8, 8, 8),
                 Margin = new Thickness(0, 8, 0, 0)
             };
@@ -139,13 +139,11 @@ namespace Aurora.App.Views
                 Owner = this,
                 Content = panel,
                 Width = 390,
-                Height = 165,
-                ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ShowInTaskbar = false
             };
 
-            var buttons = new StackPanel
+            var buttons = new WrapPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -159,6 +157,7 @@ namespace Aurora.App.Views
             buttons.Children.Add(verify);
             panel.Children.Add(buttons);
 
+            DialogLayout.UseContentHeight(credentialDialog);
             if (credentialDialog.ShowDialog() != true)
                 return;
 

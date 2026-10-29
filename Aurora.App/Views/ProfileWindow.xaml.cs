@@ -13,6 +13,7 @@ namespace Aurora.App.Views
         public ProfileWindow()
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             RefreshList();
             SpeakerSuggestionsBox.IsChecked = App.Settings.SpeakerRecognitionEnabled;
             RecoveryStoragePathText.Text = Localizer.FormatUiText("Recovery storage: {0}", RecoveryStorageSettings.DirectoryPath);
@@ -32,12 +33,13 @@ namespace Aurora.App.Views
         {
             var input = new TextBox { Text = Localizer.GetUiText("New User"), Margin = new Thickness(0, 8, 0, 8), Padding = new Thickness(8, 8, 8, 8) };
             var panel = new StackPanel { Margin = new Thickness(18, 18, 18, 18) };
-            var dialog = new Window { Owner = this, Title = "New profile", Width = 340, Height = 170, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = panel };
+            var dialog = new Window { Owner = this, Title = "New profile", Width = 340, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = panel };
             panel.Children.Add(new TextBlock { Text = "Profile name" });
             panel.Children.Add(input);
             var save = new Button { Content = "Create", Padding = new Thickness(12, 12, 12, 12), HorizontalAlignment = HorizontalAlignment.Right };
             panel.Children.Add(save);
             save.Click += (_, _) => { var p = App.Profiles.CreateProfile(input.Text); RefreshList(); ProfilesList.SelectedItem = p; dialog.Close(); };
+            DialogLayout.UseContentHeight(dialog);
             dialog.ShowDialog();
         }
 
@@ -57,10 +59,8 @@ namespace Aurora.App.Views
                 Owner = this,
                 Title = "Delete profile",
                 Width = 520,
-                Height = 320,
                 MinWidth = 520,
                 MinHeight = 320,
-                ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Background = brushConverter.ConvertFromString("#0B1018") as System.Windows.Media.Brush,
                 Foreground = brushConverter.ConvertFromString("#F2F6FA") as System.Windows.Media.Brush
@@ -107,6 +107,7 @@ namespace Aurora.App.Views
                 }
             };
 
+            DialogLayout.UseContentHeight(dialog);
             dialog.ShowDialog();
         }
 
@@ -128,8 +129,6 @@ namespace Aurora.App.Views
                     Owner = this,
                     Title = Localizer.FormatUiText("Unlock {0}", p.DisplayName),
                     Width = 380,
-                    Height = 190,
-                    ResizeMode = ResizeMode.NoResize,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
                 var panel = new StackPanel { Margin = new Thickness(20) };
@@ -160,6 +159,7 @@ namespace Aurora.App.Views
                     if (e.Key == System.Windows.Input.Key.Enter) unlock.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 };
 
+                DialogLayout.UseContentHeight(dialog);
                 dialog.ShowDialog();
                 if (!verified) return;
             }

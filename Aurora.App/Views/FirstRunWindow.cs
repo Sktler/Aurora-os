@@ -12,9 +12,7 @@ namespace Aurora.App.Views
         {
             Title = "Aurora";
             Width = 560;
-            Height = 390;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            ResizeMode = ResizeMode.NoResize;
             Topmost = true;
             ShowInTaskbar = true;
             WindowState = WindowState.Normal;
@@ -46,8 +44,9 @@ namespace Aurora.App.Views
             var installButton = new Button
             {
                 Content = "Install Aurora",
-                Width = 180,
-                Height = 44,
+                MinWidth = 180,
+                MinHeight = 44,
+                Padding = new Thickness(16, 8, 16, 8),
                 FontSize = 15,
                 FontWeight = FontWeights.SemiBold,
                 IsDefault = true,
@@ -84,6 +83,7 @@ namespace Aurora.App.Views
                         new TextBlock
                         {
                             Text = "Welcome to Aurora",
+                            TextWrapping = TextWrapping.Wrap,
                             FontSize = 30,
                             FontWeight = FontWeights.SemiBold,
                             Margin = new Thickness(0, 0, 0, 10)
@@ -91,6 +91,7 @@ namespace Aurora.App.Views
                         new TextBlock
                         {
                             Text = "Let's get Aurora installed and ready to use.",
+                            TextWrapping = TextWrapping.Wrap,
                             FontSize = 17,
                             Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
                             Margin = new Thickness(0, 0, 0, 14)
@@ -109,6 +110,7 @@ namespace Aurora.App.Views
                     }
                 }
             };
+            DialogLayout.UseContentHeight(this);
         }
     }
 }

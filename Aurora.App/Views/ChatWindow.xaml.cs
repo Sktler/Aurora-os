@@ -8,6 +8,7 @@ namespace Aurora.App.Views
         public ChatWindow(CompanionViewModel companion)
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             DataContext = new DashboardViewModelProxy(companion);
             Activated += OnWindowActivated;
         }

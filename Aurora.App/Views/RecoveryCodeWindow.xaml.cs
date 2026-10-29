@@ -14,6 +14,7 @@ public partial class RecoveryCodeWindow : Window
     public RecoveryCodeWindow()
     {
         InitializeComponent();
+        DialogLayout.UseContentHeight(this);
         ProfileLabel.Text = Localizer.FormatUiText("Profile: {0}", App.Profiles.ActiveProfile.DisplayName);
     }
 
