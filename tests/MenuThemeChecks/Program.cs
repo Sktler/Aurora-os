@@ -39,9 +39,8 @@ internal static class Program
 
         // Match ProfileMenu_Click's dynamically-created controls: no explicit style.
         var profile = new ContextMenu();
-        profile.Items.Add(new MenuItem { Header = "Settings" });
-        profile.Items.Add(new Separator());
-        profile.Items.Add(new MenuItem { Header = "Tools & Capabilities" });
+        profile.Items.Add(new MenuItem { Header = "👥  Profiles" });
+        profile.Items.Add(new MenuItem { Header = "✎  Change name" });
         CheckMenu(profile, "profile", output);
         app.Shutdown();
         Console.WriteLine($"{(failures == 0 ? "PASS" : "FAIL")}: {failures} failed checks. Rendered menus: {output}");
