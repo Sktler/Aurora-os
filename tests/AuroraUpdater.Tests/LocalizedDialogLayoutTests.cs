@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using System.Xml.Linq;
 using Aurora.App.Services;
 using Aurora.App.Views;
@@ -70,13 +71,17 @@ public sealed class LocalizedDialogLayoutTests
         RunOnSta(() =>
         {
             var previousLanguage = Localizer.Language;
-            var heading = new TextBlock
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            for (var i = 0; i < 6; i++)
             {
-                Text = "Aurora AI Provider Setup",
-                FontSize = 22,
-                TextWrapping = TextWrapping.Wrap
-            };
-            var window = new Window { Width = 320, Content = heading };
+                panel.Children.Add(new TextBlock
+                {
+                    Text = "Aurora AI Provider Setup",
+                    FontSize = 22,
+                    TextWrapping = TextWrapping.Wrap
+                });
+            }
+            var window = new Window { Width = 360, Content = panel, ShowActivated = false, ShowInTaskbar = false };
             DialogLayout.UseContentHeight(window);
             var scroller = Assert.IsType<ScrollViewer>(window.Content);
 
@@ -84,36 +89,47 @@ public sealed class LocalizedDialogLayoutTests
             {
                 Localizer.SetLanguage("en");
                 Localizer.ApplyToWindow(window);
-                scroller.Measure(new Size(320, double.PositiveInfinity));
-                var englishHeight = scroller.DesiredSize.Height;
+                window.Show();
+                UpdateLayout();
+                var englishHeight = window.ActualHeight;
 
                 Localizer.SetLanguage("es");
                 Localizer.ApplyToWindow(window);
-                scroller.Measure(new Size(320, double.PositiveInfinity));
-                Assert.True(scroller.DesiredSize.Height > englishHeight);
-                Assert.Equal(320, window.Width);
+                UpdateLayout();
+                Assert.True(window.ActualHeight > englishHeight,
+                    $"English height: {englishHeight}; Spanish height: {window.ActualHeight}.");
+                Assert.Equal(360, window.Width);
                 Assert.Equal(SizeToContent.Height, window.SizeToContent);
                 Assert.Equal(ResizeMode.CanResize, window.ResizeMode);
 
-                scroller.Measure(new Size(320, englishHeight));
-                scroller.Arrange(new Rect(0, 0, 320, englishHeight));
-                scroller.UpdateLayout();
+                window.SizeToContent = SizeToContent.Manual;
+                window.Height = englishHeight;
+                UpdateLayout();
                 Assert.True(scroller.ScrollableHeight > 0);
                 Assert.Equal(ScrollBarVisibility.Disabled, scroller.HorizontalScrollBarVisibility);
 
                 Localizer.SetLanguage("en");
                 Localizer.ApplyToWindow(window);
-                scroller.Measure(new Size(320, double.PositiveInfinity));
-                Assert.Equal(englishHeight, scroller.DesiredSize.Height);
+                window.SizeToContent = SizeToContent.Height;
+                UpdateLayout();
+                Assert.InRange(Math.Abs(window.ActualHeight - englishHeight), 0, 1);
 
                 window.SizeToContent = SizeToContent.Manual;
                 window.Width = 400;
                 window.Height = 240;
                 Localizer.SetLanguage("de");
                 Localizer.ApplyToWindow(window);
+                UpdateLayout();
                 Assert.Equal(400, window.Width);
                 Assert.Equal(240, window.Height);
                 Assert.Equal(SizeToContent.Manual, window.SizeToContent);
+
+                void UpdateLayout()
+                {
+                    window.UpdateLayout();
+                    window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                    window.UpdateLayout();
+                }
             }
             finally
             {
