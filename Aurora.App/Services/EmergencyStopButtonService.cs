@@ -45,55 +45,59 @@ public sealed class EmergencyStopButtonService : IDisposable
         if (_disposed || Application.Current == null) return;
 
         foreach (Window window in Application.Current.Windows)
+            AttachToWindow(window);
+    }
+
+    internal Popup? AttachToWindow(Window window)
+    {
+        if (_disposed || window is Views.LockdownWindow) return null;
+        if (_buttons.TryGetValue(window, out var existing)) return existing;
+
+        var root = window.Content as UIElement;
+        if (root == null) return null;
+
+        var button = new Button
         {
-            if (window is Views.LockdownWindow || _buttons.ContainsKey(window))
-                continue;
+            Content = "⛔  EMERGENCY STOP",
+            ToolTip = "Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.",
+            Padding = new Thickness(12, 7, 12, 7),
+            FontSize = 11,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.FromRgb(150, 35, 45)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(255, 105, 115)),
+            BorderThickness = new Thickness(1),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Focusable = true
+        };
+        button.Click += (_, _) => TriggerLockdown();
 
-            var root = window.Content as UIElement;
-            if (root == null) continue;
-
-            var button = new Button
+        var popup = new Popup
+        {
+            PlacementTarget = root,
+            Placement = PlacementMode.RelativePoint,
+            HorizontalOffset = Math.Max(8, window.ActualWidth - 185),
+            VerticalOffset = 10,
+            AllowsTransparency = true,
+            StaysOpen = true,
+            IsOpen = window.IsVisible,
+            Child = new Border
             {
-                Content = "⛔  EMERGENCY STOP",
-                ToolTip = "Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.",
-                Padding = new Thickness(12, 7, 12, 7),
-                FontSize = 11,
-                FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
-                Background = new SolidColorBrush(Color.FromRgb(150, 35, 45)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(255, 105, 115)),
+                CornerRadius = new CornerRadius(8),
+                Background = new SolidColorBrush(Color.FromArgb(245, 20, 23, 31)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(100, 35, 45)),
                 BorderThickness = new Thickness(1),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Focusable = true
-            };
-            button.Click += (_, _) => TriggerLockdown();
+                Padding = new Thickness(1),
+                Child = button
+            }
+        };
 
-            var popup = new Popup
-            {
-                PlacementTarget = root,
-                Placement = PlacementMode.RelativePoint,
-                HorizontalOffset = Math.Max(8, window.ActualWidth - 185),
-                VerticalOffset = 10,
-                AllowsTransparency = true,
-                StaysOpen = true,
-                IsOpen = window.IsVisible,
-                Child = new Border
-                {
-                    CornerRadius = new CornerRadius(8),
-                    Background = new SolidColorBrush(Color.FromArgb(245, 20, 23, 31)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(100, 35, 45)),
-                    BorderThickness = new Thickness(1),
-                    Padding = new Thickness(1),
-                    Child = button
-                }
-            };
-
-            window.SizeChanged += Window_SizeChanged;
-            window.LocationChanged += Window_LocationChanged;
-            window.IsVisibleChanged += Window_IsVisibleChanged;
-            window.Closed += Window_Closed;
-            _buttons[window] = popup;
-        }
+        window.SizeChanged += Window_SizeChanged;
+        window.LocationChanged += Window_LocationChanged;
+        window.IsVisibleChanged += Window_IsVisibleChanged;
+        window.Closed += Window_Closed;
+        _buttons[window] = popup;
+        return popup;
     }
 
     private void TriggerLockdown()
@@ -124,7 +128,11 @@ public sealed class EmergencyStopButtonService : IDisposable
     private void UpdatePosition(Window? window)
     {
         if (window == null || !_buttons.TryGetValue(window, out var popup)) return;
-        popup.HorizontalOffset = Math.Max(8, window.ActualWidth - 185);
+        var horizontalOffset = Math.Max(8, window.ActualWidth - 185);
+        // WPF does not move an open Popup with its target. Change an offset to
+        // force placement to refresh even when a move leaves the offsets unchanged.
+        popup.HorizontalOffset = horizontalOffset + 1;
+        popup.HorizontalOffset = horizontalOffset;
         popup.VerticalOffset = 10;
     }
 
