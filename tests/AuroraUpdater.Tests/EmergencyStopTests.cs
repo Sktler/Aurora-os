@@ -49,6 +49,7 @@ public class EmergencyStopTests
     [Fact]
     public void Clearing_active_chat_provider_credential_preserves_other_provider_keys()
     {
+        using var storage = new AppSettingsTestScope();
         var providers = new[]
         {
             ("gemini", "Gemini"),

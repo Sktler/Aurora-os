@@ -26,4 +26,4 @@ jobs:
         run: dotnet build Aurora.App/Aurora.App.csproj --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj --configuration Release --no-restore
+        run: dotnet test --project tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj --configuration Release --no-restore

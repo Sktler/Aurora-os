@@ -4,11 +4,13 @@ using Xunit;
 
 namespace AuroraUpdater.Tests;
 
+[Collection("App.Settings")]
 public class ActionAuditLogTests
 {
     [Fact]
     public void Search_ReturnsEntriesForToolOrCompanion_AndRedactsSecrets()
     {
+        using var storage = new AppSettingsTestScope();
         ActionAuditLog.Clear();
 
         try
@@ -45,6 +47,7 @@ public class ActionAuditLogTests
     [Fact]
     public void Record_StoresDeniedActionsWithoutCrashing()
     {
+        using var storage = new AppSettingsTestScope();
         ActionAuditLog.Clear();
 
         try
