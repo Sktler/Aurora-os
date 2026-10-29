@@ -2,6 +2,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -42,6 +44,7 @@ internal static class Program
         profile.Items.Add(new MenuItem { Header = "👥  Profiles" });
         profile.Items.Add(new MenuItem { Header = "✎  Change name" });
         CheckMenu(profile, "profile", output);
+        CheckHeaderContent(output);
         app.Shutdown();
         Console.WriteLine($"{(failures == 0 ? "PASS" : "FAIL")}: {failures} failed checks. Rendered menus: {output}");
         return failures == 0 ? 0 : 1;
@@ -52,8 +55,11 @@ internal static class Program
         Layout(menu);
         var items = menu.Items.OfType<MenuItem>().ToList();
         var first = items.First();
-        var text = VisualChildren<TextBlock>(first).First(t => t.Visibility == Visibility.Visible
-            && t.ActualWidth > 0 && !string.IsNullOrEmpty(t.Text));
+        var presenter = VisualChildren<ContentPresenter>(first).Single(p => p.ContentSource == "Header");
+        var text = VisualChildren<TextBlock>(presenter).First(t => t.Visibility == Visibility.Visible
+            && t.ActualWidth > 0 && (!string.IsNullOrEmpty(t.Text) || t.Inlines.Count > 0));
+        Check(text.Foreground.ToString() == first.Foreground.ToString(),
+            $"{name}: rendered normal text follows item foreground");
         Check(Contrast(text.Foreground, menu.Background) >= 4.5,
             $"{name}: rendered text {text.Foreground}, menu background {menu.Background} have >= 4.5:1 contrast");
         Save(menu, Path.Combine(output, name + "-normal.png"));
@@ -68,10 +74,17 @@ internal static class Program
         if (border != null)
             Check(Contrast(text.Foreground, border.Background) >= 4.5,
                 $"{name}: highlighted foreground/background have >= 4.5:1 contrast");
+        Check(text.Foreground.ToString() == first.Foreground.ToString(),
+            $"{name}: rendered highlighted text follows item foreground");
         Save(menu, Path.Combine(output, name + "-highlighted.png"));
 
         first.IsEnabled = false;
         Layout(menu);
+        var source = DependencyPropertyHelper.GetValueSource(text, TextBlock.ForegroundProperty);
+        Console.WriteLine($"{name}: disabled header foreground source: {source.BaseValueSource} (expression: {source.IsExpression}); "
+            + $"presenter foreground: {System.Windows.Documents.TextElement.GetForeground(presenter)}");
+        Check(first.Foreground.ToString() == Application.Current.Resources["TextMutedBrush"].ToString(),
+            $"{name}: disabled item uses TextMutedBrush");
         if (border != null)
         {
             Check(Contrast(text.Foreground, border.Background) >= 4.5,
@@ -82,6 +95,10 @@ internal static class Program
         Save(menu, Path.Combine(output, name + "-disabled.png"));
         first.IsEnabled = true;
         typeof(MenuItem).GetProperty(nameof(MenuItem.IsHighlighted))!.SetValue(first, false);
+        Layout(menu);
+        Check(text.Foreground.ToString() == first.Foreground.ToString()
+            && first.Foreground.ToString() == Application.Current.Resources["TextPrimaryBrush"].ToString(),
+            $"{name}: re-enabled header returns to TextPrimaryBrush");
 
         bool clicked = false;
         first.Click += (_, _) => clicked = true;
@@ -93,6 +110,63 @@ internal static class Program
             var line = VisualChildren<Border>(separator).FirstOrDefault();
             Check(line?.Background?.ToString() == "#FF3A4356",
                 $"{name}: separator uses the shared dark-theme border brush");
+        }
+    }
+
+    private static void CheckHeaderContent(string output)
+    {
+        var menu = (ContextMenu)XamlReader.Parse("""
+            <ContextMenu xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+                <MenuItem Header="_Öffnen" InputGestureText="Ctrl+O">
+                    <MenuItem.Icon><TextBlock Text="★" Foreground="Orange"/></MenuItem.Icon>
+                    <MenuItem Header="Child"/>
+                </MenuItem>
+                <MenuItem><MenuItem.Header><TextBlock Text="名前を変更"/></MenuItem.Header></MenuItem>
+                <MenuItem Header="Profil ändern">
+                    <MenuItem.HeaderTemplate><DataTemplate><TextBlock Text="{Binding}"/></DataTemplate></MenuItem.HeaderTemplate>
+                </MenuItem>
+                <MenuItem><MenuItem.Header><TextBlock Text="Custom color" Foreground="Orange"/></MenuItem.Header></MenuItem>
+            </ContextMenu>
+            """);
+        CheckMenu(menu, "custom-headers", output);
+        var first = (MenuItem)menu.Items[0];
+        var accessText = VisualChildren<AccessText>(first).Single();
+        Check(char.ToUpperInvariant(accessText.AccessKey) == 'Ö' && (string)first.Header == "_Öffnen",
+            "custom headers: localized access key is preserved");
+        Check(VisualChildren<TextBlock>(first).Any(t => t.Text == "Ctrl+O")
+            && VisualChildren<TextBlock>(first).Any(t => t.Text == "★" && t.Foreground.ToString() == Brushes.Orange.ToString()),
+            "custom headers: input gesture and custom icon are preserved");
+        var popup = (Popup)first.Template.FindName("PART_Popup", first);
+        var arrow = (System.Windows.Shapes.Path)first.Template.FindName("SubmenuArrow", first);
+        Check(first.HasItems && arrow.Visibility == Visibility.Visible && popup.Child != null
+            && System.Windows.Data.BindingOperations.IsDataBound(popup, Popup.IsOpenProperty),
+            "custom headers: submenu arrow, content and open binding are preserved");
+        var presenter = VisualChildren<ContentPresenter>(first).Single(p => p.ContentSource == "Header");
+        Check(first.Focusable && presenter.RecognizesAccessKey && !presenter.IsHitTestVisible
+            && KeyboardNavigation.GetDirectionalNavigation(VisualChildren<ItemsPresenter>(menu).First()) == KeyboardNavigationMode.Cycle,
+            "custom headers: menu focus and keyboard navigation settings are preserved");
+
+        var originalMuted = Application.Current.Resources["TextMutedBrush"];
+        try
+        {
+            // Replace the resource to cover live theme changes, including frozen brushes.
+            Application.Current.Resources["TextMutedBrush"] = new SolidColorBrush(Color.FromRgb(201, 214, 242));
+            foreach (var item in menu.Items.OfType<MenuItem>()) item.IsEnabled = false;
+            Layout(menu);
+            foreach (var item in menu.Items.OfType<MenuItem>().Take(3))
+            {
+                var header = VisualChildren<ContentPresenter>(item).Single(p => p.ContentSource == "Header");
+                var text = VisualChildren<TextBlock>(header).First(t => !string.IsNullOrEmpty(t.Text) || t.Inlines.Count > 0);
+                Check(text.Foreground.ToString() == "#FFC9D6F2" && text.Foreground.ToString() == item.Foreground.ToString(),
+                    $"custom headers: disabled header {menu.Items.IndexOf(item)} follows the updated theme brush");
+            }
+            var explicitHeader = (TextBlock)((MenuItem)menu.Items[3]).Header;
+            Check(explicitHeader.Foreground.ToString() == Brushes.Orange.ToString(),
+                "custom headers: explicit header foreground is preserved");
+        }
+        finally
+        {
+            Application.Current.Resources["TextMutedBrush"] = originalMuted;
         }
     }
 
