@@ -54,8 +54,27 @@ tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj
 Run:
 
 ```powershell
-dotnet test tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj
+dotnet test --project tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj
 ```
+
+The repository selects Microsoft.Testing.Platform through `global.json`. Use `--project` when passing the test project to `dotnet test`.
+
+The test script defaults to a Release build and the normal `dotnet test` runner:
+
+```powershell
+.\scripts\test.ps1
+```
+
+Inside a workspace sandbox, use the explicit sandbox mode. This builds the test project and launches its standalone runner through `dotnet run --no-build`, avoiding `dotnet test`'s named-pipe connection. Use `-NoRestore` after packages have been restored:
+
+```powershell
+.\scripts\test.ps1 -Sandbox -NoRestore
+.\scripts\test.ps1 -Sandbox -NoRestore -TestArguments @('--filter-class', '*ProviderCatalogTests')
+```
+
+Sandbox mode keeps `TEMP`, `TMP`, and the .NET CLI home under `artifacts/` in the workspace. It restores the caller's environment and working directory and removes its temporary directory even when a build or test fails. Result files remain under `artifacts/test-results/`. The script returns the build or runner exit code and never retries a failed run with another runner. Package restore still needs available packages or a reachable source; this mode does not expand sandbox permissions.
+
+Tests that write settings or credentials must use `AppSettingsTestScope` inside the serialized `App.Settings` collection. Use a fresh scope for each such test. Do not read or back up real Aurora settings or saved Windows credentials.
 
 For changes that affect both application behavior and tests, run the relevant tests and then a Release build. If a test cannot run because the environment lacks Windows-specific prerequisites, report that explicitly rather than claiming it passed.
 

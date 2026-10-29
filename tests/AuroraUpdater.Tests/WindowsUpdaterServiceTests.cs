@@ -63,7 +63,8 @@ public class WindowsUpdaterServiceTests
     [Fact]
     public void ResetAll_RemovesExternalDatabaseAndSqliteSidecars()
     {
-        var root = Path.Combine(Path.GetTempPath(), $"aurora-reset-{Guid.NewGuid():N}");
+        using var storage = new AppSettingsTestScope();
+        var root = Path.Combine(storage.DirectoryPath, "reset");
         Directory.CreateDirectory(root);
         var databasePath = Path.Combine(root, "aurora.db");
         var configDirectory = Path.Combine(root, "config");
@@ -72,6 +73,7 @@ public class WindowsUpdaterServiceTests
         File.WriteAllText(databasePath, "database");
         File.WriteAllText($"{databasePath}-wal", "wal");
         File.WriteAllText($"{databasePath}-shm", "shm");
+        new AppSettings { GeminiApiKey = "reset-test-key" };
 
         try
         {
@@ -81,6 +83,7 @@ public class WindowsUpdaterServiceTests
             Assert.False(File.Exists(databasePath));
             Assert.False(File.Exists($"{databasePath}-wal"));
             Assert.False(File.Exists($"{databasePath}-shm"));
+            Assert.Empty(storage.Secrets);
         }
 
         finally

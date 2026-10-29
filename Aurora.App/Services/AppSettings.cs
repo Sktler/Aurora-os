@@ -11,10 +11,16 @@ namespace Aurora.App.Services
     {
         private const string ResourcePrefix = "Aurora.AppSettings";
 
+        // Tests replace the entire store, so a missing test key never falls through to Windows.
+        internal static IDictionary<string, string>? SecretsOverride { get; set; }
+
         public static string? GetSecret(string key, string? fallback = null)
         {
             if (string.IsNullOrWhiteSpace(key))
                 return fallback;
+
+            if (SecretsOverride is { } secrets)
+                return secrets.TryGetValue(key, out var value) ? value : fallback;
 
             try
             {
@@ -37,6 +43,12 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(value))
             {
                 RemoveSecret(key);
+                return;
+            }
+
+            if (SecretsOverride is { } secrets)
+            {
+                secrets[key] = value;
                 return;
             }
 
@@ -65,6 +77,12 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
+            if (SecretsOverride is { } secrets)
+            {
+                secrets.Remove(key);
+                return;
+            }
+
             try
             {
                 var vault = new PasswordVault();
@@ -79,6 +97,12 @@ namespace Aurora.App.Services
 
         public static void ClearAllSecrets()
         {
+            if (SecretsOverride is { } secrets)
+            {
+                secrets.Clear();
+                return;
+            }
+
             try
             {
                 var vault = new PasswordVault();
@@ -463,7 +487,10 @@ namespace Aurora.App.Services
             }
         }
 
-        public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
+        // Process-wide test overrides must be scoped and used by the serialized App.Settings collection.
+        internal static string? ConfigDirectoryOverride { get; set; }
+
+        public static string ConfigDir => ConfigDirectoryOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
         public static bool HasSavedConfiguration
         {

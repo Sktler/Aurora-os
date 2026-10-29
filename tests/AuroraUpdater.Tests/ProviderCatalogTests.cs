@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Text.Json;
 using Aurora.App;
 using Aurora.App.Models;
 using Aurora.App.Services;
@@ -25,12 +23,7 @@ public class ProviderCatalogTests
     [Fact]
     public void AppSettings_recognizes_github_copilot_configuration()
     {
-        var configDir = AppSettings.ConfigDir;
-        var configPath = Path.Combine(configDir, "settings.json");
-        var backup = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
-        var previousCopilotApiKey = WindowsCredentialVault.GetSecret(nameof(AppSettings.GitHubCopilotApiKey), string.Empty);
-
-        Directory.CreateDirectory(configDir);
+        using var storage = new AppSettingsTestScope();
         var settings = new AppSettings
         {
             ChatProvider = "copilot",
@@ -38,24 +31,8 @@ public class ProviderCatalogTests
             GitHubCopilotModel = "gpt-4o"
         };
 
-        try
-        {
-            File.WriteAllText(configPath, JsonSerializer.Serialize(settings));
-            Assert.True(AppSettings.HasSavedConfiguration);
-        }
-        finally
-        {
-            settings.GitHubCopilotApiKey = previousCopilotApiKey ?? string.Empty;
-
-            if (backup is null)
-            {
-                if (File.Exists(configPath)) File.Delete(configPath);
-            }
-            else
-            {
-                File.WriteAllText(configPath, backup);
-            }
-        }
+        settings.Save();
+        Assert.True(AppSettings.HasSavedConfiguration);
     }
 
     [Fact]
@@ -70,48 +47,40 @@ public class ProviderCatalogTests
     [Fact]
     public void IntegrationsViewModel_refreshes_provider_fields_when_the_active_provider_changes()
     {
-        var originalSettings = App.Settings;
-
-        try
+        using var storage = new AppSettingsTestScope();
+        App.Settings = new AppSettings
         {
-            App.Settings = new AppSettings
-            {
-                ChatProvider = "gemini",
-                GeminiApiKey = "gemini-key",
-                GeminiModel = "gemini-3.6-flash",
-                GroqApiKey = "groq-key",
-                GroqModel = "llama-3.3-70b-versatile",
-                GitHubCopilotApiKey = "ghp-key",
-                GitHubCopilotModel = "gpt-4o"
-            };
+            ChatProvider = "gemini",
+            GeminiApiKey = "gemini-key",
+            GeminiModel = "gemini-3.6-flash",
+            GroqApiKey = "groq-key",
+            GroqModel = "llama-3.3-70b-versatile",
+            GitHubCopilotApiKey = "ghp-key",
+            GitHubCopilotModel = "gpt-4o"
+        };
 
-            App.RefreshIntegrationClients();
+        App.RefreshIntegrationClients();
 
-            var vm = new IntegrationsViewModel(Array.Empty<Companion>());
-            Assert.Equal("Gemini (Google) model", vm.ModelFieldLabel);
-            Assert.Equal("gemini-3.6-flash", vm.ModelName);
-            Assert.Contains("Gemini", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
+        using var vm = new IntegrationsViewModel(Array.Empty<Companion>());
+        Assert.Equal("Gemini (Google) model", vm.ModelFieldLabel);
+        Assert.Equal("gemini-3.6-flash", vm.ModelName);
+        Assert.Contains("Gemini", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
 
-            App.Settings.ChatProvider = "groq";
-            App.RefreshIntegrationClients();
+        App.Settings.ChatProvider = "groq";
+        App.RefreshIntegrationClients();
 
-            Assert.Equal("Groq model", vm.ModelFieldLabel);
-            Assert.Equal("llama-3.3-70b-versatile", vm.ModelName);
-            Assert.Contains("Groq", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Groq model", vm.ModelFieldLabel);
+        Assert.Equal("llama-3.3-70b-versatile", vm.ModelName);
+        Assert.Contains("Groq", vm.CurrentEngineDescription, StringComparison.OrdinalIgnoreCase);
 
-            App.Settings.ChatProvider = "copilot";
-            App.RefreshIntegrationClients();
+        App.Settings.ChatProvider = "copilot";
+        App.RefreshIntegrationClients();
 
-            Assert.Equal("GitHub Copilot (unofficial) model", vm.ModelFieldLabel);
-            Assert.Equal("gpt-4o", vm.ModelName);
-            vm.ModelName = "gpt-4o-mini";
-            vm.SaveModelCommand.Execute(null);
-            Assert.Equal("gpt-4o-mini", App.Settings.GitHubCopilotModel);
-        }
-        finally
-        {
-            App.Settings = originalSettings ?? new AppSettings();
-            App.RefreshIntegrationClients();
-        }
+        Assert.Equal("GitHub Copilot (unofficial) model", vm.ModelFieldLabel);
+        Assert.Equal("gpt-4o", vm.ModelName);
+        vm.ModelName = "gpt-4o-mini";
+        vm.SaveModelCommand.Execute(null);
+        Assert.Equal("gpt-4o-mini", App.Settings.GitHubCopilotModel);
+        Assert.Equal("gpt-4o-mini", AppSettings.LoadOrCreate().GitHubCopilotModel);
     }
 }
