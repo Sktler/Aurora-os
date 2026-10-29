@@ -19,12 +19,12 @@
                     <ComboBox Grid.Column="2" ItemsSource="{Binding FolderFilters}" SelectedItem="{Binding SelectedFolderFilter}" DisplayMemberPath="Name" Margin="8,0,0,0"/>
                     <CheckBox Grid.Column="3" Content="★ Favorites" IsChecked="{Binding FavoritesOnly}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                 </Grid>
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <WrapPanel Margin="0,8,0,0">
                     <TextBox Width="180" Text="{Binding NewFolderName, UpdateSourceTrigger=PropertyChanged}" ToolTip="New folder name" Padding="6" Background="#151B27" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <Button Content="Add folder" Command="{Binding CreateFolderCommand}" Margin="8,0,0,0" Padding="10,5,10,5"/>
                     <Button Content="Delete selected folder" Command="{Binding DeleteFolderCommand}" Margin="8,0,0,0" Padding="10,5,10,5" ToolTip="Conversations in the folder are kept"/>
                     <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                </StackPanel>
+                </WrapPanel>
                 <ItemsControl ItemsSource="{Binding Results}" MaxHeight="170" Margin="0,8,0,0">
                     <ItemsControl.Template><ControlTemplate TargetType="ItemsControl"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer></ControlTemplate></ItemsControl.Template>
                     <ItemsControl.ItemTemplate>

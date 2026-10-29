@@ -13,6 +13,7 @@ namespace Aurora.App.Views
         public CapabilitiesWindow()
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             FilesPermission.IsChecked = App.Settings.WindowsFilesEnabled;
             ScreenPermission.IsChecked = App.Settings.WindowsScreenEnabled;
             ClipboardPermission.IsChecked = App.Settings.WindowsClipboardEnabled;

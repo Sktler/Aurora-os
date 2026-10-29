@@ -8,6 +8,7 @@ namespace Aurora.App.Views
         public MemoryWindow()
         {
             InitializeComponent();
+            DialogLayout.ConstrainToWorkArea(this);
             DataContext = new DashboardViewModel();
             BrowserPanel.DataContext = new ConversationBrowserViewModel();
         }
