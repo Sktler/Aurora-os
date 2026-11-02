@@ -51,6 +51,7 @@ namespace Aurora.App.Services
         private WaveInEvent? _micCapture;
         private LiveMicrophoneStream? _micStream;
         private Action? _onStoppedExternally;
+        private Action<string>? _onUtterance;
         private byte[]? _lastVoiceSamplePcm16k;
         private string? _enrollmentProfileId;
         private int _speechGeneration;
@@ -466,6 +467,7 @@ namespace Aurora.App.Services
                 previousNotify?.Invoke();
             }
 
+            _onUtterance = onUtteranceRecognized;
             try
             {
                 var recognizer = WakeWordRecognizer.CreateEngine();
@@ -549,6 +551,20 @@ namespace Aurora.App.Services
                 _onStoppedExternally = null;
                 return false;
             }
+        }
+
+        /// <summary>Restarts an active continuous listener with the same callbacks so a changed
+        /// microphone or language takes effect. If it can't restart, the stop callback fires.</summary>
+        public bool RestartContinuousListening()
+        {
+            var onUtterance = _onUtterance;
+            var onStopped = _onStoppedExternally;
+            if (_continuousRecognizer == null || onUtterance == null || onStopped == null) return false;
+
+            StopContinuousListeningInternal();
+            if (StartContinuousListening(onUtterance, onStopped)) return true;
+            onStopped();
+            return false;
         }
 
         /// <summary>Turns off continuous listening. Safe to call even if it isn't running.</summary>

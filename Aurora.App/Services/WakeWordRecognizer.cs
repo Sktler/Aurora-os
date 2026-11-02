@@ -68,12 +68,27 @@ namespace Aurora.App.Services
         internal static SpeechRecognitionEngine CreateEngine()
         {
             var installed = SpeechRecognitionEngine.InstalledRecognizers();
-            var info = installed.FirstOrDefault(r => r.Culture.Equals(CultureInfo.CurrentCulture))
-                ?? installed.FirstOrDefault(r => r.Culture.TwoLetterISOLanguageName == "en")
-                ?? installed.FirstOrDefault();
+            var culture = PickRecognizerCulture(installed.Select(r => r.Culture), App.Settings?.Language, CultureInfo.CurrentCulture);
+            var info = installed.FirstOrDefault(r => r.Culture.Equals(culture));
             return info == null
                 ? new SpeechRecognitionEngine(CultureInfo.CurrentCulture)
                 : new SpeechRecognitionEngine(info);
+        }
+
+        /// <summary>Prefers an installed recognizer matching the app language, then the Windows
+        /// culture, then English, then anything installed. Returns null if none are installed.</summary>
+        internal static CultureInfo? PickRecognizerCulture(System.Collections.Generic.IEnumerable<CultureInfo> installed, string? appLanguage, CultureInfo current)
+        {
+            var list = installed.ToList();
+            if (!string.IsNullOrWhiteSpace(appLanguage))
+            {
+                var match = list.FirstOrDefault(c => c.Equals(current) && c.TwoLetterISOLanguageName.Equals(appLanguage, StringComparison.OrdinalIgnoreCase))
+                    ?? list.FirstOrDefault(c => c.TwoLetterISOLanguageName.Equals(appLanguage, StringComparison.OrdinalIgnoreCase));
+                if (match != null) return match;
+            }
+            return list.FirstOrDefault(c => c.Equals(current))
+                ?? list.FirstOrDefault(c => c.TwoLetterISOLanguageName == "en")
+                ?? list.FirstOrDefault();
         }
 
         public void StartWakeWord()
