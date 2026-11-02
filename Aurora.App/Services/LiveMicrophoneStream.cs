@@ -21,7 +21,9 @@ namespace Aurora.App.Services
         /// microphone audio is available.</summary>
         public void Push(byte[] data)
         {
-            if (data.Length > 0) _chunks.Add(data);
+            if (data.Length == 0) return;
+            try { _chunks.Add(data); }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { /* stream already completed or disposed */ }
         }
 
         /// <summary>Signals no more audio is coming - unblocks a pending Read once any
@@ -35,8 +37,13 @@ namespace Aurora.App.Services
             {
                 if (_currentOffset >= _current.Length)
                 {
-                    if (!_chunks.TryTake(out _current!, Timeout.Infinite))
+                    if (!_chunks.TryTake(out var next, Timeout.Infinite))
+                    {
+                        _current = Array.Empty<byte>();
+                        _currentOffset = 0;
                         break; // capture stopped and every queued chunk has been consumed
+                    }
+                    _current = next;
                     _currentOffset = 0;
                 }
 

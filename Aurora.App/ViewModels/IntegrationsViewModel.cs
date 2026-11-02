@@ -32,6 +32,7 @@ namespace Aurora.App.ViewModels
             _lastKnownModelName = GetActiveModel();
             ModelName = _lastKnownModelName;
             LoadMicrophones(App.Settings.MicrophoneDeviceName);
+            LoadSpeakers(App.Settings.SpeakerDeviceName);
             App.AIProviderStatusChanged += OnAIProviderStatusChanged;
         }
 
@@ -151,6 +152,27 @@ namespace Aurora.App.ViewModels
 
         [RelayCommand]
         private void RefreshMicrophones() => LoadMicrophones(SelectedMicrophone?.Name ?? App.Settings.MicrophoneDeviceName);
+
+        /// <summary>Playback devices Windows currently reports, led by the "System default" entry (blank name).</summary>
+        public ObservableCollection<MicrophoneChoice> SpeakerChoices { get; } = new();
+        [ObservableProperty] private MicrophoneChoice? _selectedSpeaker;
+
+        private void LoadSpeakers(string? savedName)
+        {
+            SpeakerChoices.Clear();
+            SpeakerChoices.Add(new MicrophoneChoice(AudioDeviceCatalog.SystemDefaultDeviceName, Localizer.GetUiText("System default")));
+            foreach (var device in AudioDeviceCatalog.GetOutputDevices())
+                SpeakerChoices.Add(new MicrophoneChoice(device.Name, device.Name));
+
+            if (!string.IsNullOrWhiteSpace(savedName) && !SpeakerChoices.Any(m => string.Equals(m.Name, savedName, StringComparison.OrdinalIgnoreCase)))
+                SpeakerChoices.Add(new MicrophoneChoice(savedName, string.Format(Localizer.GetUiText("{0} (not connected)"), savedName)));
+
+            SelectedSpeaker = SpeakerChoices.FirstOrDefault(m => string.Equals(m.Name, savedName ?? "", StringComparison.OrdinalIgnoreCase))
+                              ?? SpeakerChoices[0];
+        }
+
+        [RelayCommand]
+        private void RefreshSpeakers() => LoadSpeakers(SelectedSpeaker?.Name ?? App.Settings.SpeakerDeviceName);
 
         /// <summary>Minimum SAPI recognition confidence (0.0-1.0) an utterance must clear
         /// before it's forwarded to the AI at all - the "input" half of the voice pipeline.</summary>
@@ -870,12 +892,17 @@ namespace Aurora.App.ViewModels
             var microphoneChanged = SelectedMicrophone != null &&
                 !string.Equals(App.Settings.MicrophoneDeviceName ?? "", SelectedMicrophone.Name, StringComparison.OrdinalIgnoreCase);
             if (SelectedMicrophone != null) App.Settings.MicrophoneDeviceName = SelectedMicrophone.Name;
+            if (SelectedSpeaker != null) App.Settings.SpeakerDeviceName = SelectedSpeaker.Name;
             App.Settings.Save();
             if (microphoneChanged)
             {
-                // The wake-word recognizer binds to its device when it starts, so restart it on the new one.
-                App.WakeWord?.Stop();
-                App.RefreshVoiceActivation();
+                // Recognizers bind to their device when they start, so restart them on the new one.
+                if (App.Voice?.IsListening == true) App.Voice.RestartContinuousListening();
+                else
+                {
+                    App.WakeWord?.Stop();
+                    App.RefreshVoiceActivation();
+                }
             }
             VoiceStatus = "Saved. New replies will use this voice.";
         }
