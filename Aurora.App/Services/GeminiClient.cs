@@ -255,7 +255,7 @@ namespace Aurora.App.Services
                 }
                 catch (Exception ex)
                 {
-                    return ProviderErrors.Connection("Gemini", ex);
+                    return fallbackNotice + ProviderErrors.Connection("Gemini", ex);
                 }
 
                 if (!response.IsSuccessStatusCode && turn == 0 &&
@@ -288,20 +288,20 @@ namespace Aurora.App.Services
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return ProviderErrors.Format("Gemini", response.StatusCode);
+                    return fallbackNotice + ProviderErrors.Format("Gemini", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var root = doc.RootElement;
 
                 if (!root.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
-                    return "[Gemini returned an empty response.]";
+                    return fallbackNotice + "[Gemini returned an empty response.]";
 
                 JsonElement firstCandidate = default;
                 foreach (var c in candidates.EnumerateArray()) { firstCandidate = c; break; }
 
                 if (!firstCandidate.TryGetProperty("content", out var contentEl) ||
                     !contentEl.TryGetProperty("parts", out var partsEl))
-                    return "[Gemini returned an empty response.]";
+                    return fallbackNotice + "[Gemini returned an empty response.]";
 
                 // Clone so the parts survive past doc's disposal at the end of this iteration.
                 var parts = new List<JsonElement>();
@@ -346,7 +346,7 @@ namespace Aurora.App.Services
                 contents.Add(new { role = "user", parts = responseParts });
             }
 
-            return "[Reached the tool-call limit for this turn - try asking for one action at a time.]";
+            return fallbackNotice + "[Reached the tool-call limit for this turn - try asking for one action at a time.]";
         }
     }
 }

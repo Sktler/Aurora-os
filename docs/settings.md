@@ -3,28 +3,34 @@
 All of this lives behind the **gear icon** in the sidebar (now called
 **Settings**, since it covers more than integrations):
 
-- **Change API key / provider** — reopens the same setup window used on
-  first run, pre-filled with whatever's currently configured. A dropdown
-  picks between **Gemini, Groq, ChatGPT, or Claude** — swap providers or
-  just paste in a new key anytime; saving restarts Aurora so it takes
-  effect immediately. Gemini and Groq are genuinely free; ChatGPT (OpenAI)
-  and Claude (Anthropic) are paid, metered APIs with no permanent free
-  tier — the setup window says this plainly for whichever one you pick.
-- **Model** — a free-text field under the AI engine section, not a fixed
-  dropdown, so Aurora is never pinned to whichever model happened to be
-  current when it was built. Type any model name your active provider
-  serves (e.g. Gemini's `gemini-3.6-flash`, Groq's
-  `llama-3.3-70b-versatile`, OpenAI's `gpt-4o-mini`, or Claude's
-  `claude-sonnet-5`) and hit **Save model** - it takes effect on your very
-  next message, no restart needed. A leading `models/` (as Google's own
-  docs sometimes write it) is stripped automatically either way.
+- **AI engine** — choose Gemini, Groq, OpenAI, Claude, or GitHub Copilot,
+  enter a key, and select or type a model directly in this panel. Switching
+  providers loads that provider's live model list when a saved key is available.
+  **Save provider and model** applies to the next request without a restart.
+  The model field remains editable if discovery fails or you use a model that
+  is not listed. A leading `models/` prefix is stripped when saving. The same
+  editor appears in first-run setup, alongside profile/password controls.
+  Keys are stored through Windows Credential Vault. Provider pricing,
+  account permissions, and model availability still apply.
+- **System > Interface language** — change the UI language immediately.
+  The welcome screen also asks for a language before provider setup. Speech
+  recognition follows the app language when a matching Windows recognizer
+  is installed; otherwise it uses the existing Windows/English fallback.
+- **Tools** — edit the Windows capability switches, camera controls, image
+  integration status, and MCP controls directly inside Settings. Capabilities
+  remain opt-in. Device access also requires Windows permission. Disabling
+  Location clears dashboard weather; weather for a place explicitly named in
+  a chat remains available without retrieving device location.
+- **Appearance** — theme and orb-skin changes apply immediately. Profile,
+  chat, recovery, menu, and dropdown surfaces use the shared theme palette.
 - **Reset Aurora completely** — wipes every key, token, and every
   companion's renamed name and chat history, then restarts as if freshly
-  installed. Asks for confirmation first; can't be undone.
+  installed. Requires the developer credential and confirmation; cannot be undone.
 - **Voice** — pick any voice Windows has installed (whatever's available on
   your PC - different genders, accents, etc.), test it, and toggle whether
   companions speak replies out loud automatically (on by default).
-- **Weather & web search** — nothing to configure; already work.
+- **Weather & web search** — dashboard weather requires both Aurora location
+  consent and Windows location permission. Web search uses the existing service.
 - **System volume** — a slider and mute toggle for your PC's master output
   volume. Companions can also adjust this when you ask them to.
 - **Spotify** — real OAuth sign-in (opens your browser, you approve access).
