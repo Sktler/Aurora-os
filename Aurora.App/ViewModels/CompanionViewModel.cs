@@ -51,6 +51,7 @@ namespace Aurora.App.ViewModels
         {
             public string Key { get; init; } = "";
             public string Name { get; init; } = "";
+            public override string ToString() => Name;
         }
 
         private void LoadProviderChoice()

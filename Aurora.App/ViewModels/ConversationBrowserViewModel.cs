@@ -10,6 +10,7 @@ namespace Aurora.App.ViewModels
     {
         public int? Id { get; init; }
         public string Name { get; init; } = "";
+        public override string ToString() => Name;
     }
 
     /// <summary>Search/filter view over saved conversations plus folder management.</summary>

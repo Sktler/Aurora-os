@@ -62,7 +62,7 @@ namespace Aurora.App.Services
             var response = await _http.GetAsync("https://api.anthropic.com/v1/models");
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"Anthropic returned {(int)response.StatusCode}: {text}");
+                throw new InvalidOperationException(ProviderErrors.Format("Claude", response.StatusCode));
 
             using var doc = JsonDocument.Parse(text);
             var ids = new List<string>();
@@ -107,7 +107,7 @@ namespace Aurora.App.Services
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Claude API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Claude", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 if (!doc.RootElement.TryGetProperty("content", out var contentBlocks))
@@ -123,7 +123,7 @@ namespace Aurora.App.Services
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching Claude: {ex.Message}]";
+                return ProviderErrors.Connection("Claude", ex);
             }
         }
 
@@ -171,11 +171,11 @@ namespace Aurora.App.Services
                 }
                 catch (Exception ex)
                 {
-                    return $"[Connection error reaching Claude: {ex.Message}]";
+                    return ProviderErrors.Connection("Claude", ex);
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Claude API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Claude", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var root = doc.RootElement;

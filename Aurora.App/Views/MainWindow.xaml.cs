@@ -22,7 +22,7 @@ namespace Aurora.App.Views
         {
             InitializeComponent();
             AuroraOrbLoader.Apply(this);
-            ComposerTextBox.KeyDown += ComposerTextBox_KeyDown;
+            ComposerTextBox.PreviewKeyDown += ComposerTextBox_KeyDown;
             Loaded += MainWindow_Loaded;
             LoadSavedLayout();
         }
@@ -143,10 +143,14 @@ namespace Aurora.App.Views
             try
             {
 #pragma warning disable CA1416
-                await dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
+                var submission = dvm.SelectedCompanion.SendCommand.ExecuteAsync(null);
+                // SendAsync consumes the draft before its first await. Clear only that
+                // accepted text, leaving anything typed while the response arrives intact.
+                if (dvm.SelectedCompanion.DraftMessage.Length == 0) ComposerTextBox.Clear();
+                await submission;
 #pragma warning restore CA1416
             }
-            finally { ComposerTextBox.Clear(); }
+            finally { ComposerTextBox.Focus(); }
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -108,7 +108,15 @@ namespace Aurora.App.Services
             lock (_gate)
             {
                 if (!IsCurrent(recognizer) || _phase != ListeningPhase.WakeWord ||
-                    !WakeWordMatcher.IsWakeWord(text, confidence)) return;
+                    !WakeWordMatcher.TryExtractCommand(text, confidence, out var inlineCommand)) return;
+                if (inlineCommand.Length > 0)
+                {
+                    if (!VoiceTranscriptFilter.MeetsConfidenceThreshold(confidence,
+                        VoiceTranscriptFilter.ClampConfidenceThreshold(_commandConfidence()))) return;
+                    WakeWordDetected?.Invoke();
+                    CommandRecognized?.Invoke(inlineCommand);
+                    return;
+                }
                 try
                 {
                     _phase = ListeningPhase.CommandPending;
@@ -146,7 +154,7 @@ namespace Aurora.App.Services
                         recognizer.StartCommand();
                         var generation = ++_commandGeneration;
                         _commandTimeout = new Timer(_ => TimeoutCommand(recognizer, generation), null,
-                            TimeSpan.FromSeconds(8), Timeout.InfiniteTimeSpan);
+                            TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan);
                         return;
                     }
 
@@ -238,6 +246,25 @@ namespace Aurora.App.Services
         public const float MinConfidence = 0.5f;
 
         public static readonly string[] Phrases = { "hey aurora", "hi aurora", "hey, aurora", "okay aurora" };
+
+        public static bool TryExtractCommand(string? text, float confidence, out string command)
+        {
+            command = "";
+            if (confidence < MinConfidence || string.IsNullOrWhiteSpace(text)) return false;
+            var normalized = text.Replace(",", "").Trim();
+            foreach (var phrase in Phrases.Select(p => p.Replace(",", "")))
+            {
+                if (string.Equals(normalized, phrase, StringComparison.OrdinalIgnoreCase)) return true;
+                if (!normalized.StartsWith(phrase, StringComparison.OrdinalIgnoreCase) || normalized.Length <= phrase.Length) continue;
+                if (!char.IsWhiteSpace(normalized[phrase.Length]) && !char.IsPunctuation(normalized[phrase.Length])) continue;
+                // Slice the original utterance so punctuation inside the request survives.
+                var original = text.Trim();
+                var end = original.IndexOf("aurora", StringComparison.OrdinalIgnoreCase) + "aurora".Length;
+                command = original[end..].TrimStart(' ', '.', ',', ':', ';', '!', '?');
+                return true;
+            }
+            return false;
+        }
 
         public static bool IsWakeWord(string? text, float confidence)
         {

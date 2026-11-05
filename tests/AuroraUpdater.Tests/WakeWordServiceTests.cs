@@ -7,6 +7,20 @@ namespace AuroraUpdater.Tests;
 public sealed class WakeWordServiceTests
 {
     [Fact]
+    public void Inline_wake_request_routes_all_dictation_without_a_second_capture()
+    {
+        var recognizer = new FakeRecognizer();
+        using var service = new WakeWordService(() => true, () => 0.7, () => recognizer);
+        string? command = null;
+        service.CommandRecognized += text => command = text;
+        service.Start();
+        recognizer.Hear("hey aurora explain why the sky is blue and suggest a book", 0.95f);
+        Assert.Equal("explain why the sky is blue and suggest a book", command);
+        Assert.Equal(0, recognizer.CommandStarts);
+        Assert.Equal(0, recognizer.Cancellations);
+    }
+
+    [Fact]
     public void Denied_permission_never_creates_a_recognizer_and_can_be_enabled_later()
     {
         var allowed = false;
