@@ -164,7 +164,7 @@ public sealed class LocalizedDialogLayoutTests
     [InlineData("SetupWindow.xaml", "SaveContinueButton")]
     [InlineData("RecoveryCodeWindow.xaml", "DoneButton")]
     [InlineData("ProfileWindow.xaml", "AddProfile_Click")]
-    [InlineData("CapabilitiesWindow.xaml", "RefreshCameras_Click")]
+    [InlineData("CapabilitiesView.xaml", "RefreshCameras_Click")]
     [InlineData("ChatWindow.xaml", "{Binding ApplyProviderModelCommand}")]
     [InlineData("MemoryWindow.xaml", "{Binding DeleteFolderCommand}")]
     public void Translated_action_rows_wrap_at_the_available_width(string file, string action)
@@ -177,18 +177,15 @@ public sealed class LocalizedDialogLayoutTests
     }
 
     [Fact]
-    public void Setup_heading_and_language_picker_have_separate_columns()
+    public void Language_is_in_System_and_before_provider_setup()
     {
-        var document = ReadView("SetupWindow.xaml");
-        var heading = document.Descendants(Presentation + "TextBlock").Single(element =>
-            (string?)element.Attribute(Xaml + "Name") == "HeaderText");
-        var picker = document.Descendants(Presentation + "ComboBox").Single(element =>
-            (string?)element.Attribute(Xaml + "Name") == "LanguageBox");
-
-        Assert.Same(heading.Parent, picker.Parent);
-        Assert.Equal("1", (string?)picker.Attribute("Grid.Column"));
-        Assert.Equal("Wrap", (string?)heading.Attribute("TextWrapping"));
-        Assert.Equal(2, heading.Parent!.Element(Presentation + "Grid.ColumnDefinitions")!.Elements().Count());
+        var setup = ReadView("SetupWindow.xaml");
+        Assert.DoesNotContain(setup.Descendants(), element => (string?)element.Attribute(Xaml + "Name") == "LanguageBox");
+        var settings = ReadView("IntegrationsWindow.xaml");
+        var language = Assert.Single(settings.Descendants(), element => element.Name.LocalName == "LanguagePicker");
+        Assert.Contains(language.Ancestors(), element => ((string?)element.Attribute("Visibility"))?.Contains("ConverterParameter=System") == true);
+        var welcome = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "Aurora.App", "Views", "FirstRunWindow.cs"));
+        Assert.Contains("new LanguagePicker", welcome);
     }
 
     [Fact]
@@ -221,12 +218,14 @@ public sealed class LocalizedDialogLayoutTests
     private static readonly XNamespace Presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
     private static readonly XNamespace Xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-    private static XDocument ReadView(string file)
+    private static XDocument ReadView(string file) => XDocument.Load(Path.Combine(FindRepositoryRoot(), "Aurora.App", "Views", file));
+
+    private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Aurora.sln")))
             directory = directory.Parent;
-        return XDocument.Load(Path.Combine(directory?.FullName ?? throw new DirectoryNotFoundException(), "Aurora.App", "Views", file));
+        return directory?.FullName ?? throw new DirectoryNotFoundException();
     }
 
     private static void RunOnSta(Action action)

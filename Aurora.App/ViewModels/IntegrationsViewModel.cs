@@ -43,7 +43,7 @@ namespace Aurora.App.ViewModels
         [RelayCommand]
         private void GoToSection(SettingsSection section)
         {
-            CurrentSection = section;
+            CurrentSection = section == SettingsSection.Models ? SettingsSection.Engine : section;
             if (section == SettingsSection.Models && ModelSuggestions.Count == 0 && !IsLoadingModels)
                 _ = RefreshModelsAsync();
         }

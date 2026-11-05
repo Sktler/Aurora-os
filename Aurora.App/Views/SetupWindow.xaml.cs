@@ -1,9 +1,8 @@
 using System;
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Controls;
 using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using Aurora.App.Services;
 
 namespace Aurora.App.Views
@@ -12,7 +11,6 @@ namespace Aurora.App.Views
     {
         private readonly bool _restartOnSave;
         private string? _generatedRecoveryCode;
-        private bool _loadingLanguage;
         public bool KeySaved { get; private set; }
 
         public SetupWindow(bool restartOnSave = true)
@@ -20,54 +18,12 @@ namespace Aurora.App.Views
             InitializeComponent();
             DialogLayout.ConstrainToWorkArea(this);
             _restartOnSave = restartOnSave;
-            _loadingLanguage = true;
-            LanguageBox.ItemsSource = Localizer.SupportedLanguages;
-            LanguageBox.SelectedValue = Localizer.NormalizeLanguage(App.Settings.Language);
-            _loadingLanguage = false;
-            Title = "Aurora - Initial Setup";
-            ProfileNameBox.Text = !_restartOnSave ? Localizer.GetUiText("New User") : (string.IsNullOrWhiteSpace(App.Settings.UserName) ? Localizer.GetUiText("New User") : App.Settings.UserName);
-
-            ProviderCombo.ItemsSource = AIProviderCatalog.All;
-            var current = AIProviderCatalog.Get(App.Settings.ChatProvider);
-            ProviderCombo.SelectedItem = current;
-
-            // The setup footer is identical for every provider and every setup state.
-            // Always show Cancel + Save and Continue; never let provider-specific state
-            // change the presence or label of either action.
-            SkipButton.Content = "Cancel";
-            SaveContinueButton.Content = "Save and Continue";
-            UpdateProviderText();
-
-            var alreadyConfigured = !string.IsNullOrWhiteSpace(App.Settings.GeminiApiKey) ||
-                                     !string.IsNullOrWhiteSpace(App.Settings.GroqApiKey) ||
-                                     !string.IsNullOrWhiteSpace(App.Settings.OpenAIApiKey) ||
-                                     !string.IsNullOrWhiteSpace(App.Settings.ClaudeApiKey) ||
-                                     !string.IsNullOrWhiteSpace(App.Settings.GitHubCopilotApiKey);
-            if (alreadyConfigured)
-                HeaderText.Text = "Aurora Setup";
-        }
-
-        private AIProviderInfo SelectedProvider => (AIProviderInfo)ProviderCombo.SelectedItem;
-
-        private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_loadingLanguage || LanguageBox.SelectedValue is not string code) return;
-            var usesDefaultName = string.Equals(ProfileNameBox.Text, Localizer.GetUiText("New User", Localizer.Language), StringComparison.Ordinal);
-            App.Settings.Language = Localizer.NormalizeLanguage(code);
-            Localizer.SetLanguage(App.Settings.Language);
-            if (usesDefaultName) ProfileNameBox.Text = Localizer.GetUiText("New User");
-            UpdateProviderText();
-        }
-
-        private void UpdateProviderText()
-        {
-            if (ProviderCombo.SelectedItem is not AIProviderInfo p) return;
-            KeyLabel.Text = string.Format(Localizer.Get("Setup.KeyRequired"), p.DisplayName);
-            GetKeyButton.ToolTip = string.Format(Localizer.Get("Setup.GetKeyTooltip"), p.DisplayName);
-            GetKeyButton.Content = Localizer.GetUiText(p.GetKeyButtonText);
-            KeyHintText.Text = Localizer.GetUiText(p.KeyHint);
-            CostNoteText.Text = Localizer.GetUiText(p.CostNote);
-            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
+            ProviderSettings.SaveProviderButton.Visibility = Visibility.Collapsed;
+            ProfileNameBox.Text = !restartOnSave || string.IsNullOrWhiteSpace(App.Settings.UserName)
+                ? Localizer.GetUiText("New User") : App.Settings.UserName;
+            SkipButton.Content = Localizer.GetUiText("Cancel");
+            SaveContinueButton.Content = Localizer.GetUiText("Save and Continue");
+            Closed += (_, _) => ProviderSettings.ViewModel.Dispose();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -77,101 +33,21 @@ namespace Aurora.App.Views
             Focus();
         }
 
-        private static string GetApiKeyFor(string key) => key switch
-        {
-            "groq" => App.Settings.GroqApiKey,
-            "openai" => App.Settings.OpenAIApiKey,
-            "claude" => App.Settings.ClaudeApiKey,
-            "copilot" => App.Settings.GitHubCopilotApiKey,
-            _ => App.Settings.GeminiApiKey
-        };
-
-        private static string GetModelFor(string key) => key switch
-        {
-            "groq" => App.Settings.GroqModel,
-            "openai" => App.Settings.OpenAIModel,
-            "claude" => App.Settings.ClaudeModel,
-            "copilot" => App.Settings.GitHubCopilotModel,
-            _ => App.Settings.GeminiModel
-        };
-
-        private void Provider_Changed(object sender, RoutedEventArgs e)
-        {
-            if (KeyLabel == null || ProviderCombo.SelectedItem == null) return;
-
-            var p = SelectedProvider;
-            ErrorText.Visibility = Visibility.Collapsed;
-            ClipboardHint.Visibility = Visibility.Collapsed;
-
-            KeyLabel.Text = string.Format(Localizer.Get("Setup.KeyRequired"), p.DisplayName);
-            KeyHintText.Text = Localizer.GetUiText(p.KeyHint);
-            GetKeyButton.Content = Localizer.GetUiText(p.GetKeyButtonText);
-            GetKeyButton.ToolTip = string.Format(Localizer.Get("Setup.GetKeyTooltip"), p.DisplayName);
-            ImageGenNote.Visibility = p.BundlesImageGen ? Visibility.Visible : Visibility.Collapsed;
-            CostNoteText.Text = Localizer.GetUiText(p.CostNote);
-
-            ApiKeyBox.Password = GetApiKeyFor(p.Key);
-            var existingModel = GetModelFor(p.Key);
-            ModelBox.ItemsSource = p.ModelExamples.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            ModelBox.Text = string.IsNullOrWhiteSpace(existingModel) ? p.DefaultModel : existingModel;
-            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
-
-            DocsLink.NavigateUri = new Uri(p.DocsUrl);
-            RateLimitsLink.NavigateUri = new Uri(p.RateLimitsUrl);
-            ModelsLink.NavigateUri = new Uri(p.ModelsUrl);
-            PricingLink.NavigateUri = new Uri(p.PricingUrl);
-
-            // Reassert the shared footer state whenever the provider changes.
-            SkipButton.Content = "Cancel";
-            SaveContinueButton.Content = "Save and Continue";
-            SaveContinueButton.IsEnabled = true;
-            SkipButton.IsEnabled = true;
-        }
-
-        private void OpenUrl(string url)
-        {
-            try
-            {
-                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                ErrorText.Text = string.Format(Localizer.Get("Setup.OpenBrowserError"), ex.Message, url);
-                ErrorText.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void Link_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Hyperlink { NavigateUri: not null } link)
-                OpenUrl(link.NavigateUri.ToString());
-        }
-
         private void Window_Activated(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(ApiKeyBox.Password)) return;
-            if (ProviderCombo.SelectedItem == null) return;
-
-            string? clip;
+            var vm = ProviderSettings.ViewModel;
+            if (!string.IsNullOrWhiteSpace(vm.ApiKey) || vm.Provider == null) return;
             try
             {
-                clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : null;
+                var clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : "";
+                if (clip.StartsWith(vm.Provider.KeyShapePrefix, StringComparison.Ordinal) &&
+                    clip.Length is >= 20 and <= 120 && !clip.Contains(' '))
+                {
+                    vm.ApiKey = clip;
+                    _ = vm.RefreshAsync();
+                }
             }
-            catch
-            {
-                clip = null;
-            }
-
-            if (string.IsNullOrWhiteSpace(clip)) return;
-
-            var prefix = SelectedProvider.KeyShapePrefix;
-            var looksRight = clip.StartsWith(prefix, StringComparison.Ordinal) &&
-                              clip.Length is >= 20 and <= 120 && !clip.Contains(' ');
-            if (looksRight)
-            {
-                ApiKeyBox.Password = clip;
-                ClipboardHint.Visibility = Visibility.Visible;
-            }
+            catch { }
         }
 
         private void GeneratePassword_Click(object sender, RoutedEventArgs e)
@@ -229,121 +105,39 @@ namespace Aurora.App.Views
             }
         }
 
-        private void GetFreeKey_Click(object sender, RoutedEventArgs e) => OpenUrl(SelectedProvider.GetKeyUrl);
-
-        private bool _checkingKey;
-
-        private async void ApiKeyBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            var key = ApiKeyBox.Password.Trim();
-            if (string.IsNullOrWhiteSpace(key) || ProviderCombo.SelectedItem == null) return;
-            if (_checkingKey) return;
-
-            var p = SelectedProvider;
-            _checkingKey = true;
-            ModelBox.IsEnabled = false;
-            ModelExamplesText.Text = string.Format(Localizer.Get("Setup.CheckingKey"), p.DisplayName);
-            try
-            {
-                IChatEngine client = p.Key switch
-                {
-                    "groq" => new GroqClient(key, p.DefaultModel),
-                    "openai" => new OpenAIClient(key, p.DefaultModel),
-                    "claude" => new ClaudeClient(key, p.DefaultModel),
-                    "copilot" => new GitHubCopilotClient(key, p.DefaultModel),
-                    _ => new GeminiClient(key, p.DefaultModel)
-                };
-                var models = await client.ListModelsAsync();
-                if (models.Count > 0)
-                {
-                    ModelBox.ItemsSource = models;
-                    ModelExamplesText.Text = string.Format(Localizer.Get("Setup.ModelsLoaded"), models.Count, p.DisplayName);
-                }
-                else
-                {
-                    ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
-                }
-            }
-            catch
-            {
-                ModelExamplesText.Text = string.Format(Localizer.Get("Setup.Examples"), p.ModelExamples);
-            }
-            finally
-            {
-                ModelBox.IsEnabled = true;
-                _checkingKey = false;
-            }
-        }
-
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            var apiKey = ApiKeyBox.Password.Trim();
-            var p = SelectedProvider;
-            var profileName = ProfileNameBox.Text.Trim();
-            var profilePassword = ProfilePasswordBox.Password;
-
-            if (string.IsNullOrWhiteSpace(profileName))
+            if (string.IsNullOrWhiteSpace(ProfileNameBox.Text))
             {
                 ErrorText.Text = Localizer.Get("Setup.ProfileNameRequired");
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }
-
-            if (string.IsNullOrWhiteSpace(profilePassword))
+            if (string.IsNullOrWhiteSpace(ProfilePasswordBox.Password))
             {
                 ErrorText.Text = Localizer.Get("Setup.ProfilePasswordRequired");
                 ErrorText.Visibility = Visibility.Visible;
                 return;
             }
-
-            if (string.IsNullOrWhiteSpace(apiKey))
+            try
             {
-                ErrorText.Text = string.Format(Localizer.Get("Setup.ApiKeyRequired"), p.DisplayName);
+                if (!ProviderSettings.ViewModel.Save(refreshClients: false)) return;
+                if (ProviderSettings.ViewModel.Provider?.Key == "gemini") App.Settings.ImageProvider = "gemini";
+                App.Settings.UserName = ProfileNameBox.Text.Trim();
+                App.Profiles.SaveActiveSettings();
+                new ProfilePasswordStore().SetPassword(App.Profiles.ActiveProfile.Id, ProfilePasswordBox.Password);
+                if (!string.IsNullOrWhiteSpace(_generatedRecoveryCode))
+                    new ProfileRecoveryCodeStore().SetCode(App.Profiles.ActiveProfile.Id, _generatedRecoveryCode);
+                App.Settings.Save();
+                KeySaved = true;
+                if (_restartOnSave) RestartApp();
+                else DialogResult = true;
+            }
+            catch (Exception ex)
+            {
+                ErrorText.Text = Localizer.FormatUiText("Could not save settings: {0}", ex.Message);
                 ErrorText.Visibility = Visibility.Visible;
-                return;
             }
-
-            var model = string.IsNullOrWhiteSpace(ModelBox.Text) ? p.DefaultModel : ModelBox.Text.Trim();
-            if (model.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
-                model = model["models/".Length..];
-
-            switch (p.Key)
-            {
-                case "groq":
-                    App.Settings.GroqApiKey = apiKey;
-                    App.Settings.GroqModel = model;
-                    break;
-                case "openai":
-                    App.Settings.OpenAIApiKey = apiKey;
-                    App.Settings.OpenAIModel = model;
-                    break;
-                case "claude":
-                    App.Settings.ClaudeApiKey = apiKey;
-                    App.Settings.ClaudeModel = model;
-                    break;
-                case "copilot":
-                    App.Settings.GitHubCopilotApiKey = apiKey;
-                    App.Settings.GitHubCopilotModel = model;
-                    break;
-                default:
-                    App.Settings.GeminiApiKey = apiKey;
-                    App.Settings.GeminiModel = model;
-                    App.Settings.ImageProvider = "gemini";
-                    break;
-            }
-
-            App.Settings.ChatProvider = p.Key;
-            App.Settings.UserName = profileName;
-            App.Profiles.SaveActiveSettings();
-            new ProfilePasswordStore().SetPassword(App.Profiles.ActiveProfile.Id, profilePassword);
-            if (!string.IsNullOrWhiteSpace(_generatedRecoveryCode))
-                new ProfileRecoveryCodeStore().SetCode(App.Profiles.ActiveProfile.Id, _generatedRecoveryCode);
-            App.Settings.Save();
-            KeySaved = true;
-            if (_restartOnSave)
-                RestartApp();
-            else
-                DialogResult = true;
         }
 
         private static void RestartApp()

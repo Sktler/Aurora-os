@@ -16,7 +16,10 @@ namespace Aurora.App.Services
         internal void NotifyLanguageChanged() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs("Item[]"));
     }
 
-    public sealed record AppLanguage(string Code, string NativeName);
+    public sealed record AppLanguage(string Code, string NativeName)
+    {
+        public override string ToString() => NativeName;
+    }
 
     /// <summary>
     /// Application UI localization, independent of the language used by AI models.
