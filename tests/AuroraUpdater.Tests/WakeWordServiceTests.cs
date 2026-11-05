@@ -209,7 +209,7 @@ public sealed class WakeWordServiceTests
     public async Task Command_timeout_cancels_capture_and_resumes_wake_listening_without_submitting_audio()
     {
         var recognizer = new FakeRecognizer();
-        using var service = new WakeWordService(() => true, () => 0.7, () => recognizer);
+        using var service = new WakeWordService(() => true, () => 0.7, () => recognizer, TimeSpan.FromMilliseconds(50));
         var commands = new List<string>();
         service.CommandRecognized += commands.Add;
         service.Start();

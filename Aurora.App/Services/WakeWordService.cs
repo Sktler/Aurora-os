@@ -13,6 +13,7 @@ namespace Aurora.App.Services
         private readonly object _gate = new();
         private readonly Func<bool> _microphoneAllowed;
         private readonly Func<double> _commandConfidence;
+        private readonly TimeSpan _commandDuration;
         private readonly Func<IWakeWordRecognizer> _createRecognizer;
         private IWakeWordRecognizer? _recognizer;
         private Timer? _commandTimeout;
@@ -39,11 +40,12 @@ namespace Aurora.App.Services
         }
 
         internal WakeWordService(Func<bool> microphoneAllowed, Func<double> commandConfidence,
-            Func<IWakeWordRecognizer> createRecognizer)
+            Func<IWakeWordRecognizer> createRecognizer, TimeSpan? commandDuration = null)
         {
             // Construction must not open the microphone or cache a failed permission probe.
             _microphoneAllowed = microphoneAllowed;
             _commandConfidence = commandConfidence;
+            _commandDuration = commandDuration ?? TimeSpan.FromSeconds(30);
             _createRecognizer = createRecognizer;
         }
 
@@ -154,7 +156,7 @@ namespace Aurora.App.Services
                         recognizer.StartCommand();
                         var generation = ++_commandGeneration;
                         _commandTimeout = new Timer(_ => TimeoutCommand(recognizer, generation), null,
-                            TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan);
+                            _commandDuration, Timeout.InfiniteTimeSpan);
                         return;
                     }
 
