@@ -14,7 +14,7 @@ were changed. Configuration and conversation memory remain local.
 3. [PR #271](https://github.com/Sktler/Aurora-os/pull/271), based on #270:
    live theme/localization, Profiles sizing, localized safety-control spacing,
    and welcome-flow polish.
-4. `codex/demo-verification`, based on #271: layout recommendations, updated
+4. [PR #272](https://github.com/Sktler/Aurora-os/pull/272), based on #271: layout recommendations, updated
    settings documentation, final evidence, and a regression ensuring a later
    provider failure cannot erase the original fallback explanation or replay
    a tool.
@@ -62,8 +62,11 @@ still needs the explicitly outstanding interactive checks in the next section.
   Release build passes with zero warnings/errors; **248 tests pass, zero failed
   or skipped**; the WPF menu harness reports **zero failed checks**. PNGs are
   retained in the `demo-presentation-checks` workflow artifact.
-- The final verification branch adds the post-tool fallback regression. Its
-  exact Windows CI result will be recorded in the final PR before handoff.
+- [#272 Windows CI](https://github.com/Sktler/Aurora-os/actions/runs/42131119098)
+  at `c1bb65d`: Release build passes with zero warnings/errors; **250 tests pass,
+  zero failed or skipped**, including post-tool fallback and live connection-label
+  regressions. The WPF menu harness again reports **zero failed checks**.
+  The following report-only commit does not change application or test code.
 
 Tests which write credentials/settings use `AppSettingsTestScope`; provider
 requests use fake HTTP handlers and keys. No personal settings, credentials,
