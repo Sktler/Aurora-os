@@ -27,3 +27,14 @@ jobs:
 
       - name: Test
         run: dotnet test --project tests/AuroraUpdater.Tests/AuroraUpdater.Tests.csproj --configuration Release --no-restore
+
+      - name: WPF menu rendering regression
+        run: dotnet run --project tests/MenuThemeChecks/MenuThemeChecks.csproj --configuration Release -- .
+
+      - name: Save presentation check images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-presentation-checks
+          path: artifacts/menu-theme/after
+          if-no-files-found: ignore

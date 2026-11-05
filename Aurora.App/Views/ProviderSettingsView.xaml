@@ -18,7 +18,7 @@
    <Button Content="Models" Tag="ModelsUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
    <Button Content="Pricing" Tag="PricingUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
   </WrapPanel>
-  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,12"/>
+  <TextBlock Text="{local:LocBinding Status}" TextWrapping="Wrap" Margin="0,12,0,12"/>
   <Button x:Name="SaveProviderButton" Content="Save provider and model" Click="Save_Click" HorizontalAlignment="Left"/>
  </StackPanel>
 </UserControl>

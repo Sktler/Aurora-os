@@ -14,11 +14,12 @@ namespace Aurora.App.Services
             // Aurora consent is independent of the Windows-wide desktop-app permission.
             if (App.Settings?.WindowsLocationEnabled != true) return null;
             var access = await Geolocator.RequestAccessAsync();
-            if (access != GeolocationAccessStatus.Allowed)
+            if (access != GeolocationAccessStatus.Allowed || App.Settings.WindowsLocationEnabled != true)
                 return null;
 
             var locator = new Geolocator { DesiredAccuracyInMeters = 100 };
             var position = await locator.GetGeopositionAsync(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20));
+            if (App.Settings.WindowsLocationEnabled != true) return null;
             var point = position.Coordinate.Point.Position;
             return new UserLocation(point.Latitude, point.Longitude);
         }

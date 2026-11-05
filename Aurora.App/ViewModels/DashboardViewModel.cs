@@ -47,6 +47,7 @@ namespace Aurora.App.ViewModels
             GreetingText = BuildGreeting();
             RefreshAIProviderStatus();
             App.AIProviderStatusChanged += OnAIProviderStatusChanged;
+            App.WindowsPermissionsChanged += OnWindowsPermissionsChanged;
             Localizer.LanguageChanged += OnLanguageChanged;
 
             var existing = App.Memory?.LoadCompanions();
@@ -84,6 +85,20 @@ namespace Aurora.App.ViewModels
             GreetingText = BuildGreeting();
         }
 
+        private void OnWindowsPermissionsChanged(object? sender, EventArgs e)
+        {
+            if (!App.Settings.WindowsLocationEnabled) ShowLocationUnavailable();
+            else _ = RefreshWeatherAsync();
+        }
+
+        private void ShowLocationUnavailable()
+        {
+            WeatherLocation = Localizer.GetUiText("Location unavailable");
+            WeatherTemperature = "—";
+            WeatherCondition = Localizer.GetUiText("Location permission required");
+            WeatherSummary = Localizer.GetUiText("Allow Aurora to use Windows location services to show local NWS weather.");
+        }
+
         private void OnAIProviderStatusChanged(object? sender, EventArgs e) => RefreshAIProviderStatus();
 
         private void OnLanguageChanged(object? sender, EventArgs e)
@@ -93,6 +108,7 @@ namespace Aurora.App.ViewModels
                 GreetingText = BuildGreeting();
                 RefreshAIProviderStatus();
                 SettingsNavigation.RefreshLabels();
+                foreach (var companion in Companions) companion.RefreshLocalizedLabels();
                 WakeWordStatus = Localizer.GetUiText(WakeWordStatus);
                 WeatherLocation = Localizer.GetUiText(WeatherLocation);
                 WeatherCondition = Localizer.GetUiText(WeatherCondition);
@@ -157,14 +173,12 @@ namespace Aurora.App.ViewModels
                 var location = await new LocationService().GetCurrentLocationAsync();
                 if (location == null)
                 {
-                    WeatherLocation = Localizer.GetUiText("Location unavailable");
-                    WeatherTemperature = "—";
-                    WeatherCondition = Localizer.GetUiText("Location permission required");
-                    WeatherSummary = Localizer.GetUiText("Allow Aurora to use Windows location services to show local NWS weather.");
+                    ShowLocationUnavailable();
                     return;
                 }
 
                 var weather = await App.Weather.GetCurrentWeatherAsync(location.Latitude, location.Longitude);
+                if (!App.Settings.WindowsLocationEnabled) { ShowLocationUnavailable(); return; }
                 WeatherLocation = weather.Location;
                 WeatherTemperature = $"{weather.TemperatureF:0}°F";
                 WeatherCondition = weather.Condition;

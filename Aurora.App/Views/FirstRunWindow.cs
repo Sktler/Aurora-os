@@ -1,8 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Threading.Tasks;
-using System;
 
 namespace Aurora.App.Views
 {
@@ -16,8 +13,7 @@ namespace Aurora.App.Views
             Topmost = true;
             ShowInTaskbar = true;
             WindowState = WindowState.Normal;
-            Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
-            Foreground = Brushes.White;
+
             Loaded += (_, _) =>
             {
                 WindowState = WindowState.Normal;
@@ -25,25 +21,9 @@ namespace Aurora.App.Views
                 Focus();
             };
 
-            var progressText = new TextBlock
-            {
-                Text = "Preparing Aurora setup... 60 seconds",
-                FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
-                Margin = new Thickness(0, 0, 0, 8),
-                Visibility = Visibility.Collapsed
-            };
-            var progressBar = new ProgressBar
-            {
-                Height = 8,
-                Minimum = 0,
-                Maximum = 60,
-                Margin = new Thickness(0, 0, 0, 20),
-                Visibility = Visibility.Collapsed
-            };
             var installButton = new Button
             {
-                Content = "Install Aurora",
+                Content = "Continue",
                 MinWidth = 180,
                 MinHeight = 44,
                 Padding = new Thickness(16, 8, 16, 8),
@@ -52,28 +32,11 @@ namespace Aurora.App.Views
                 IsDefault = true,
                 HorizontalAlignment = HorizontalAlignment.Right
             };
-            installButton.Click += async (_, _) =>
-            {
-                installButton.IsEnabled = false;
-                progressText.Visibility = Visibility.Visible;
-                progressBar.Visibility = Visibility.Visible;
-                for (var remaining = 60; remaining > 0; remaining--)
-                {
-                    progressBar.Value = 60 - remaining;
-                    progressText.Text = $"Preparing Aurora setup... {remaining} seconds";
-                    await Task.Delay(TimeSpan.FromSeconds(.01));
-                }
-                progressBar.Value = progressBar.Maximum;
-                progressText.Text = "Preparation complete. Opening Aurora setup...";
-                await Task.Delay(TimeSpan.FromMilliseconds(700));
-                DialogResult = true;
-            };
+            installButton.Click += (_, _) => DialogResult = true;
 
             Content = new Border
             {
                 Padding = new Thickness(30),
-                Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(79, 216, 232)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Child = new StackPanel
@@ -93,7 +56,6 @@ namespace Aurora.App.Views
                             Text = "Let's get Aurora installed and ready to use.",
                             TextWrapping = TextWrapping.Wrap,
                             FontSize = 17,
-                            Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
                             Margin = new Thickness(0, 0, 0, 14)
                         },
                         new TextBlock
@@ -101,13 +63,10 @@ namespace Aurora.App.Views
                             Text = "The setup wizard will help you choose an AI provider and model. After that, Aurora will ask which device permissions and Windows capabilities you want to enable.",
                             FontSize = 14,
                             TextWrapping = TextWrapping.Wrap,
-                            Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                             Margin = new Thickness(0, 0, 0, 28)
                         },
                         new TextBlock { Text = "Interface language", Margin = new Thickness(0, 0, 0, 6) },
                         new LanguagePicker { Margin = new Thickness(0, 0, 0, 18) },
-                        progressText,
-                        progressBar,
                         installButton
                     }
                 }

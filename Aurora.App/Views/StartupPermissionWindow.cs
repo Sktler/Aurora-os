@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using Aurora.App.Services;
 
 namespace Aurora.App.Views
@@ -25,8 +24,7 @@ namespace Aurora.App.Views
             Topmost = true;
             ShowInTaskbar = true;
             WindowState = WindowState.Normal;
-            Background = new SolidColorBrush(Color.FromRgb(11, 14, 20));
-            Foreground = Brushes.White;
+
             Loaded += (_, _) =>
             {
                 WindowState = WindowState.Normal;
@@ -39,7 +37,6 @@ namespace Aurora.App.Views
                 Text = "Aurora will ask for permission to use location, microphone, camera, and Windows capabilities.",
                 FontSize = 14,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.FromRgb(208, 215, 226)),
                 Margin = new Thickness(0, 0, 0, 12)
             };
 
@@ -47,15 +44,12 @@ namespace Aurora.App.Views
             {
                 Visibility = Visibility.Collapsed,
                 FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromRgb(126, 232, 245)),
                 Margin = new Thickness(0, 6, 0, 0)
             };
 
             Content = new Border
             {
                 Padding = new Thickness(28),
-                Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(79, 216, 232)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Child = new StackPanel
@@ -76,7 +70,6 @@ namespace Aurora.App.Views
                             Text = "For each capability, choose Allow or Deny. Device permissions are also confirmed by Windows when required.",
                             FontSize = 13,
                             TextWrapping = TextWrapping.Wrap,
-                            Foreground = new SolidColorBrush(Color.FromRgb(160, 170, 186)),
                             Margin = new Thickness(0, 0, 0, 16)
                         },
                         _countdownText
@@ -149,8 +142,7 @@ namespace Aurora.App.Views
                 Topmost = true,
                 ShowInTaskbar = true,
                 WindowState = WindowState.Normal,
-                Background = new SolidColorBrush(Color.FromRgb(18, 22, 31)),
-                Foreground = Brushes.White,
+
                 WindowStyle = WindowStyle.SingleBorderWindow
             };
             dialog.Loaded += (_, _) =>
@@ -210,7 +202,6 @@ namespace Aurora.App.Views
                             Text = helperText,
                             FontSize = 13,
                             TextWrapping = TextWrapping.Wrap,
-                            Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                             Margin = new Thickness(0, 0, 0, 20)
                         },
                         new WrapPanel

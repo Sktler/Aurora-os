@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:Aurora.App.Views"
         Title="Aurora - AI Provider Setup" Height="900" Width="560"
         MinHeight="700" MinWidth="520"
-        Background="{StaticResource BgDeepBrush}"
+        Background="{DynamicResource BgDeepBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         WindowStyle="SingleBorderWindow"
@@ -42,18 +42,18 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <PasswordBox x:Name="ProfilePasswordBox" Grid.Column="0"
-                                 Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 Background="{DynamicResource BgPanelBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10,10,10,10" FontSize="13"/>
                     <Button Grid.Column="1" Content="Generate password" Margin="8,0,0,0" Padding="12,8,12,8"
-                            Background="{StaticResource BgPanelBrush}" BorderThickness="0"
-                            Foreground="{StaticResource AccentCyanBrush}" Cursor="Hand"
+                            Background="{DynamicResource BgPanelBrush}" BorderThickness="0"
+                            Foreground="{DynamicResource AccentCyanBrush}" Cursor="Hand"
                             Click="GeneratePassword_Click"/>
                 </Grid>
                 <TextBlock Text="Enter your own password or generate a strong one. Aurora stores only a verifier, not the password itself."
-                           TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                           TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                 <Button Content="Generate recovery code" HorizontalAlignment="Left" Padding="12,8,12,8" Margin="0,0,0,16"
-                        Background="{StaticResource BgPanelBrush}" BorderThickness="0"
-                        Foreground="{StaticResource AccentGreenBrush}" Cursor="Hand"
+                        Background="{DynamicResource BgPanelBrush}" BorderThickness="0"
+                        Foreground="{DynamicResource AccentGreenBrush}" Cursor="Hand"
                         Click="GenerateRecoveryCode_Click"/>
 
                 <local:ProviderSettingsView x:Name="ProviderSettings"/>
@@ -69,15 +69,15 @@
             <WrapPanel Grid.Row="0" HorizontalAlignment="Right">
                 <Button x:Name="SkipButton" Content="Skip for now" Padding="14,8,14,8" Margin="0,0,10,0"
                         Background="Transparent" BorderThickness="0"
-                        Foreground="{StaticResource TextMutedBrush}" Cursor="Hand"
+                        Foreground="{DynamicResource TextMutedBrush}" Cursor="Hand"
                         Click="Skip_Click"/>
                 <Button x:Name="SaveContinueButton" Content="Save and Continue" Padding="18,8,18,8" FontWeight="Bold"
-                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                        Foreground="{StaticResource BgDeepBrush}" Cursor="Hand"
+                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                        Foreground="{DynamicResource BgDeepBrush}" Cursor="Hand"
                         IsDefault="True" IsEnabled="True"
                         Click="Save_Click"/>
             </WrapPanel>
-            <TextBlock Grid.Row="1" TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+            <TextBlock Grid.Row="1" TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                        Text="Your key is stored in Windows Credential Vault and sent only to the selected provider."/>
         </Grid>
     </Grid>

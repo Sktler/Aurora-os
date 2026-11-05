@@ -9,6 +9,6 @@
                Width="200" Height="200"
                HorizontalAlignment="Center" VerticalAlignment="Center"
                IsHitTestVisible="False"/>
-        <Button Content="×" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Click="Close_Click" Background="#101821" Foreground="White" BorderBrush="#4FD8E8" BorderThickness="1" Padding="0" FontSize="15" Panel.ZIndex="2"/>
+        <Button Content="×" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Click="Close_Click" Background="{DynamicResource BgPanelBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="#4FD8E8" BorderThickness="1" Padding="0" FontSize="15" Panel.ZIndex="2"/>
     </Grid>
 </Window>

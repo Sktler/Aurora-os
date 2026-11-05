@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -68,9 +69,12 @@ public sealed class EmergencyStopButtonService : IDisposable
         window.Content = frame;
         root = frame;
 
+        var label = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brushes.White };
+        label.SetBinding(TextBlock.TextProperty, new Binding("[⛔  EMERGENCY STOP]") { Source = Localizer.Resources });
         var button = new Button
         {
-            Content = "⛔  EMERGENCY STOP",
+            Content = label,
+            Width = 165,
             ToolTip = "Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.",
             Padding = new Thickness(12, 7, 12, 7),
             FontSize = 11,
@@ -82,6 +86,8 @@ public sealed class EmergencyStopButtonService : IDisposable
             Cursor = System.Windows.Input.Cursors.Hand,
             Focusable = true
         };
+        button.SetBinding(FrameworkElement.ToolTipProperty,
+            new Binding("[Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.]") { Source = Localizer.Resources });
         button.Click += (_, _) => TriggerLockdown();
 
         var popup = new Popup
@@ -104,6 +110,11 @@ public sealed class EmergencyStopButtonService : IDisposable
             }
         };
 
+        ((FrameworkElement)popup.Child).SizeChanged += (_, _) =>
+        {
+            toolbar.Height = popup.Child.RenderSize.Height + 20;
+            UpdatePosition(window);
+        };
         window.SizeChanged += Window_SizeChanged;
         window.LocationChanged += Window_LocationChanged;
         window.IsVisibleChanged += Window_IsVisibleChanged;
@@ -140,6 +151,8 @@ public sealed class EmergencyStopButtonService : IDisposable
     private void UpdatePosition(Window? window)
     {
         if (window == null || !_buttons.TryGetValue(window, out var popup)) return;
+        if (popup.Child is Border { Child: Button button })
+            button.Width = Math.Max(40, Math.Min(165, window.ActualWidth - 20));
         var horizontalOffset = Math.Max(8, window.ActualWidth - 185);
         // WPF does not move an open Popup with its target. Change an offset to
         // force placement to refresh even when a move leaves the offsets unchanged.

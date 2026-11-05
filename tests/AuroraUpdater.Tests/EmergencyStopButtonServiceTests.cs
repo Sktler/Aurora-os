@@ -16,6 +16,33 @@ namespace AuroraUpdater.Tests;
 public sealed class EmergencyStopButtonServiceTests
 {
     [Fact]
+    public void Emergency_stop_has_reserved_space_above_content_in_every_language()
+    {
+        RunOnSta(_ =>
+        {
+            var window = CreateWindow(40, 40);
+            var content = (FrameworkElement)window.Content;
+            var previousLanguage = Localizer.Language;
+            using var service = new EmergencyStopButtonService();
+            try
+            {
+                window.Show();
+                var popup = Assert.IsType<Popup>(service.AttachToWindow(window));
+                foreach (var language in new[] { "en", "es", "fr", "de" })
+                {
+                    Localizer.SetLanguage(language);
+                    window.Width = 300;
+                    DrainDispatcher();
+                    var frame = Assert.IsType<DockPanel>(window.Content);
+                    Assert.True(content.TranslatePoint(new Point(), frame).Y >= popup.Child.RenderSize.Height + popup.VerticalOffset);
+                    Assert.True(popup.Child.RenderSize.Width <= window.ActualWidth - 16);
+                }
+            }
+            finally { window.Close(); Localizer.SetLanguage(previousLanguage); }
+        });
+    }
+
+    [Fact]
     public void Popups_follow_their_own_windows_during_moves_and_resizes()
     {
         RunOnSta(_ =>

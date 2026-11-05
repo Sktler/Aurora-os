@@ -54,6 +54,28 @@ namespace Aurora.App.ViewModels
             public override string ToString() => Name;
         }
 
+        public void RefreshLocalizedLabels()
+        {
+            if (ProviderChoices.Count > 0)
+            {
+                var selectedDefault = SelectedProviderChoice?.Key == GlobalProviderKey;
+                ProviderChoices[0] = new ProviderOption { Key = GlobalProviderKey, Name = Localizer.GetUiText("Default (global)") };
+                if (selectedDefault) SelectedProviderChoice = ProviderChoices[0];
+            }
+            if (FolderChoices.Count > 0)
+            {
+                var selectedDefault = SelectedFolder?.Id == null;
+                _loadingOrganization = true;
+                try
+                {
+                    FolderChoices[0] = new FolderOption { Id = null, Name = ConversationBrowserViewModel.NoFolderLabel };
+                    if (selectedDefault) SelectedFolder = FolderChoices[0];
+                }
+                finally { _loadingOrganization = false; }
+            }
+            RefreshProviderModelLabel();
+        }
+
         private void LoadProviderChoice()
         {
             _loadingProvider = true;
@@ -75,7 +97,7 @@ namespace Aurora.App.ViewModels
             if (App.Settings == null) return;
             var (provider, model) = App.ResolveCompanionModel(Companion);
             var configured = App.GetChatEngineFor(Companion)?.IsConfigured == true;
-            ProviderModelLabel = $"{AIProviderCatalog.Get(provider).DisplayName} · {model}" + (configured ? "" : " · no API key");
+            ProviderModelLabel = $"{AIProviderCatalog.Get(provider).DisplayName} · {model}" + (configured ? "" : Localizer.GetUiText(" · no API key"));
         }
 
         [RelayCommand]

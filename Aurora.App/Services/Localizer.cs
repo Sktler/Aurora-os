@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
@@ -13,7 +14,13 @@ namespace Aurora.App.Services
     {
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public string this[string key] => Localizer.Get(key);
-        internal void NotifyLanguageChanged() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs("Item[]"));
+        public int Revision { get; private set; }
+        internal void NotifyLanguageChanged()
+        {
+            Revision++;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs("Item[]"));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Revision)));
+        }
     }
 
     public sealed record AppLanguage(string Code, string NativeName)
@@ -42,6 +49,7 @@ namespace Aurora.App.Services
         private sealed class OriginalValues
         {
             public Dictionary<DependencyProperty, string> Values { get; } = new();
+            public Dictionary<DependencyProperty, string> Applied { get; } = new();
         }
         private static readonly ConditionalWeakTable<DependencyObject, OriginalValues> OriginalText = new();
 
@@ -97,28 +105,70 @@ namespace Aurora.App.Services
             return key;
         }
 
+        internal static bool HasUiTranslation(string text, string language) =>
+            (UiTranslations.TryGetValue(text, out var table) || UiTranslations.TryGetValue(NormalizeUiText(text), out table)) && table.ContainsKey(language);
+
         public static string GetUiText(string text, string? language = null)
         {
             var lang = NormalizeLanguage(language ?? _language);
-            if (string.Equals(lang, DefaultLanguage, StringComparison.Ordinal)) return GetEnglishText(text);
-            if (UiTranslations.TryGetValue(text, out var translations) && translations.TryGetValue(lang, out var translated))
-                return translated;
+
+            if (UiTranslations.TryGetValue(text, out var translations))
+                return lang == DefaultLanguage ? text : translations.GetValueOrDefault(lang, text);
+            string? translated;
             var normalizedText = NormalizeUiText(text);
             if (UiTranslations.TryGetValue(normalizedText, out translations) && translations.TryGetValue(lang, out translated))
                 return translated;
 
             foreach (var entry in UiTranslations)
             {
-                if (entry.Value.TryGetValue(lang, out translated) &&
-                    string.Equals(NormalizeUiText(translated), normalizedText, StringComparison.Ordinal))
-                    return translated;
+                if (entry.Value.Values.Any(value => string.Equals(NormalizeUiText(value), normalizedText, StringComparison.Ordinal)))
+                    return lang == DefaultLanguage ? entry.Key : entry.Value.GetValueOrDefault(lang, entry.Key);
             }
 
+            if (TryTranslateFormattedText(text, lang, out var formatted)) return formatted;
             return GetEnglishText(text);
         }
 
         public static string FormatUiText(string template, params object?[] args) =>
             string.Format(CultureInfo.CurrentUICulture, GetUiText(template), args);
+
+        private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> UiTranslations = CreateUiTranslations();
+
+        private sealed record FormatPattern(string English, IReadOnlyDictionary<string, string> Translations, Regex Pattern, int ArgumentCount);
+        private static readonly Lazy<List<FormatPattern>> FormatPatterns = new(() =>
+        {
+            var patterns = new List<FormatPattern>();
+            foreach (var entry in UiTranslations)
+            {
+                if (!entry.Key.Contains("{0}")) continue;
+                var count = Regex.Matches(entry.Key, @"\{([0-9]+)\}").Select(m => int.Parse(m.Groups[1].Value)).Max() + 1;
+                foreach (var source in new[] { entry.Key }.Concat(entry.Value.Values))
+                {
+                    var parts = Regex.Split(source, @"(\{[0-9]+\})");
+                    var pattern = "^" + string.Concat(parts.Select(part =>
+                        Regex.IsMatch(part, @"^\{[0-9]+\}$")
+                            ? "(?<arg" + part[1..^1] + ">.*?)" : Regex.Escape(part))) + "$";
+                    patterns.Add(new(entry.Key, entry.Value, new Regex(pattern, RegexOptions.Singleline | RegexOptions.CultureInvariant), count));
+                }
+            }
+            return patterns;
+        });
+
+        private static bool TryTranslateFormattedText(string text, string language, out string translated)
+        {
+            // Called only for explicitly localized UI labels/statuses. Arguments remain data.
+            foreach (var item in FormatPatterns.Value)
+            {
+                var match = item.Pattern.Match(text);
+                if (!match.Success) continue;
+                var args = Enumerable.Range(0, item.ArgumentCount).Select(i => (object)match.Groups["arg" + i].Value).ToArray();
+                translated = string.Format(CultureInfo.CurrentUICulture,
+                    language == DefaultLanguage ? item.English : item.Translations.GetValueOrDefault(language, item.English), args);
+                return true;
+            }
+            translated = text;
+            return false;
+        }
 
         private static string GetEnglishText(string text)
         {
@@ -153,6 +203,8 @@ namespace Aurora.App.Services
                 var element = pending.Pop();
                 if (!seen.Add(element)) continue;
                 TranslateLocalStringValues(element);
+                if (element is FrameworkElement { ContextMenu: { } menu }) pending.Push(menu);
+                if (element is FrameworkElement { ToolTip: DependencyObject tip }) pending.Push(tip);
 
                 foreach (var child in LogicalTreeHelper.GetChildren(element).OfType<DependencyObject>())
                     pending.Push(child);
@@ -182,20 +234,27 @@ namespace Aurora.App.Services
                     property != System.Windows.Automation.AutomationProperties.NameProperty)
                     continue;
                 if (property.ReadOnly || values.Current.Value is not string initial) continue;
+                if (originals.Applied.TryGetValue(property, out var applied) && initial != applied)
+                {
+                    // A control changed its label/status since the last localization pass.
+                    originals.Values.Remove(property);
+                    originals.Applied.Remove(property);
+                }
                 if (!originals.Values.TryGetValue(property, out var original))
                 {
                     original = GetEnglishText(initial);
-                    if (!UiTranslations.ContainsKey(NormalizeUiText(original))) continue;
+                    if (!UiTranslations.ContainsKey(NormalizeUiText(original)) &&
+                        !TryTranslateFormattedText(initial, DefaultLanguage, out original)) continue;
                     originals.Values[property] = original;
                 }
 
                 var localized = GetUiText(original);
+                originals.Applied[property] = localized;
                 if (!Equals(element.GetValue(property), localized))
                     element.SetValue(property, localized);
             }
         }
 
-        private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> UiTranslations = CreateUiTranslations();
 
         private static Dictionary<string, IReadOnlyDictionary<string, string>> CreateUiTranslations()
         {
@@ -702,6 +761,84 @@ namespace Aurora.App.Services
             Add("Teal", "Verde azulado", "Bleu sarcelle", "Blaugrün");
             Add("★ Favorite", "★ Favorito", "★ Favori", "★ Favorit");
 
+            Add("Appearance", "Apariencia", "Apparence", "Darstellung");
+            Add("Theme", "Tema", "Thème", "Design");
+            Add("Orb skin", "Estilo del orbe", "Style de l’orbe", "Kugelstil");
+            Add("Companion orb skin (each companion's color still applies)", "Estilo del orbe (se conserva el color de cada compañero)", "Style de l’orbe (la couleur de chaque compagnon est conservée)", "Kugelstil (die Farbe jedes Begleiters bleibt erhalten)");
+            Add("Location", "Ubicación", "Localisation", "Standort");
+            Add("Refresh models", "Actualizar modelos", "Actualiser les modèles", "Modelle aktualisieren");
+            Add("Save provider and model", "Guardar proveedor y modelo", "Enregistrer le fournisseur et le modèle", "Anbieter und Modell speichern");
+            Add("Recovery storage: ", "Almacenamiento de recuperación: ", "Stockage de récupération : ", "Wiederherstellungsspeicher: ");
+            Add("Your key is stored in Windows Credential Vault and sent only to the selected provider.", "Tu clave se guarda en el Almacén de credenciales de Windows y solo se envía al proveedor seleccionado.", "Votre clé est stockée dans le Gestionnaire d’identifiants Windows et envoyée uniquement au fournisseur choisi.", "Dein Schlüssel wird in der Windows-Anmeldeinformationsverwaltung gespeichert und nur an den gewählten Anbieter gesendet.");
+            Add("Voice enrolled: {0}", "Voz registrada: {0}", "Voix enregistrée : {0}", "Stimme registriert: {0}");
+            Add("Success: {0}", "Éxito: {0}", "Réussite : {0}", "Erfolg: {0}");
+            Add("Yes", "Sí", "Oui", "Ja");
+            Add("No", "No", "Non", "Nein");
+            Add("Enter an API key to load available models. You can also type a model name.", "Introduce una clave API para cargar los modelos disponibles. También puedes escribir un modelo.", "Saisissez une clé API pour charger les modèles disponibles. Vous pouvez aussi saisir un nom de modèle.", "Gib einen API-Schlüssel ein, um verfügbare Modelle zu laden. Du kannst auch einen Modellnamen eingeben.");
+            Add("Loading models from {0}...", "Cargando modelos de {0}...", "Chargement des modèles de {0}...", "Modelle von {0} werden geladen...");
+            Add("{0} models loaded live from {1}.", "{0} modelos cargados de {1}.", "{0} modèles chargés depuis {1}.", "{0} Modelle von {1} geladen.");
+            Add("Couldn't load models: {0}", "No se pudieron cargar los modelos: {0}", "Impossible de charger les modèles : {0}", "Modelle konnten nicht geladen werden: {0}");
+            Add("Enter an API key first.", "Introduce primero una clave API.", "Saisissez d’abord une clé API.", "Gib zuerst einen API-Schlüssel ein.");
+            Add("Model discovery is unavailable in local-only mode or during Emergency Stop.", "La búsqueda de modelos no está disponible en modo local o durante una parada de emergencia.", "La découverte de modèles est indisponible en mode local ou pendant un arrêt d’urgence.", "Die Modellsuche ist im lokalen Modus oder während eines Notstopps nicht verfügbar.");
+            Add("Provider and model saved. Changes apply to the next request.", "Proveedor y modelo guardados. Los cambios se aplican a la próxima solicitud.", "Fournisseur et modèle enregistrés. Les modifications s’appliquent à la prochaine demande.", "Anbieter und Modell gespeichert. Änderungen gelten für die nächste Anfrage.");
+            Add("Could not save settings: {0}", "No se pudo guardar la configuración: {0}", "Impossible d’enregistrer les paramètres : {0}", "Einstellungen konnten nicht gespeichert werden: {0}");
+            Add("Could not open the browser: {0}", "No se pudo abrir el navegador: {0}", "Impossible d’ouvrir le navigateur : {0}", "Browser konnte nicht geöffnet werden: {0}");
+            Add("{0} request failed (HTTP {1}). {2}", "La solicitud a {0} falló (HTTP {1}). {2}", "La demande à {0} a échoué (HTTP {1}). {2}", "Anfrage an {0} fehlgeschlagen (HTTP {1}). {2}");
+            Add("Check the API key and account permissions in Settings > AI engine.", "Comprueba la clave API y los permisos de la cuenta en Configuración > Motor de IA.", "Vérifiez la clé API et les autorisations du compte dans Paramètres > Moteur IA.", "Prüfe API-Schlüssel und Kontoberechtigungen unter Einstellungen > KI-Engine.");
+            Add("The selected model is unavailable. Choose an available model in Settings > AI engine.", "El modelo seleccionado no está disponible. Elige otro en Configuración > Motor de IA.", "Le modèle sélectionné est indisponible. Choisissez un modèle dans Paramètres > Moteur IA.", "Das gewählte Modell ist nicht verfügbar. Wähle ein verfügbares Modell unter Einstellungen > KI-Engine.");
+            Add("The provider's rate or usage limit was reached. Check your quota and try again later.", "Se alcanzó el límite de uso del proveedor. Comprueba tu cuota e inténtalo más tarde.", "La limite d’utilisation du fournisseur est atteinte. Vérifiez votre quota et réessayez plus tard.", "Das Nutzungslimit des Anbieters wurde erreicht. Prüfe dein Kontingent und versuche es später erneut.");
+            Add("The provider rejected this request. Check the selected model and its supported features.", "El proveedor rechazó la solicitud. Comprueba el modelo y sus funciones compatibles.", "Le fournisseur a refusé cette demande. Vérifiez le modèle et ses fonctionnalités.", "Der Anbieter hat die Anfrage abgelehnt. Prüfe das Modell und seine unterstützten Funktionen.");
+            Add("The provider is temporarily unavailable. Try again later.", "El proveedor no está disponible temporalmente. Inténtalo más tarde.", "Le fournisseur est temporairement indisponible. Réessayez plus tard.", "Der Anbieter ist vorübergehend nicht verfügbar. Versuche es später erneut.");
+            Add("Check your provider settings and try again.", "Comprueba la configuración del proveedor e inténtalo de nuevo.", "Vérifiez les paramètres du fournisseur et réessayez.", "Prüfe die Anbietereinstellungen und versuche es erneut.");
+            Add("{0} request was cancelled or timed out. Check the connection and provider status before retrying.", "La solicitud a {0} se canceló o agotó el tiempo. Comprueba la conexión y el estado del proveedor.", "La demande à {0} a été annulée ou a expiré. Vérifiez la connexion et l’état du fournisseur.", "Die Anfrage an {0} wurde abgebrochen oder ist abgelaufen. Prüfe Verbindung und Anbieterstatus.");
+            Add("Could not reach {0}. Check your connection and provider settings, then try again.", "No se pudo contactar con {0}. Comprueba la conexión y la configuración del proveedor.", "Impossible de joindre {0}. Vérifiez la connexion et les paramètres du fournisseur, puis réessayez.", "{0} ist nicht erreichbar. Prüfe Verbindung und Anbietereinstellungen und versuche es erneut.");
+            Add("Used the available default model {0} for this reply. Your saved model is unchanged.", "Se usó el modelo predeterminado disponible {0} para esta respuesta. Tu modelo guardado no ha cambiado.", "Le modèle par défaut disponible {0} a été utilisé pour cette réponse. Votre modèle enregistré est inchangé.", "Für diese Antwort wurde das verfügbare Standardmodell {0} verwendet. Dein gespeichertes Modell bleibt unverändert.");
+            Add("Appearance reset to default.", "Apariencia restablecida.", "Apparence réinitialisée.", "Darstellung zurückgesetzt.");
+            Add("Checking for an Aurora update...", "Buscando una actualización de Aurora...", "Recherche d’une mise à jour d’Aurora...", "Suche nach einem Aurora-Update...");
+            Add("Downloading the latest Windows package...", "Descargando el último paquete de Windows...", "Téléchargement du dernier paquet Windows...", "Aktuelles Windows-Paket wird heruntergeladen...");
+            Add("Discovering devices...", "Buscando dispositivos...", "Recherche d’appareils...", "Geräte werden gesucht...");
+            Add("Testing connection...", "Probando conexión...", "Test de connexion...", "Verbindung wird geprüft...");
+            Add("Loading voices from Azure...", "Cargando voces de Azure...", "Chargement des voix Azure...", "Azure-Stimmen werden geladen...");
+            Add("Loading voices from ElevenLabs...", "Cargando voces de ElevenLabs...", "Chargement des voix ElevenLabs...", "ElevenLabs-Stimmen werden geladen...");
+            Add("Speaking a sample now...", "Reproduciendo una muestra...", "Lecture d’un échantillon...", "Stimmprobe wird abgespielt...");
+            Add("Saved. New replies will use this voice.", "Guardado. Las próximas respuestas usarán esta voz.", "Enregistré. Les prochaines réponses utiliseront cette voix.", "Gespeichert. Neue Antworten verwenden diese Stimme.");
+            Add("No speech voices are available on this Windows install.", "No hay voces disponibles en esta instalación de Windows.", "Aucune voix n’est disponible sur cette installation Windows.", "Auf dieser Windows-Installation sind keine Stimmen verfügbar.");
+            Add("Disconnected from Google.", "Desconectado de Google.", "Déconnecté de Google.", "Von Google getrennt.");
+            Add("Disconnected from Spotify.", "Desconectado de Spotify.", "Déconnecté de Spotify.", "Von Spotify getrennt.");
+            Add("Disconnected from Home Assistant.", "Desconectado de Home Assistant.", "Déconnecté de Home Assistant.", "Von Home Assistant getrennt.");
+            Add("Not connected.", "No conectado.", "Non connecté.", "Nicht verbunden.");
+            Add("Enter a model name first.", "Introduce primero un modelo.", "Saisissez d’abord un modèle.", "Gib zuerst einen Modellnamen ein.");
+            Add("Enter a password first.", "Introduce primero una contraseña.", "Saisissez d’abord un mot de passe.", "Gib zuerst ein Passwort ein.");
+            Add("Developer mode locked.", "Modo de desarrollador bloqueado.", "Mode développeur verrouillé.", "Entwicklermodus gesperrt.");
+            Add("Developer mode unlocked.", "Modo de desarrollador desbloqueado.", "Mode développeur déverrouillé.", "Entwicklermodus entsperrt.");
+            Add("Incorrect developer password.", "Contraseña de desarrollador incorrecta.", "Mot de passe développeur incorrect.", "Falsches Entwicklerpasswort.");
+            Add("The passwords do not match.", "Las contraseñas no coinciden.", "Les mots de passe ne correspondent pas.", "Die Passwörter stimmen nicht überein.");
+            Add("Create a developer password first.", "Crea primero una contraseña de desarrollador.", "Créez d’abord un mot de passe développeur.", "Erstelle zuerst ein Entwicklerpasswort.");
+            Add("Developer password must be at least 12 characters.", "La contraseña de desarrollador debe tener al menos 12 caracteres.", "Le mot de passe développeur doit contenir au moins 12 caractères.", "Das Entwicklerpasswort muss mindestens 12 Zeichen lang sein.");
+            Add("Developer password created. Use it to unlock developer mode and authorize a complete Aurora reset.", "Contraseña de desarrollador creada. Úsala para desbloquear el modo de desarrollador y autorizar un reinicio completo.", "Mot de passe développeur créé. Utilisez-le pour déverrouiller le mode développeur et autoriser une réinitialisation complète.", "Entwicklerpasswort erstellt. Verwende es zum Entsperren des Entwicklermodus und zum Freigeben eines vollständigen Aurora-Resets.");
+            Add("Developer credential required to reset Aurora.", "Se requiere la credencial de desarrollador para restablecer Aurora.", "Identifiant développeur requis pour réinitialiser Aurora.", "Zum Zurücksetzen von Aurora sind Entwickleranmeldedaten erforderlich.");
+            Add("Developer reset", "Restablecimiento de desarrollador", "Réinitialisation développeur", "Entwickler-Reset");
+            Add("AI provider disconnected", "Proveedor de IA desconectado", "Fournisseur IA déconnecté", "KI-Anbieter getrennt");
+            Add("Done", "Listo", "Terminé", "Fertig");
+            Add("Hide", "Ocultar", "Masquer", "Ausblenden");
+            Add("Unlock", "Desbloquear", "Déverrouiller", "Entsperren");
+            Add("Verify", "Verificar", "Vérifier", "Prüfen");
+            Add("Sift's documents folder cleared.", "Carpeta de documentos de Sift eliminada.", "Dossier de documents de Sift effacé.", "Sifts Dokumentenordner entfernt.");
+            Add("Choose a folder Sift can read files from", "Elige una carpeta que Sift pueda leer", "Choisissez un dossier que Sift peut lire", "Wähle einen Ordner, den Sift lesen darf");
+            Add("Enter an Azure Speech key and region first.", "Introduce primero una clave y región de Azure Speech.", "Saisissez d’abord une clé et une région Azure Speech.", "Gib zuerst einen Azure-Speech-Schlüssel und eine Region ein.");
+            Add("Enter an ElevenLabs API key first.", "Introduce primero una clave API de ElevenLabs.", "Saisissez d’abord une clé API ElevenLabs.", "Gib zuerst einen ElevenLabs-API-Schlüssel ein.");
+            Add("Enter your Google OAuth Client ID and Client Secret first (see the note below).", "Introduce primero tu ID y secreto de cliente OAuth de Google (consulta la nota).", "Saisissez d’abord l’ID et le secret client OAuth Google (voir la note).", "Gib zuerst Google-OAuth-Client-ID und Client-Secret ein (siehe Hinweis unten).");
+            Add("Enter your Spotify Client ID first (see the note below).", "Introduce primero tu ID de cliente de Spotify (consulta la nota).", "Saisissez d’abord votre ID client Spotify (voir la note).", "Gib zuerst deine Spotify-Client-ID ein (siehe Hinweis unten).");
+            Add("Opening your browser to sign in with Google...", "Abriendo el navegador para iniciar sesión con Google...", "Ouverture du navigateur pour vous connecter à Google...", "Browser zur Google-Anmeldung wird geöffnet...");
+            Add("Opening your browser to sign in with Spotify...", "Abriendo el navegador para iniciar sesión con Spotify...", "Ouverture du navigateur pour vous connecter à Spotify...", "Browser zur Spotify-Anmeldung wird geöffnet...");
+            Add("To clear everything, use \"Reset Aurora completely\" in the AI engine section.", "Para borrar todo, usa «Restablecer Aurora por completo» en Motor de IA.", "Pour tout effacer, utilisez «Réinitialiser complètement Aurora» dans Moteur IA.", "Zum Löschen aller Daten verwende „Aurora vollständig zurücksetzen“ im Bereich KI-Engine.");
+            Add("Includes any custom or cloned voices already in your ElevenLabs account, not just their stock ones. Save the key above first if \"Load voices\" comes back empty.", "Incluye voces personalizadas o clonadas de tu cuenta de ElevenLabs. Guarda la clave si «Cargar voces» no devuelve resultados.", "Inclut les voix personnalisées ou clonées de votre compte ElevenLabs. Enregistrez la clé si «Charger les voix» ne renvoie rien.", "Enthält auch eigene und geklonte Stimmen deines ElevenLabs-Kontos. Speichere den Schlüssel, falls „Stimmen laden“ keine Ergebnisse liefert.");
+            Add("Needs an Azure account (free tier includes 0.5M characters/month). \"Create resource\" opens the Azure Portal's Speech service page - after creating one, its key and region are under Keys and Endpoint in the resource's menu.", "Requiere una cuenta de Azure (el nivel gratuito incluye 0,5 M de caracteres al mes). «Crear recurso» abre Speech en Azure Portal; después, busca la clave y región en Claves y punto de conexión.", "Nécessite un compte Azure (offre gratuite : 0,5 M de caractères/mois). «Créer une ressource» ouvre Speech dans Azure Portal ; la clé et la région se trouvent ensuite dans Clés et point de terminaison.", "Erfordert ein Azure-Konto (kostenlos: 0,5 Mio. Zeichen/Monat). „Ressource erstellen“ öffnet Speech im Azure-Portal. Schlüssel und Region stehen danach unter Schlüssel und Endpunkt.");
+            Add("1. Go to developer.spotify.com/dashboard and log in with any Spotify account.\n2. Create an app (any name/description works).\n3. In the app's settings, add this exact Redirect URI: http://127.0.0.1:8888/callback\n4. Copy the Client ID shown on the app's page into the box below.", "1. Ve a developer.spotify.com/dashboard e inicia sesión.\n2. Crea una aplicación.\n3. Añade esta URI de redirección exacta: http://127.0.0.1:8888/callback\n4. Copia el Client ID en el campo siguiente.", "1. Ouvrez developer.spotify.com/dashboard et connectez-vous.\n2. Créez une application.\n3. Ajoutez cette URI de redirection exacte : http://127.0.0.1:8888/callback\n4. Copiez le Client ID dans le champ ci-dessous.", "1. Öffne developer.spotify.com/dashboard und melde dich an.\n2. Erstelle eine App.\n3. Füge diese Redirect URI exakt hinzu: http://127.0.0.1:8888/callback\n4. Kopiere die Client ID in das Feld unten.");
+            Add("1. Go to console.cloud.google.com and create a project (or use an existing one).\n2. APIs & Services → OAuth consent screen → set it up for your own use (External + add yourself as a test user is fine).\n3. APIs & Services → Credentials → Create Credentials → OAuth client ID → Application type: Desktop app.\n4. Copy the Client ID and Client Secret it gives you into the two boxes below.\n5. APIs & Services → Library → enable the Gmail API and Google Drive API.", "1. Abre console.cloud.google.com y crea o selecciona un proyecto.\n2. Configura APIs & Services → OAuth consent screen para uso personal.\n3. En Credentials, crea un OAuth client ID de tipo Desktop app.\n4. Copia el Client ID y Client Secret en los campos siguientes.\n5. En Library, activa Gmail API y Google Drive API.", "1. Ouvrez console.cloud.google.com et créez ou choisissez un projet.\n2. Configurez APIs & Services → OAuth consent screen pour votre usage personnel.\n3. Dans Credentials, créez un OAuth client ID de type Desktop app.\n4. Copiez le Client ID et le Client Secret dans les champs ci-dessous.\n5. Dans Library, activez Gmail API et Google Drive API.", "1. Öffne console.cloud.google.com und erstelle oder wähle ein Projekt.\n2. Konfiguriere APIs & Services → OAuth consent screen für dich selbst.\n3. Erstelle unter Credentials eine OAuth client ID vom Typ Desktop app.\n4. Kopiere Client ID und Client Secret in die Felder unten.\n5. Aktiviere unter Library Gmail API und Google Drive API.");
+            Add("⛔  EMERGENCY STOP", "⛔  PARADA DE EMERGENCIA", "⛔  ARRÊT D’URGENCE", "⛔  NOTSTOPP");
+            Add("Disconnect the active AI provider and remove its key from local settings. Revoke the key with the provider if compromised.", "Desconecta el proveedor de IA activo y elimina su clave local. Revoca la clave con el proveedor si está comprometida.", "Déconnecte le fournisseur IA actif et supprime sa clé locale. Révoquez la clé auprès du fournisseur si elle est compromise.", "Trennt den aktiven KI-Anbieter und entfernt den lokalen Schlüssel. Widerrufe einen kompromittierten Schlüssel beim Anbieter.");
+            Add(" · no API key", " · sin clave API", " · aucune clé API", " · kein API-Schlüssel");
             return result;
         }
 

@@ -5,7 +5,7 @@
         xmlns:local="clr-namespace:Aurora.App.Views"
         xmlns:models="clr-namespace:Aurora.App.Models"
         Title="Settings" Height="840" Width="720" MinHeight="560" MinWidth="620"
-        Background="{StaticResource BgDeepTranslucentBrush}"
+        Background="{DynamicResource BgDeepTranslucentBrush}"
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
@@ -38,7 +38,7 @@
             <Setter Property="Margin" Value="0,0,14,14"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Background" Value="{StaticResource BgPanelBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BgPanelBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -48,7 +48,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="Background" Value="{StaticResource BgCardBrush}"/>
+                                <Setter TargetName="TileBorder" Property="Background" Value="{DynamicResource BgCardBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -67,7 +67,7 @@
                 <TextBlock Text="Engine, voice, integrations, and your local data." Style="{StaticResource MutedText}" Margin="0,0,0,20"/>
 
                 <TextBlock Text="Star a Settings entry to pin it to Home." Style="{StaticResource MutedText}" Margin="0,0,0,14"/>
-                <TextBlock Text="{Binding SettingsNavigation.Status}" Foreground="#F0745C" TextWrapping="Wrap"/>
+                <TextBlock Text="{local:LocBinding SettingsNavigation.Status}" Foreground="#F0745C" TextWrapping="Wrap"/>
                 <ItemsControl ItemsSource="{Binding SettingsNavigation.Entries}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -95,11 +95,11 @@
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Section}" Value="{x:Static models:SettingsSection.Music}">
                                                             <Setter Property="Text" Value="{Binding DataContext.SpotifyConnected, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"/>
-                                                            <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Section}" Value="{x:Static models:SettingsSection.Google}">
                                                             <Setter Property="Text" Value="{Binding DataContext.GoogleConnected, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"/>
-                                                            <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -114,7 +114,7 @@
                                         Cursor="Hand" ToolTip="{Binding PinAction}" AutomationProperties.Name="{Binding PinAction}"
                                         Command="{Binding DataContext.SettingsNavigation.TogglePinCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}">
-                                    <TextBlock Text="{Binding PinGlyph}" FontSize="20" Foreground="{StaticResource AccentAmberBrush}"/>
+                                    <TextBlock Text="{Binding PinGlyph}" FontSize="20" Foreground="{DynamicResource AccentAmberBrush}"/>
                                 </Button>
                             </Grid>
                         </DataTemplate>
@@ -129,11 +129,11 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="AI engine" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <local:ProviderSettingsView x:Name="EngineSettings"/>
                 </Border>
                 <Button Content="Reset Aurora completely" Click="ResetAurora_Click" HorizontalAlignment="Left" Margin="0,16,0,0"/>
@@ -147,17 +147,17 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Companion colors" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                            Text="Changes the color of each companion's orb, both in the sidebar and the header - takes effect immediately, no restart needed."/>
 
                 <ItemsControl ItemsSource="{Binding Companions}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{StaticResource BgPanelBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                         <local:Globe3D Width="24" Height="24" Margin="0,0,10,0" AccentColor="{Binding AccentHex}"/>
@@ -175,8 +175,8 @@
                                         <Button Tag="#5BE0A0" Background="#5BE0A0" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Green"/>
                                         <Button Tag="#4FD0A8" Background="#4FD0A8" Click="ColorSwatch_Click" Style="{StaticResource ColorSwatchStyle}" ToolTip="Teal"/>
                                         <Button Content="Custom..." Click="CustomColor_Click" Padding="10,4,10,4" Margin="4,0,0,8"
-                                                Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                                BorderBrush="{StaticResource AccentCyanBrush}" BorderThickness="1" Cursor="Hand"/>
+                                                Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                BorderBrush="{DynamicResource AccentCyanBrush}" BorderThickness="1" Cursor="Hand"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -192,11 +192,11 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Voice" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <CheckBox Content="Companions speak their replies out loud by default" IsChecked="{Binding SpeakRepliesByDefault}"
                                   Margin="0,0,0,14"/>
@@ -211,10 +211,10 @@
                                       DisplayMemberPath="Label" AutomationProperties.Name="Microphone"
                                       MinWidth="280" MaxWidth="420"/>
                             <Button Content="Refresh" Command="{Binding RefreshMicrophonesCommand}" Margin="8,0,0,0" Padding="12,4,12,4"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource AccentCyanBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource AccentCyanBrush}"/>
                         </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="Choose which microphone Aurora listens to for voice input and the wake word. System default follows whatever Windows uses. Press Save to apply."/>
 
                         <TextBlock Text="Speaker" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -223,10 +223,10 @@
                                       DisplayMemberPath="Label" AutomationProperties.Name="Speaker"
                                       MinWidth="280" MaxWidth="420"/>
                             <Button Content="Refresh" Command="{Binding RefreshSpeakersCommand}" Margin="8,0,0,0" Padding="12,4,12,4"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource AccentCyanBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource AccentCyanBrush}"/>
                         </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="Choose where Aurora's spoken replies play. This applies to cloud voices (OpenAI, ElevenLabs, Azure); the offline Windows voice always uses the Windows default output. Press Save to apply."/>
 
                         <TextBlock Text="Voice input sensitivity (confidence threshold)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -241,7 +241,7 @@
                             <TextBlock Grid.Column="1" Text="{Binding VoiceConfidenceThreshold, StringFormat={}{0:P0}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" MinWidth="40"/>
                         </Grid>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="Recognized speech below this confidence is treated as noise and never sent to your companion - raise it in a noisy room, lower it in a quiet one. Every recognized phrase (accepted or not) stays available for debugging voice-recognition quality."/>
 
                         <TextBlock Text="Speaking pace" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -256,7 +256,7 @@
                             <TextBlock Grid.Column="1" Text="{Binding SpeechPaceWpm, StringFormat={}{0:0} wpm}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" MinWidth="70"/>
                         </Grid>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="How fast replies are spoken, in words per minute - a natural conversational pace is around 150-170. Applies to whichever voice provider is selected below without changing what's said, only how quickly."/>
 
                         <TextBlock Text="Aurora voice volume" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -271,19 +271,19 @@
                             <TextBlock Grid.Column="1" Text="{Binding TtsVolumePercent, StringFormat={}{0:0}%}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" MinWidth="70"/>
                         </Grid>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="How loud Aurora's spoken replies are, independent of your PC's system volume. Click Save to apply."/>
 
                         <TextBlock Text="Voice provider" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding TtsProvider}"
-                                  Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                  Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderThickness="0" Padding="10" Margin="0,0,0,4">
                             <ComboBoxItem Content="OpenAI (default - biggest natural-sounding selection)" Tag="openai"/>
                             <ComboBoxItem Content="ElevenLabs" Tag="elevenlabs"/>
                             <ComboBoxItem Content="Azure Speech" Tag="azure"/>
                             <ComboBoxItem Content="Windows built-in (offline, free, no key)" Tag="windows"/>
                         </ComboBox>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,14" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="If the picked provider has no key saved yet, or a request to it fails, replies automatically fall back to the offline Windows voice instead of staying silent."/>
 
                         <!-- === OpenAI === -->
@@ -296,24 +296,24 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox Grid.Column="0" Text="{Binding OpenAiTtsApiKey, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                                 <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetOpenAiKey_Click"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource AccentCyanBrush}"/>
                                 <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
-                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             </Grid>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Leave blank to reuse your OpenAI chat API key from the AI engine section, if you've already set one. TTS is billed per character (a small fraction of a cent per reply) - a card on your OpenAI account is required, there's no free tier for this specific API."/>
 
                             <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <ComboBox Text="{Binding OpenAiTtsVoice, UpdateSourceTrigger=PropertyChanged}"
                                       IsEditable="True" IsTextSearchEnabled="True"
-                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                       BorderThickness="0" Padding="10" Margin="0,0,0,4">
                                 <ComboBoxItem Content="alloy"/>
                                 <ComboBoxItem Content="echo"/>
@@ -322,7 +322,7 @@
                                 <ComboBoxItem Content="nova"/>
                                 <ComboBoxItem Content="shimmer"/>
                             </ComboBox>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="OpenAI doesn't publish a voice-listing API, so unlike the Models page this list is a starting point, not a live fetch - type any other voice name OpenAI adds and it'll work the same way."/>
                         </StackPanel>
 
@@ -336,32 +336,32 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox Grid.Column="0" Text="{Binding ElevenLabsApiKey, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                                 <Button Grid.Column="1" Content="Get API key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetElevenLabsKey_Click"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource AccentCyanBrush}"/>
                                 <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
-                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             </Grid>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Free tier available (around 10,000 characters/month, no card required to start) - found under your account's Profile + API Key settings once signed in."/>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
                                         Command="{Binding LoadElevenLabsVoicesCommand}"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource AccentCyanBrush}"/>
                             </StackPanel>
                             <ComboBox ItemsSource="{Binding ElevenLabsVoices}" SelectedItem="{Binding SelectedElevenLabsVoice}"
                                       DisplayMemberPath="Name"
-                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                       BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Includes any custom or cloned voices already in your ElevenLabs account, not just their stock ones. Save the key above first if &quot;Load voices&quot; comes back empty."/>
                         </StackPanel>
 
@@ -375,66 +375,66 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox Grid.Column="0" Text="{Binding AzureSpeechKey, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                          BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                                 <Button Grid.Column="1" Content="Create resource" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Click="GetAzureKey_Click"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource AccentCyanBrush}"/>
                                 <Button Grid.Column="2" Content="Save key" Margin="8,0,0,0" Padding="12,8,12,8"
                                         Command="{Binding SaveVoiceCommand}"
-                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             </Grid>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Needs an Azure account (free tier includes 0.5M characters/month). &quot;Create resource&quot; opens the Azure Portal's Speech service page - after creating one, its key and region are under Keys and Endpoint in the resource's menu."/>
 
                             <TextBlock Text="Region" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding AzureSpeechRegion, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" Margin="0,0,0,4"/>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="The short region code from your Azure resource, e.g. eastus or westeurope - it's part of the API endpoint, so it has to match exactly."/>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <Button Content="Load voices" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
                                         Command="{Binding LoadAzureVoicesCommand}"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource AccentCyanBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource AccentCyanBrush}"/>
                             </StackPanel>
                             <ComboBox ItemsSource="{Binding AzureVoices}" SelectedItem="{Binding SelectedAzureVoice}"
                                       DisplayMemberPath="DisplayName"
-                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                       BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Azure's catalog runs to hundreds of neural voices across languages - loading it live means new ones Microsoft adds show up here automatically."/>
                         </StackPanel>
 
                         <!-- === Windows (offline) === -->
                         <StackPanel Visibility="{Binding TtsProvider, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=windows}">
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="Runs fully offline through Windows' built-in voices - pick whichever's installed on this PC. Smaller selection than the cloud providers above, but free and needs no API key."/>
                             <TextBlock Text="Voice" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}"
                                       DisplayMemberPath="DisplayName"
-                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                      Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                       BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="No voices showing up? Windows Settings → Time &amp; Language → Speech lets you add more."/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                             <Button Content="Test voice" Padding="16,8,16,8"
                                     Command="{Binding TestVoiceCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <Button Content="Save" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveVoiceCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding VoiceStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding VoiceStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -446,11 +446,11 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Appearance" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock Text="Theme" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <ComboBox ItemsSource="{Binding ThemeNames}" SelectedItem="{Binding SelectedTheme}"
@@ -459,7 +459,7 @@
                         <ComboBox ItemsSource="{Binding OrbSkinNames}" SelectedItem="{Binding SelectedOrbSkin}"
                                   AutomationProperties.Name="Orb skin" HorizontalAlignment="Left" MinWidth="200" Margin="0,0,0,14"/>
                         <Button Content="Reset to default" Command="{Binding ResetAppearanceCommand}" HorizontalAlignment="Left" Padding="16,8,16,8"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextMutedBrush}"/>
+                                Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextMutedBrush}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -471,25 +471,25 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Sift's documents folder" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,0,0,10"
                                    Text="Sift can only read files inside one folder you choose here - never anything else on your PC, and it can't browse into subfolders or escape this one. Works for plain-text-style files (txt, md, csv, json, code files); PDFs, Word docs, spreadsheets, and images aren't readable yet."/>
                         <TextBlock Text="{Binding TrustedFolderPath}" FontFamily="Consolas" FontSize="12"
-                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Choose folder..." Padding="16,8,16,8"
                                     Click="ChooseTrustedFolder_Click"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             <Button Content="Clear" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding ClearTrustedFolderCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextMutedBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -502,18 +502,18 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="System" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="Interface language" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8"/>
                         <local:LanguagePicker/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="Weather &amp; web search" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,0"
@@ -521,7 +521,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="App updates" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,10" TextWrapping="Wrap"
@@ -529,18 +529,18 @@
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Check for updates" Padding="16,8,16,8"
                                     Command="{Binding CheckForUpdatesCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <Button Content="Pull latest" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding PullLatestUpdateCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding UpdateStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock Text="System volume" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,12" TextWrapping="Wrap"
@@ -553,8 +553,8 @@
                             <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding SystemVolume}" VerticalAlignment="Center"/>
                             <Button Grid.Column="1" Margin="10,0,0,0" Padding="12,6,12,6"
                                     Command="{Binding ToggleSystemMuteCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextPrimaryBrush}">
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextPrimaryBrush}">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Content" Value="🔊 Mute"/>
@@ -578,44 +578,44 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Music" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Spotify" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding SpotifyConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
                                    Text="Real sign-in via Spotify's own OAuth flow - needs a free Client ID from Spotify's developer dashboard, no client secret required. Reading what's playing and searching works on any account; play/pause/skip needs Spotify Premium and an active device (Spotify open somewhere)."/>
 
-                        <Expander Header="How to get a Client ID" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
-                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <Expander Header="How to get a Client ID" Foreground="{DynamicResource AccentCyanBrush}" Margin="0,4,0,10">
+                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="1. Go to developer.spotify.com/dashboard and log in with any Spotify account.&#x0a;2. Create an app (any name/description works).&#x0a;3. In the app's settings, add this exact Redirect URI: http://127.0.0.1:8888/callback&#x0a;4. Copy the Client ID shown on the app's page into the box below."/>
                         </Expander>
 
                         <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding SpotifyClientId, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
 
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Connect with Spotify" Padding="16,8,16,8"
                                     Command="{Binding ConnectSpotifyCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding DisconnectSpotifyCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextMutedBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
 
-                        <TextBlock Text="{Binding SpotifyAccountName, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
-                                   Foreground="{StaticResource AccentGreenBrush}"
+                        <TextBlock Text="{local:LocBinding SpotifyAccountName, Template='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
+                                   Foreground="{DynamicResource AccentGreenBrush}"
                                    Visibility="{Binding SpotifyConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                     </StackPanel>
                 </Border>
@@ -628,17 +628,17 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Smart home" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="SmartThings" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding SmartThingsVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock Text="Personal Access Token from account.smartthings.com/tokens" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
                         <Grid>
@@ -647,28 +647,28 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding SmartThingsToken, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                             <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestSmartThingsCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                         </Grid>
-                        <TextBlock Text="{Binding SmartThingsStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding SmartThingsStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Home Assistant" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding HomeAssistantVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock Text="Base URL and a long-lived access token from your HA profile page" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
                         <TextBox Text="{Binding HomeAssistantUrl, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10" Margin="0,0,0,8"
                                  Tag="http://homeassistant.local:8123"/>
                         <Grid>
@@ -678,32 +678,32 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding HomeAssistantToken, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                             <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestHomeAssistantCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             <Button Grid.Column="2" Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding DisconnectHomeAssistantCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextMutedBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextMutedBrush}"/>
                         </Grid>
-                        <TextBlock Text="{Binding HomeAssistantStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding HomeAssistantStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Hubitat" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding HubitatVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock Text="Maker API base URL (for one Hubitat app) and its access token" Style="{StaticResource MutedText}" Margin="0,2,0,10"/>
                         <TextBox Text="{Binding HubitatUrl, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10" Margin="0,0,0,8"
                                  Tag="http://hubitat.local/apps/api/1234"/>
                         <Grid>
@@ -712,73 +712,73 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding HubitatToken, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" VerticalContentAlignment="Center"/>
                             <Button Grid.Column="1" Content="Save &amp; Test" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding SaveAndTestHubitatCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                         </Grid>
-                        <TextBlock Text="{Binding HubitatStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding HubitatStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Amazon Alexa" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding AlexaConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
                                    Text="This one can't be a real one-click connection: Alexa only talks to apps through a published Smart Home Skill, which means its own Amazon Developer account, a hosted Lambda function, and Amazon's account-linking flow - not something a token or key can shortcut. This toggle just tracks that you've set that up elsewhere; it doesn't verify anything."/>
                         <Button Content="{Binding AlexaConnected, Converter={x:Static local:BoolToToggleLabelConverter.Instance}}"
                                 HorizontalAlignment="Left" Padding="16,8,16,8"
                                 Command="{Binding ToggleAlexaConnectedCommand}"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                Foreground="{StaticResource TextPrimaryBrush}"/>
+                                Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <TextBlock Text="Unified device catalog" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <Button Content="Get devices" Margin="12,0,0,0" Padding="14,6,14,6"
                                     Command="{Binding DiscoverDevicesCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
+                        <TextBlock Text="{local:LocBinding StatusMessage}" Style="{StaticResource MutedText}" Margin="0,8,0,10" TextWrapping="Wrap"/>
 
                         <CheckBox IsChecked="{Binding CatalogIncludeNotes, Mode=TwoWay}"
                                   Content="Include notes / raw metadata in catalog"
                                   Margin="0,0,0,10"
-                                  Foreground="{StaticResource TextPrimaryBrush}"/>
+                                  Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <TextBlock Text="Turn this on to show each device's raw hub metadata alongside the normalized catalog fields."
                                    Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                         <UniformGrid Columns="3" Margin="0,0,0,12">
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
                                 <StackPanel>
                                     <TextBlock Text="SmartThings" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding SmartThingsCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
-                                    <TextBlock Text="{Binding SmartThingsCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{local:LocBinding SmartThingsCatalogCount, Template='{}{0} items'}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{local:LocBinding SmartThingsCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
+                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,8,0">
                                 <StackPanel>
                                     <TextBlock Text="Home Assistant" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding HomeAssistantCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
-                                    <TextBlock Text="{Binding HomeAssistantCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{local:LocBinding HomeAssistantCatalogCount, Template='{}{0} items'}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{local:LocBinding HomeAssistantCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8">
+                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8">
                                 <StackPanel>
                                     <TextBlock Text="Hubitat" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding HubitatCatalogCount, StringFormat={}{0} items}" Margin="0,3,0,0"/>
-                                    <TextBlock Text="{Binding HubitatCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{local:LocBinding HubitatCatalogCount, Template='{}{0} items'}" Margin="0,3,0,0"/>
+                                    <TextBlock Text="{local:LocBinding HubitatCatalogStatus}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
                         </UniformGrid>
@@ -786,7 +786,7 @@
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,0,6">
+                                    <Border Background="{DynamicResource BgCardBrush}" CornerRadius="8" Padding="10,8,10,8" Margin="0,0,0,6">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -796,8 +796,8 @@
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
                                                 <TextBlock Text="{Binding Id}" Style="{StaticResource MutedText}"/>
                                                 <TextBlock Text="{Binding Detail}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding CapabilitiesSummary, StringFormat=Capabilities: {0}}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding SupportedActionsSummary, StringFormat=Actions: {0}}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{local:LocBinding CapabilitiesSummary, Template='Capabilities: {0}'}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{local:LocBinding SupportedActionsSummary, Template='Actions: {0}'}" Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                                             </StackPanel>
                                             <TextBlock Grid.Column="1" Text="{Binding Source}" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                                         </Grid>
@@ -816,49 +816,49 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Google" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Gmail, Drive &amp; Docs" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding GoogleConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
-                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                                       Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
                                    Text="Powers Sift's access to your inbox and documents. This does a real Google sign-in - you'll need your own free OAuth client from Google Cloud Console (Aurora can't ship one for you, since every installed app registers its own)."/>
 
-                        <Expander Header="How to get a Client ID / Secret" Foreground="{StaticResource AccentCyanBrush}" Margin="0,4,0,10">
-                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <Expander Header="How to get a Client ID / Secret" Foreground="{DynamicResource AccentCyanBrush}" Margin="0,4,0,10">
+                            <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                        Text="1. Go to console.cloud.google.com and create a project (or use an existing one).&#x0a;2. APIs &amp; Services → OAuth consent screen → set it up for your own use (External + add yourself as a test user is fine).&#x0a;3. APIs &amp; Services → Credentials → Create Credentials → OAuth client ID → Application type: Desktop app.&#x0a;4. Copy the Client ID and Client Secret it gives you into the two boxes below.&#x0a;5. APIs &amp; Services → Library → enable the Gmail API and Google Drive API."/>
                         </Expander>
 
                         <TextBlock Text="Client ID" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding GoogleClientId, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
 
                         <TextBlock Text="Client Secret" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <PasswordBox x:Name="GoogleSecretBox" Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                        <PasswordBox x:Name="GoogleSecretBox" Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                      BorderThickness="0" Padding="10" Margin="0,0,0,10"
                                      PasswordChanged="GoogleSecretBox_PasswordChanged"/>
 
                         <StackPanel Orientation="Horizontal">
                             <Button Content="Connect with Google" Padding="16,8,16,8"
                                     Command="{Binding ConnectGoogleCommand}"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                    Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                             <Button Content="Disconnect" Margin="10,0,0,0" Padding="16,8,16,8"
                                     Command="{Binding DisconnectGoogleCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextMutedBrush}"/>
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                    Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
 
-                        <TextBlock Text="{Binding GoogleAccountEmail, StringFormat='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
-                                   Foreground="{StaticResource AccentGreenBrush}"
+                        <TextBlock Text="{local:LocBinding GoogleAccountEmail, Template='Connected as {0}'}" Margin="0,8,0,0" FontSize="12"
+                                   Foreground="{DynamicResource AccentGreenBrush}"
                                    Visibility="{Binding GoogleConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                     </StackPanel>
                 </Border>
@@ -871,13 +871,13 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Developer mode" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="Create your own developer password. Aurora stores only a secure verifier; the same password unlocks developer mode and authorizes a complete Aurora reset."/>
 
                         <!-- Create/unlock developer password -->
@@ -885,33 +885,33 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <Grid Width="220">
                                     <PasswordBox x:Name="DeveloperPasswordBox" Padding="8,6,8,6"
-                                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                 Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                                  BorderThickness="0"/>
                                     <TextBox x:Name="DeveloperPasswordTextBox" Padding="8,6,8,6"
                                              Visibility="Collapsed"
-                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                              BorderThickness="0"/>
                                 </Grid>
                                 <Button Content="Show" x:Name="DeveloperPasswordToggleButton" Margin="8,0,0,0" Padding="12,6,12,6"
                                         Click="DeveloperPasswordToggle_Click"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <PasswordBox x:Name="DeveloperPasswordConfirmBox" Width="220" Margin="10,0,0,0" Padding="8,6,8,6"
-                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                              BorderThickness="0"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="Create developer password" Padding="16,6,16,6"
                                         Click="CreateDeveloperPassword_Click"
-                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                                 <PasswordBox x:Name="OverrideCodeBox" Width="220" Margin="10,0,0,0" Padding="8,6,8,6"
-                                             Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                             Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                              BorderThickness="0" PasswordChanged="OverrideCodeBox_PasswordChanged"/>
                                 <Button Content="Unlock developer mode" Margin="10,0,0,0" Padding="16,6,16,6"
                                         Click="UnlockDevMode_Click"
-                                        Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                        Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        Background="{DynamicResource BgCardBrush}" BorderThickness="0"
+                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
 
@@ -919,38 +919,38 @@
                         <StackPanel Visibility="{Binding DevModeEnabled, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
                             <Button Content="Lock developer mode" HorizontalAlignment="Left" Padding="16,6,16,6"
                                     Command="{Binding LockDevModeCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
+                                    Background="{DynamicResource BgCardBrush}" BorderThickness="0"
                                     Foreground="#F0745C" Margin="0,0,0,10"/>
 
                             <ItemsControl ItemsSource="{Binding Companions}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="{StaticResource BgCardBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                        <Border Background="{DynamicResource BgCardBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
                                             <StackPanel>
                                                 <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                                                <TextBlock Text="Role label" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="Role label" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                                                 <TextBox Text="{Binding Role, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"
-                                                         Padding="6" Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         Padding="6" Background="{DynamicResource BgPanelBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                                          BorderThickness="0"/>
 
-                                                <TextBlock Text="Tool access" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="Tool access" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                                                 <ComboBox ItemsSource="{x:Static vm:IntegrationsViewModel.ToolAccessValues}"
                                                           SelectedItem="{Binding ToolAccess}" Margin="0,2,0,8" Padding="6"
-                                                          Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                          Background="{DynamicResource BgPanelBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                                           BorderThickness="0"/>
 
-                                                <TextBlock Text="System prompt" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="System prompt" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
                                                 <TextBox Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
                                                          TextWrapping="Wrap" AcceptsReturn="True" Height="80" VerticalScrollBarVisibility="Auto"
                                                          Margin="0,2,0,8" Padding="6"
-                                                         Background="{StaticResource BgPanelBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         Background="{DynamicResource BgPanelBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                                          BorderThickness="0"/>
 
                                                 <Button Content="Save overrides" HorizontalAlignment="Left" Padding="14,6,14,6"
                                                         Click="SaveOverrides_Click"
-                                                        Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                                        Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                                                        Background="{DynamicResource AccentCyanBrush}" BorderThickness="0"
+                                                        Foreground="{DynamicResource BgDeepBrush}" FontWeight="Bold"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
@@ -958,7 +958,7 @@
                             </ItemsControl>
                         </StackPanel>
 
-                        <TextBlock Text="{Binding DevModeStatus}" Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{local:LocBinding DevModeStatus}" Margin="0,8,0,0" FontSize="12" Foreground="{DynamicResource TextMutedBrush}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -970,25 +970,25 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Memory &amp; data" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
                         <TextBlock Text="Browse and search your saved conversations, favorites, folders, and tags." Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
                         <Button Content="Open Memory" Click="OpenMemory_Click" HorizontalAlignment="Left" Margin="0,12,0,0" Padding="16,8"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
+                <Border Background="{DynamicResource BgPanelBrush}" CornerRadius="12" Padding="18">
                     <StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}"
                                    Text="Every companion's chat history, renamed name, and all the keys/tokens above live only on this PC - nothing is synced anywhere else."/>
-                        <TextBlock Text="{Binding SettingsFilePath, StringFormat='Settings: {0}'}" Margin="0,10,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding DatabaseFilePath, StringFormat='Chat history: {0}'}" Margin="0,2,0,0" FontSize="11" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock Text="{local:LocBinding SettingsFilePath, Template='Settings: {0}'}" Margin="0,10,0,0" FontSize="11" FontFamily="Consolas" Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock Text="{local:LocBinding DatabaseFilePath, Template='Chat history: {0}'}" Margin="0,2,0,0" FontSize="11" FontFamily="Consolas" Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                    Text="To clear everything, use &quot;Reset Aurora completely&quot; in the AI engine section."/>
                     </StackPanel>
                 </Border>
@@ -1001,7 +1001,7 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Tools" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <local:CapabilitiesView/>
