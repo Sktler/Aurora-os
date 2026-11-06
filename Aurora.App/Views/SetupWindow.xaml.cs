@@ -78,8 +78,7 @@ namespace Aurora.App.Views
                     Owner = this,
                     Title = Localizer.Get("Setup.RecoveryTitle"),
                     Width = 560,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Background = System.Windows.Media.Brushes.Black
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
                 var panel = new StackPanel { Margin = new Thickness(24, 24, 24, 24) };
                 panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryLead"), TextWrapping = TextWrapping.Wrap, FontSize = 18, FontWeight = FontWeights.SemiBold });

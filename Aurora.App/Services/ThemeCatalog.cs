@@ -51,11 +51,8 @@ namespace Aurora.App.Services
                 Set(resources, "AccentAmber", theme.AccentAmber);
                 Set(resources, "AccentGreen", theme.AccentGreen);
                 Set(resources, "IdleGlow", theme.IdleGlow);
-                if (resources["BgDeepTranslucentBrush"] is SolidColorBrush { IsFrozen: false } translucent)
-                {
-                    var c = (Color)ColorConverter.ConvertFromString(theme.BgDeep);
-                    translucent.Color = Color.FromArgb(0xE6, c.R, c.G, c.B);
-                }
+                var c = (Color)ColorConverter.ConvertFromString(theme.BgDeep);
+                SetColor(resources, "BgDeepTranslucentBrush", Color.FromArgb(0xE6, c.R, c.G, c.B));
             }
             catch (Exception)
             {
@@ -65,13 +62,16 @@ namespace Aurora.App.Services
         private static void Set(ResourceDictionary resources, string key, string hex)
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
-            if (resources[key + "Brush"] is SolidColorBrush brush)
-            {
-                if (brush.IsFrozen)
-                    resources[key + "Brush"] = new SolidColorBrush(color);
-                else
-                    brush.Color = color;
-            }
+            resources[key + "Color"] = color;
+            SetColor(resources, key + "Brush", color);
+        }
+
+        private static void SetColor(ResourceDictionary resources, string key, Color color)
+        {
+            if (resources[key] is SolidColorBrush { IsFrozen: false } brush)
+                brush.Color = color;
+            else
+                resources[key] = new SolidColorBrush(color);
         }
     }
 }

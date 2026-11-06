@@ -8,7 +8,7 @@
                 <TextBlock Text="{local:Loc Settings.Title}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,20"/>
 
                 <!-- Language -->
-                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                <Border Padding="20" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="{local:Loc Settings.Language.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="{local:Loc Settings.Language.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
@@ -20,7 +20,7 @@
                 </Border>
 
                 <!-- Privacy -->
-                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                <Border Padding="20" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="{local:Loc Settings.Privacy.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="{local:Loc Settings.Privacy.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
@@ -31,7 +31,7 @@
                 </Border>
 
                 <!-- Security -->
-                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                <Border Padding="20" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="{local:Loc Settings.Approval.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="{local:Loc Settings.Approval.Description}" TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
@@ -50,7 +50,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                <Border Padding="20" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="{local:Loc Settings.Audit.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="{local:Loc Settings.Audit.Description}"  TextWrapping="Wrap" Opacity="0.75" Margin="0,6,0,14"/>
@@ -69,23 +69,23 @@
                         <ListBox x:Name="AuditLogListBox" MaxHeight="360" ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="#25FFFFFF" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                                    <Border BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,8">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding TimestampUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
-                                                <TextBlock Text="{Binding ToolName}" Foreground="#D9E8FF"/>
+                                                <TextBlock Text="{Binding ToolName}" Foreground="{DynamicResource AccentCyanBrush}"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
-                                                <TextBlock Text="{Binding CompanionName}" Foreground="#A8F0FF"/>
+                                                <TextBlock Text="{Binding CompanionName}" Foreground="{DynamicResource AccentCyanBrush}"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding DisplaySummary}" TextWrapping="Wrap" Margin="0,0,0,4"/>
-                                            <TextBlock Text="{Binding DisplayDetails}" TextWrapping="Wrap" Foreground="#D9D9D9" Margin="0,0,0,4"/>
+                                            <TextBlock Text="{Binding DisplayDetails}" TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                 <TextBlock Text="{local:Loc Settings.Audit.Status}" Opacity="0.75"/>
-                                                                                                <TextBlock Text="{local:Loc Settings.Audit.Approved}" Foreground="#79E7A7" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
+                                                                                                <TextBlock Text="{local:Loc Settings.Audit.Approved}" Foreground="{DynamicResource AccentGreenBrush}" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                                                                                                 <TextBlock Text="{local:Loc Settings.Audit.Denied}"  Foreground="#FFB3B3" Visibility="{Binding Approved, Converter={x:Static local:BoolToVisibilityConverter.Instance}, ConverterParameter=Invert}"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
-                                                <TextBlock Text="{Binding Success, StringFormat=Success: {0}}"/>
+                                                <TextBlock Text="{local:LocBinding Success, Template='Success: {0}'}"/>
                                                 <TextBlock Text="  •  " Opacity="0.6"/>
                                                 <TextBlock Text="{Binding Source}" Opacity="0.7"/>
                                             </StackPanel>
@@ -98,7 +98,7 @@
                 </Border>
 
                 <!-- Music -->
-                <Border Padding="20" CornerRadius="12" Background="#16000000" BorderBrush="#25FFFFFF" BorderThickness="1" Margin="0,0,0,16">
+                <Border Padding="20" CornerRadius="12" Background="{DynamicResource BgPanelBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="{local:Loc Settings.Music.Title}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="Jamendo" FontSize="16" FontWeight="Medium" Margin="0,14,0,4"/>

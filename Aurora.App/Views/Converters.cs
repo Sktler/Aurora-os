@@ -1,4 +1,5 @@
 using System;
+using Aurora.App.Services;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -79,7 +80,7 @@ namespace Aurora.App.Views
         public static readonly BoolToStatusTextConverter Instance = new();
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-            (value is bool b && b) ? "Connected" : "Not connected";
+            (value is bool b && b) ? Localizer.GetUiText("Connected") : Localizer.GetUiText("Not connected");
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
             throw new NotImplementedException();
@@ -90,7 +91,7 @@ namespace Aurora.App.Views
         public static readonly BoolToToggleLabelConverter Instance = new();
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-            (value is bool b && b) ? "Mark as not connected" : "Mark as connected";
+            (value is bool b && b) ? Localizer.GetUiText("Mark as not connected") : Localizer.GetUiText("Mark as connected");
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
             throw new NotImplementedException();

@@ -13,8 +13,8 @@ public sealed class ButtonContrastTests
         var style = Regex.Match(xaml, "<Style TargetType=\"\\{x:Type Button\\}\">.*?</Style>", RegexOptions.Singleline).Value;
 
         Assert.NotEmpty(style);
-        Assert.Contains("Property=\"Background\" Value=\"{StaticResource BgCardBrush}\"", style);
-        Assert.Contains("Property=\"Foreground\" Value=\"{StaticResource TextPrimaryBrush}\"", style);
+        Assert.Contains("Property=\"Background\" Value=\"{DynamicResource BgCardBrush}\"", style);
+        Assert.Contains("Property=\"Foreground\" Value=\"{DynamicResource TextPrimaryBrush}\"", style);
         Assert.Contains("TextElement.Foreground=\"{TemplateBinding Foreground}\"", style);
     }
 

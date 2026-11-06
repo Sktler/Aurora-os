@@ -38,6 +38,7 @@ namespace Aurora.App
         public static InstallationSecurityService Security { get; private set; } = null!;
         public static EmergencyStopButtonService EmergencyStopButtons { get; private set; } = null!;
         public static event EventHandler? AIProviderStatusChanged;
+        public static event EventHandler? WindowsPermissionsChanged;
         public static ProfileRecoveryCodeStore RecoveryCodes { get; } = new();
         public static bool IsLocalOnlyModeEnabled => Settings != null && Settings.LocalOnlyMode;
         public static string LocalOnlyModeBlockedMessage(string featureName) => $"[Local-only mode is enabled. {featureName} is unavailable while Aurora is restricted to local-only features.]";
@@ -205,6 +206,7 @@ namespace Aurora.App
             WindowsAutomation = CreateWindowsService();
             AppAdapters = new AppAdapterService(WindowsAutomation);
             RefreshVoiceActivation();
+            WindowsPermissionsChanged?.Invoke(null, EventArgs.Empty);
         }
 
         public static void RefreshVoiceActivation()

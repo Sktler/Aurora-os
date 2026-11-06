@@ -2,42 +2,42 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Aurora Chat" Width="900" Height="700" MinWidth="620" MinHeight="480"
-        Background="{StaticResource BgDeepBrush}" WindowStartupLocation="CenterOwner">
+        Background="{DynamicResource BgDeepBrush}" WindowStartupLocation="CenterOwner">
     <Grid Margin="20">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid Grid.Row="0" Margin="0,0,0,14">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <StackPanel Margin="0,0,12,0"><TextBlock Text="Chat with Aurora" TextWrapping="Wrap" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Your full conversation window" TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/></StackPanel>
-            <Button Grid.Column="1" HorizontalAlignment="Right" Content="Clear this chat" Command="{Binding SelectedCompanion.ClearChatHistoryCommand}" Padding="12,7,12,7" Background="#151B27" Foreground="{StaticResource TextMutedBrush}" BorderBrush="#293245" ToolTip="Delete this conversation only"/>
+            <StackPanel Margin="0,0,12,0"><TextBlock Text="Chat with Aurora" TextWrapping="Wrap" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Your full conversation window" TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0"/></StackPanel>
+            <Button Grid.Column="1" HorizontalAlignment="Right" Content="Clear this chat" Command="{Binding SelectedCompanion.ClearChatHistoryCommand}" Padding="12,7,12,7" Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextMutedBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" ToolTip="Delete this conversation only"/>
         </Grid>
         <WrapPanel Grid.Row="1" Margin="0,0,0,12" DataContext="{Binding SelectedCompanion}">
             <ToggleButton Content="★ Favorite" IsChecked="{Binding IsFavorite}" Padding="10,6,10,6" VerticalAlignment="Center"/>
-            <TextBlock Text="Folder" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+            <TextBlock Text="Folder" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
             <ComboBox Width="160" ItemsSource="{Binding FolderChoices}" SelectedItem="{Binding SelectedFolder}" DisplayMemberPath="Name"/>
-            <TextBlock Text="Tags" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
-            <TextBox Width="220" Text="{Binding TagsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Comma-separated tags" Padding="6" Background="#0E131D" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="Tags" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+            <TextBox Width="220" Text="{Binding TagsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Comma-separated tags" Padding="6" Background="{DynamicResource BgDeepBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <Button Content="Save tags" Command="{Binding SaveTagsCommand}" Margin="8,0,0,0" Padding="10,6,10,6"/>
         </WrapPanel>
         <WrapPanel Grid.Row="2" Margin="0,0,0,12" DataContext="{Binding SelectedCompanion}">
-            <TextBlock Text="Provider" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBlock Text="Provider" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
             <ComboBox Width="190" ItemsSource="{Binding ProviderChoices}" SelectedItem="{Binding SelectedProviderChoice}" DisplayMemberPath="Name"/>
-            <TextBlock Text="Model" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
-            <TextBox Width="180" Text="{Binding ModelDraft, UpdateSourceTrigger=PropertyChanged}" ToolTip="Blank = provider default model" Padding="6" Background="#0E131D" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="Model" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+            <TextBox Width="180" Text="{Binding ModelDraft, UpdateSourceTrigger=PropertyChanged}" ToolTip="Blank = provider default model" Padding="6" Background="{DynamicResource BgDeepBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <Button Content="Apply" Command="{Binding ApplyProviderModelCommand}" Margin="8,0,0,0" Padding="10,6,10,6"/>
-            <TextBlock Text="{Binding ProviderModelLabel}" TextWrapping="Wrap" Foreground="{StaticResource AccentCyanBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <TextBlock Text="{Binding ProviderModelLabel}" TextWrapping="Wrap" Foreground="{DynamicResource AccentCyanBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
         </WrapPanel>
-        <Border Grid.Row="3" Background="#0E131D" BorderBrush="#202A3A" BorderThickness="1" CornerRadius="16" Padding="12">
+        <Border Grid.Row="3" Background="{DynamicResource BgDeepBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" BorderThickness="1" CornerRadius="16" Padding="12">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding SelectedCompanion.Messages}">
-                    <ItemsControl.ItemTemplate><DataTemplate><Border Background="#151B27" CornerRadius="12" Padding="12" Margin="4,4,4,8"><StackPanel><TextBlock Text="{Binding Role}" FontSize="11" Foreground="{StaticResource AccentCyanBrush}"/><TextBlock Text="{Binding Content}" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemTemplate><DataTemplate><Border Background="{DynamicResource BgCardBrush}" CornerRadius="12" Padding="12" Margin="4,4,4,8"><StackPanel><TextBlock Text="{Binding Role}" FontSize="11" Foreground="{DynamicResource AccentCyanBrush}"/><TextBlock Text="{Binding Content}" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
         </Border>
         <Grid Grid.Row="4" Margin="0,12,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBox Text="{Binding SelectedCompanion.DraftMessage, UpdateSourceTrigger=PropertyChanged}" MinHeight="46" Padding="12" AcceptsReturn="True" TextWrapping="Wrap" Background="#0E131D" BorderBrush="#293245" Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBox Text="{Binding SelectedCompanion.DraftMessage, UpdateSourceTrigger=PropertyChanged}" MinHeight="46" Padding="12" AcceptsReturn="True" TextWrapping="Wrap" Background="{DynamicResource BgDeepBrush}" BorderBrush="{DynamicResource IdleGlowBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <Button Grid.Column="1" Content="🎙" AutomationProperties.Name="Voice input" Command="{Binding SelectedCompanion.ListenCommand}" Margin="8,0,0,0" Padding="16,10,16,10"/>
-            <Button Grid.Column="2" Content="Send" Command="{Binding SelectedCompanion.SendCommand}" Margin="8,0,0,0" Padding="18,10,18,10" Background="#4B16A0" Foreground="White" BorderThickness="0"/>
+            <Button Grid.Column="2" Content="Send" Command="{Binding SelectedCompanion.SendCommand}" Margin="8,0,0,0" Padding="18,10,18,10" Background="{DynamicResource AccentVioletBrush}" Foreground="{DynamicResource BgDeepBrush}" BorderThickness="0"/>
         </Grid>
     </Grid>
 </Window>

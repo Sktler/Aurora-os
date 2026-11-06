@@ -1,5 +1,6 @@
 using System.Windows;
 using Aurora.App.ViewModels;
+using Aurora.App.Services;
 
 namespace Aurora.App.Views
 {
@@ -11,6 +12,13 @@ namespace Aurora.App.Views
             DialogLayout.ConstrainToWorkArea(this);
             DataContext = new DashboardViewModelProxy(companion);
             Activated += OnWindowActivated;
+            Localizer.LanguageChanged += OnLanguageChanged;
+            Closed += (_, _) => Localizer.LanguageChanged -= OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged(object? sender, System.EventArgs e)
+        {
+            if (DataContext is DashboardViewModelProxy proxy) proxy.SelectedCompanion.RefreshLocalizedLabels();
         }
 
         private void OnWindowActivated(object? sender, System.EventArgs e)
