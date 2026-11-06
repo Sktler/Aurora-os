@@ -134,65 +134,10 @@
                 </StackPanel>
 
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="{Binding CurrentEngineDescription}" Style="{StaticResource MutedText}" Margin="0,0,0,12"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="Change API key / provider" Padding="16,8,16,8"
-                                    Click="ChangeApiKey_Click"
-                                    Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
-                            <Button Content="Reset Aurora completely" Margin="10,0,0,0" Padding="16,8,16,8"
-                                    Click="ResetAurora_Click"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="#F0745C"/>
-                        </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="Resetting wipes every key, token, and companion's chat history and restarts Aurora as if freshly installed. This can't be undone."/>
-                    </StackPanel>
+                    <local:ProviderSettingsView x:Name="EngineSettings"/>
                 </Border>
-            </StackPanel>
-        </ScrollViewer>
-
-        <!-- ============================== MODELS ============================== -->
-        <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding CurrentSection, Converter={x:Static local:EnumToVisibilityConverter.Instance}, ConverterParameter=Models}">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
-                            Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Models" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding ModelFieldLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <Button Content="Refresh" Margin="10,0,0,0" Padding="10,4,10,4" FontSize="11"
-                                    Command="{Binding RefreshModelsCommand}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource AccentCyanBrush}"/>
-                        </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,10" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
-                                   Text="This list is fetched live from your provider's own API every time you open this page - not a fixed list baked into Aurora. New models your provider adds show up here as soon as they're live on your account; nothing to update in the app."/>
-
-                        <TextBlock Text="{Binding ModelListStatus}" Margin="0,0,0,8" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-
-                        <StackPanel Orientation="Horizontal">
-                            <ComboBox Text="{Binding ModelName, UpdateSourceTrigger=PropertyChanged}"
-                                      ItemsSource="{Binding ModelSuggestions}"
-                                      IsEditable="True" IsTextSearchEnabled="True"
-                                      IsEnabled="{Binding CanEditModel}"
-                                      MaxDropDownHeight="360" Width="280" Padding="8,6,8,6"
-                                      Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
-                                      BorderThickness="0"/>
-                            <Button Content="Save model" Margin="10,0,0,0" Padding="16,6,16,6"
-                                    Command="{Binding SaveModelCommand}" IsEnabled="{Binding CanEditModel}"
-                                    Background="{StaticResource BgCardBrush}" BorderThickness="0"
-                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding ModelStatus}" Margin="0,6,0,0" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
-                    </StackPanel>
-                </Border>
+                <Button Content="Reset Aurora completely" Click="ResetAurora_Click" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                <TextBlock Text="Resetting wipes every key, token, and companion's chat history and restarts Aurora as if freshly installed. This can't be undone." TextWrapping="Wrap" Margin="0,8,0,0"/>
             </StackPanel>
         </ScrollViewer>
 
@@ -560,6 +505,13 @@
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="System" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Interface language" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <local:LanguagePicker/>
+                    </StackPanel>
+                </Border>
 
                 <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,14">
                     <StackPanel>
@@ -1052,13 +1004,8 @@
                             Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="Tools" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
-                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="Manage Windows permissions, camera, image generation, and MCP tools." Style="{StaticResource MutedText}" TextWrapping="Wrap"/>
-                        <Button Content="Open Tools &amp; Capabilities" Click="OpenTools_Click" HorizontalAlignment="Left" Margin="0,12,0,0" Padding="16,8"
-                                Background="{StaticResource BgCardBrush}" BorderThickness="0" Foreground="{StaticResource TextPrimaryBrush}"/>
-                    </StackPanel>
-                </Border>
+                <local:CapabilitiesView/>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

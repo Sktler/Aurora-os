@@ -17,7 +17,7 @@ public sealed class ComboBoxScrollTests
     [Fact]
     public void Model_picker_sets_a_bounded_dropdown_height()
     {
-        var xaml = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "Aurora.App", "Views", "IntegrationsWindow.xaml"));
+        var xaml = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "Aurora.App", "Views", "ProviderSettingsView.xaml"));
 
         Assert.Contains("MaxDropDownHeight=\"360\"", xaml);
     }

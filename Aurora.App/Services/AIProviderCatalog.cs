@@ -12,6 +12,7 @@ namespace Aurora.App.Services
     {
         public required string Key { get; init; } // matches AppSettings.ChatProvider, e.g. "gemini"
         public required string DisplayName { get; init; }
+        public override string ToString() => DisplayName;
         public required string DefaultModel { get; init; }
         public required string ModelExamples { get; init; } // shown as a hint under the model field
         public required string KeyHint { get; init; }

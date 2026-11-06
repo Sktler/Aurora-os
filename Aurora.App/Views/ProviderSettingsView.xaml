@@ -1,0 +1,24 @@
+<UserControl x:Class="Aurora.App.Views.ProviderSettingsView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Aurora.App.Views">
+ <StackPanel>
+  <TextBlock Text="Chat engine" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+  <ComboBox ItemsSource="{Binding Providers}" SelectedItem="{Binding Provider}" DisplayMemberPath="DisplayName" MaxDropDownHeight="360"/>
+  <TextBlock Text="API key (required)" Margin="0,14,0,6"/>
+  <PasswordBox x:Name="ApiKeyBox" PasswordChanged="ApiKeyBox_PasswordChanged" LostFocus="ApiKeyBox_LostFocus"/>
+  <Button Content="Get a key" Click="GetKey_Click" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+  <TextBlock Text="{Binding KeyHint}" TextWrapping="Wrap" Margin="0,8,0,0" Style="{StaticResource MutedText}"/>
+  <TextBlock Text="Model" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,8"/>
+  <ComboBox Text="{Binding Model, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Models}" IsEditable="True" MaxDropDownHeight="360"/>
+  <Button Content="Refresh models" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+  <TextBlock Text="{Binding CostNote}" TextWrapping="Wrap" Margin="0,12,0,0" Style="{StaticResource MutedText}"/>
+  <WrapPanel Margin="0,8,0,0">
+   <Button Content="API docs" Tag="DocsUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
+   <Button Content="Rate limits" Tag="RateLimitsUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
+   <Button Content="Models" Tag="ModelsUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
+   <Button Content="Pricing" Tag="PricingUrl" Click="OpenLink_Click" Margin="0,0,8,8"/>
+  </WrapPanel>
+  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,12"/>
+  <Button x:Name="SaveProviderButton" Content="Save provider and model" Click="Save_Click" HorizontalAlignment="Left"/>
+ </StackPanel>
+</UserControl>

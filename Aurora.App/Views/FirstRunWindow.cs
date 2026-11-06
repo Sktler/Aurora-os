@@ -104,6 +104,8 @@ namespace Aurora.App.Views
                             Foreground = new SolidColorBrush(Color.FromRgb(180, 190, 204)),
                             Margin = new Thickness(0, 0, 0, 28)
                         },
+                        new TextBlock { Text = "Interface language", Margin = new Thickness(0, 0, 0, 6) },
+                        new LanguagePicker { Margin = new Thickness(0, 0, 0, 18) },
                         progressText,
                         progressBar,
                         installButton

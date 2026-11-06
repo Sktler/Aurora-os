@@ -62,7 +62,6 @@ namespace Aurora.App.ViewModels
             Entries = Array.AsReadOnly(new[]
             {
                 new SettingsNavigationEntry(SettingsSection.Engine, "🧠", "AI engine", "Provider, API key, reset"),
-                new SettingsNavigationEntry(SettingsSection.Models, "🧩", "Models", "Choose your AI model"),
                 new SettingsNavigationEntry(SettingsSection.Companions, "🎨", "Companion colors", "Orb color per companion"),
                 new SettingsNavigationEntry(SettingsSection.Voice, "🔊", "Voice", "OpenAI, ElevenLabs, Azure, or offline"),
                 new SettingsNavigationEntry(SettingsSection.Appearance, "🎨", "Appearance", "Themes & orb skins"),
@@ -77,6 +76,7 @@ namespace Aurora.App.ViewModels
             });
             PinnedEntries = new ReadOnlyObservableCollection<SettingsNavigationEntry>(_pinnedEntries);
             var savedPins = new HashSet<string>(settings.PinnedSettingsSections ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+            if (savedPins.Contains(nameof(SettingsSection.Models))) savedPins.Add(nameof(SettingsSection.Engine));
             foreach (var entry in Entries)
             {
                 entry.SetPinned(savedPins.Contains(entry.Section.ToString()));

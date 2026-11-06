@@ -132,7 +132,8 @@ public sealed class SettingsNavigationTests
         Assert.Contains("GoToSectionCommand", (string?)buttons[0].Attribute("Command"));
         Assert.Contains("TogglePinCommand", (string?)buttons[1].Attribute("Command"));
         Assert.Contains(settings.Descendants(xaml + "Button"), button => (string?)button.Attribute("Click") == "OpenMemory_Click");
-        Assert.Contains(settings.Descendants(xaml + "Button"), button => (string?)button.Attribute("Click") == "OpenTools_Click");
+        Assert.Contains(settings.Descendants(), element => element.Name.LocalName == "CapabilitiesView");
+        Assert.DoesNotContain(new SettingsNavigationViewModel(new AppSettings()).Entries, entry => entry.Section == SettingsSection.Models);
     }
 
     private static string FindView(string file)
