@@ -17,6 +17,27 @@ namespace AuroraUpdater.Tests;
 public sealed class DemoPresentationTests
 {
     [Fact]
+    public void Connection_labels_refresh_without_reconnecting()
+    {
+        RunOnSta(() =>
+        {
+            var previous = Localizer.Language;
+            var label = new TextBlock { DataContext = new { Connected = true } };
+            var extension = new LocBindingExtension("Connected") { TrueText = "Connected", FalseText = "Not connected" };
+            label.SetBinding(TextBlock.TextProperty, extension.CreateBinding());
+            try
+            {
+                foreach (var language in new[] { "en", "es", "fr", "de" })
+                {
+                    Localizer.SetLanguage(language);
+                    Assert.Equal(Localizer.GetUiText("Connected", language), label.Text);
+                }
+            }
+            finally { Localizer.SetLanguage(previous); }
+        });
+    }
+
+    [Fact]
     public void Formatted_labels_refresh_across_all_languages_without_changing_data()
     {
         RunOnSta(() =>
@@ -125,7 +146,7 @@ public sealed class DemoPresentationTests
     private static void RunOnSta(Action action)
     {
         Exception? error = null;
-        var thread = new Thread(() => { try { action(); } catch (Exception ex) { error = ex; } });
+        var thread = new Thread(() => { try { action(); } catch (Exception ex) { error = ex; } }) { IsBackground = true };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         Assert.True(thread.Join(TimeSpan.FromSeconds(30)));

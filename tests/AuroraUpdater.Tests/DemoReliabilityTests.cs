@@ -67,8 +67,28 @@ public sealed class DemoReliabilityTests
         Assert.Single(handler.Requests);
     }
 
+    [Fact]
+    public async Task Failure_after_a_fallback_tool_call_does_not_replay_tools_or_hide_the_original_failure()
+    {
+        var handler = new ModelHandler { ToolThenFailure = true };
+        var client = new GeminiClient("fake-key", "retired-model", new HttpClient(handler));
+        var calls = 0;
+        var definitions = new List<object> { new { name = "test_tool", description = "test", input_schema = new { type = "object", properties = new { } } } };
+        var reply = await client.SendWithToolsAsync("system", [], "hello", definitions, (_, _) =>
+        {
+            calls++;
+            return Task.FromResult("done");
+        });
+        Assert.Equal(1, calls);
+        Assert.Equal(4, handler.Requests.Count);
+        Assert.Contains("saved model is unchanged", reply);
+        Assert.Contains("HTTP 404", reply);
+        Assert.Contains("HTTP 503", reply);
+    }
+
     private sealed class ModelHandler : HttpMessageHandler
     {
+        public bool ToolThenFailure { get; init; }
         public HttpStatusCode Failure { get; init; } = HttpStatusCode.NotFound;
         public List<string> Requests { get; } = [];
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -81,7 +101,11 @@ public sealed class DemoReliabilityTests
                 : path.EndsWith("/models")
                     ? "{\"models\":[{\"name\":\"models/" + model + "\",\"supportedGenerationMethods\":[\"generateContent\"]}]}"
                     : "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hello\"}]}}]}";
-            return Task.FromResult(new HttpResponseMessage(path.Contains("retired-model") ? Failure : HttpStatusCode.OK)
+            if (ToolThenFailure && Requests.Count == 3)
+                body = "{\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"test_tool\",\"args\":{}}}]}}]}";
+            var status = ToolThenFailure && Requests.Count == 4 ? HttpStatusCode.ServiceUnavailable
+                : path.Contains("retired-model") ? Failure : HttpStatusCode.OK;
+            return Task.FromResult(new HttpResponseMessage(status)
             { Content = new StringContent(body, Encoding.UTF8, "application/json") });
         }
     }

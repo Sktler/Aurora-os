@@ -94,11 +94,11 @@
                                                             <Setter Property="Text" Value="{Binding DataContext.ModelFieldLabel, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Section}" Value="{x:Static models:SettingsSection.Music}">
-                                                            <Setter Property="Text" Value="{Binding DataContext.SpotifyConnected, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"/>
+                                                            <Setter Property="Text" Value="{local:LocBinding DataContext.SpotifyConnected, RelativeSource={RelativeSource AncestorType=Window}, TrueText=Connected, FalseText='Not connected'}"/>
                                                             <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Section}" Value="{x:Static models:SettingsSection.Google}">
-                                                            <Setter Property="Text" Value="{Binding DataContext.GoogleConnected, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"/>
+                                                            <Setter Property="Text" Value="{local:LocBinding DataContext.GoogleConnected, RelativeSource={RelativeSource AncestorType=Window}, TrueText=Connected, FalseText='Not connected'}"/>
                                                             <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -586,7 +586,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Spotify" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding SpotifyConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding SpotifyConnected, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
@@ -636,7 +636,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="SmartThings" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding SmartThingsVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding SmartThingsVerified, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
@@ -662,7 +662,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Home Assistant" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding HomeAssistantVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding HomeAssistantVerified, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
@@ -697,7 +697,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Hubitat" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding HubitatVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding HubitatVerified, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
@@ -727,13 +727,13 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Amazon Alexa" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding AlexaConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding AlexaConnected, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
                                    Text="This one can't be a real one-click connection: Alexa only talks to apps through a published Smart Home Skill, which means its own Amazon Developer account, a hosted Lambda function, and Amazon's account-linking flow - not something a token or key can shortcut. This toggle just tracks that you've set that up elsewhere; it doesn't verify anything."/>
-                        <Button Content="{Binding AlexaConnected, Converter={x:Static local:BoolToToggleLabelConverter.Instance}}"
+                        <Button Content="{local:LocBinding AlexaConnected, TrueText='Mark as not connected', FalseText='Mark as connected'}"
                                 HorizontalAlignment="Left" Padding="16,8,16,8"
                                 Command="{Binding ToggleAlexaConnectedCommand}"
                                 Background="{DynamicResource BgCardBrush}" BorderThickness="0"
@@ -824,7 +824,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Gmail, Drive &amp; Docs" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding GoogleConnected, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                            <TextBlock Text="{local:LocBinding GoogleConnected, TrueText=Connected, FalseText='Not connected'}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
                                        Foreground="{DynamicResource AccentGreenBrush}"/>
                         </StackPanel>
