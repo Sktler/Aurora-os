@@ -93,8 +93,8 @@ namespace Aurora.App.Services
 
         public void StartWakeWord()
         {
-            _dictationGrammar.Enabled = false;
-            _wakeGrammar.Enabled = true;
+            _wakeGrammar.Enabled = false;
+            _dictationGrammar.Enabled = true;
             _engine.RecognizeAsync(RecognizeMode.Multiple);
             if (!_captureStarted)
             {

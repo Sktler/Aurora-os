@@ -11,6 +11,16 @@ namespace AuroraUpdater.Tests;
 public sealed class AppSettingsStorageTests
 {
     [Fact]
+    public async Task Denied_Aurora_location_consent_does_not_probe_Windows()
+    {
+        using var scope = new AppSettingsTestScope();
+        App.Settings.WindowsLocationEnabled = false;
+        Assert.Null(await new LocationService().GetCurrentLocationAsync());
+        App.Settings.Save();
+        Assert.False(AppSettings.LoadOrCreate().WindowsLocationEnabled);
+    }
+
+    [Fact]
     public void Scope_restores_production_defaults_without_accessing_production_storage()
     {
         var previousDirectory = AppSettings.ConfigDirectoryOverride;

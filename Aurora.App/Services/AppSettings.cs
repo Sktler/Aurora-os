@@ -359,6 +359,7 @@ namespace Aurora.App.Services
         public bool WindowsUiAutomationEnabled { get; set; } = false;
         public bool WindowsNetworkEnabled { get; set; } = false;
         public bool WindowsPowerEnabled { get; set; } = false;
+        public bool WindowsLocationEnabled { get; set; } = false;
         public bool WindowsCameraEnabled { get; set; } = false;
         public bool WindowsMicrophoneEnabled { get; set; } = false;
         public bool WindowsMcpEnabled { get; set; } = false;

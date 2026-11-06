@@ -33,6 +33,9 @@ public sealed class EmergencyStopButtonService : IDisposable
 
         foreach (var pair in _buttons)
         {
+            pair.Key.SizeChanged -= Window_SizeChanged;
+            pair.Key.LocationChanged -= Window_LocationChanged;
+            pair.Key.IsVisibleChanged -= Window_IsVisibleChanged;
             pair.Key.Closed -= Window_Closed;
             pair.Value.IsOpen = false;
         }
@@ -55,6 +58,15 @@ public sealed class EmergencyStopButtonService : IDisposable
 
         var root = window.Content as UIElement;
         if (root == null) return null;
+
+        var frame = new DockPanel { LastChildFill = true };
+        var toolbar = new Border { Height = 48 };
+        DockPanel.SetDock(toolbar, Dock.Top);
+        window.Content = null;
+        frame.Children.Add(toolbar);
+        frame.Children.Add(root);
+        window.Content = frame;
+        root = frame;
 
         var button = new Button
         {

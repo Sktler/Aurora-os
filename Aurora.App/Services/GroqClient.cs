@@ -55,7 +55,7 @@ namespace Aurora.App.Services
             var response = await _http.GetAsync("https://api.groq.com/openai/v1/models");
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"Groq returned {(int)response.StatusCode}: {text}");
+                throw new InvalidOperationException(ProviderErrors.Format("Groq", response.StatusCode));
 
             using var doc = JsonDocument.Parse(text);
             var ids = new List<string>();
@@ -94,7 +94,7 @@ namespace Aurora.App.Services
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Groq API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Groq", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");
@@ -108,7 +108,7 @@ namespace Aurora.App.Services
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching Groq: {ex.Message}]";
+                return ProviderErrors.Connection("Groq", ex);
             }
         }
 
@@ -168,11 +168,11 @@ namespace Aurora.App.Services
                 }
                 catch (Exception ex)
                 {
-                    return $"[Connection error reaching Groq: {ex.Message}]";
+                    return ProviderErrors.Connection("Groq", ex);
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Groq API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Groq", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");

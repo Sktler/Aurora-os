@@ -13,6 +13,7 @@ namespace Aurora.App.Services
         private readonly object _gate = new();
         private readonly Func<bool> _microphoneAllowed;
         private readonly Func<double> _commandConfidence;
+        private readonly TimeSpan _commandDuration;
         private readonly Func<IWakeWordRecognizer> _createRecognizer;
         private IWakeWordRecognizer? _recognizer;
         private Timer? _commandTimeout;
@@ -39,11 +40,12 @@ namespace Aurora.App.Services
         }
 
         internal WakeWordService(Func<bool> microphoneAllowed, Func<double> commandConfidence,
-            Func<IWakeWordRecognizer> createRecognizer)
+            Func<IWakeWordRecognizer> createRecognizer, TimeSpan? commandDuration = null)
         {
             // Construction must not open the microphone or cache a failed permission probe.
             _microphoneAllowed = microphoneAllowed;
             _commandConfidence = commandConfidence;
+            _commandDuration = commandDuration ?? TimeSpan.FromSeconds(30);
             _createRecognizer = createRecognizer;
         }
 
@@ -108,7 +110,15 @@ namespace Aurora.App.Services
             lock (_gate)
             {
                 if (!IsCurrent(recognizer) || _phase != ListeningPhase.WakeWord ||
-                    !WakeWordMatcher.IsWakeWord(text, confidence)) return;
+                    !WakeWordMatcher.TryExtractCommand(text, confidence, out var inlineCommand)) return;
+                if (inlineCommand.Length > 0)
+                {
+                    if (!VoiceTranscriptFilter.MeetsConfidenceThreshold(confidence,
+                        VoiceTranscriptFilter.ClampConfidenceThreshold(_commandConfidence()))) return;
+                    WakeWordDetected?.Invoke();
+                    CommandRecognized?.Invoke(inlineCommand);
+                    return;
+                }
                 try
                 {
                     _phase = ListeningPhase.CommandPending;
@@ -146,7 +156,7 @@ namespace Aurora.App.Services
                         recognizer.StartCommand();
                         var generation = ++_commandGeneration;
                         _commandTimeout = new Timer(_ => TimeoutCommand(recognizer, generation), null,
-                            TimeSpan.FromSeconds(8), Timeout.InfiniteTimeSpan);
+                            _commandDuration, Timeout.InfiniteTimeSpan);
                         return;
                     }
 
@@ -238,6 +248,25 @@ namespace Aurora.App.Services
         public const float MinConfidence = 0.5f;
 
         public static readonly string[] Phrases = { "hey aurora", "hi aurora", "hey, aurora", "okay aurora" };
+
+        public static bool TryExtractCommand(string? text, float confidence, out string command)
+        {
+            command = "";
+            if (confidence < MinConfidence || string.IsNullOrWhiteSpace(text)) return false;
+            var normalized = text.Replace(",", "").Trim();
+            foreach (var phrase in Phrases.Select(p => p.Replace(",", "")))
+            {
+                if (string.Equals(normalized, phrase, StringComparison.OrdinalIgnoreCase)) return true;
+                if (!normalized.StartsWith(phrase, StringComparison.OrdinalIgnoreCase) || normalized.Length <= phrase.Length) continue;
+                if (!char.IsWhiteSpace(normalized[phrase.Length]) && !char.IsPunctuation(normalized[phrase.Length])) continue;
+                // Slice the original utterance so punctuation inside the request survives.
+                var original = text.Trim();
+                var end = original.IndexOf("aurora", StringComparison.OrdinalIgnoreCase) + "aurora".Length;
+                command = original[end..].TrimStart(' ', '.', ',', ':', ';', '!', '?');
+                return true;
+            }
+            return false;
+        }
 
         public static bool IsWakeWord(string? text, float confidence)
         {

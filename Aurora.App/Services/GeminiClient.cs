@@ -24,9 +24,9 @@ namespace Aurora.App.Services
         private int _credentialsRevoked;
         private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/";
 
-        public GeminiClient(string apiKey, string model)
+        public GeminiClient(string apiKey, string model, HttpClient? httpClient = null)
         {
-            _http = new HttpClient();
+            _http = httpClient ?? new HttpClient();
             _apiKey = apiKey ?? "";
 
             var trimmedModel = model?.Trim() ?? "";
@@ -57,7 +57,9 @@ namespace Aurora.App.Services
         /// large enough to span multiple pages. Strips the "models/" prefix Gemini puts on
         /// every name, matching how model names are stored and used everywhere else in this
         /// app (see the constructor above, which strips the same prefix defensively).</summary>
-        public async Task<List<string>> ListModelsAsync()
+        public Task<List<string>> ListModelsAsync() => ListModelsAsync(chatOnly: false);
+
+        private async Task<List<string>> ListModelsAsync(bool chatOnly)
         {
             if (!IsConfigured) return new List<string>();
 
@@ -72,7 +74,7 @@ namespace Aurora.App.Services
                 var response = await _http.GetAsync(url);
                 var text = await response.Content.ReadAsStringAsync();
                 if (!response.IsSuccessStatusCode)
-                    throw new InvalidOperationException($"Gemini returned {(int)response.StatusCode}: {text}");
+                    throw new InvalidOperationException(ProviderErrors.Format("Gemini", response.StatusCode));
 
                 using var doc = JsonDocument.Parse(text);
                 var root = doc.RootElement;
@@ -81,6 +83,8 @@ namespace Aurora.App.Services
                 {
                     foreach (var m in models.EnumerateArray())
                     {
+                        if (chatOnly && (!m.TryGetProperty("supportedGenerationMethods", out var methods) ||
+                            !methods.EnumerateArray().Any(method => method.GetString() == "generateContent"))) continue;
                         if (!m.TryGetProperty("name", out var nameEl)) continue;
                         var name = nameEl.GetString() ?? "";
                         if (name.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
@@ -130,13 +134,13 @@ namespace Aurora.App.Services
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Gemini API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Gemini", response.StatusCode);
 
                 return ExtractText(responseText);
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching Gemini: {ex.Message}]";
+                return ProviderErrors.Connection("Gemini", ex);
             }
         }
 
@@ -222,6 +226,8 @@ namespace Aurora.App.Services
             if (!IsConfigured)
                 return "[No Gemini API key set. Add one in Settings to bring this companion online.]";
 
+            var requestEndpoint = Endpoint;
+            var fallbackNotice = "";
             var contents = BuildContents(history, newUserMessage);
             var tools = ConvertTools(toolDefinitions);
 
@@ -244,16 +250,45 @@ namespace Aurora.App.Services
                 HttpResponseMessage response;
                 try
                 {
-                    response = await _http.PostAsync(Endpoint, content);
+                    response = await _http.PostAsync(requestEndpoint, content);
                     responseText = await response.Content.ReadAsStringAsync();
                 }
                 catch (Exception ex)
                 {
-                    return $"[Connection error reaching Gemini: {ex.Message}]";
+                    return ProviderErrors.Connection("Gemini", ex);
+                }
+
+                if (!response.IsSuccessStatusCode && turn == 0 &&
+                    ProviderErrors.IsMissingGeminiModel(response.StatusCode, responseText))
+                {
+                    var defaultModel = AIProviderCatalog.Get("gemini").DefaultModel;
+                    if (!string.Equals(_model, defaultModel, StringComparison.Ordinal) && IsConfigured)
+                    {
+                        try
+                        {
+                            var available = await ListModelsAsync(chatOnly: true);
+                            if (available.Contains(defaultModel) && IsConfigured)
+                            {
+                                var originalFailure = ProviderErrors.Format("Gemini", response.StatusCode);
+                                response.Dispose();
+                                using var fallbackContent = new StringContent(json, Encoding.UTF8, "application/json");
+                                response = await _http.PostAsync($"{BaseUrl}{defaultModel}:generateContent?key={_apiKey}", fallbackContent);
+                                responseText = await response.Content.ReadAsStringAsync();
+                                if (!response.IsSuccessStatusCode)
+                                    return originalFailure + "\n" + ProviderErrors.Format("Gemini", response.StatusCode);
+                                requestEndpoint = $"{BaseUrl}{defaultModel}:generateContent?key={_apiKey}";
+                                fallbackNotice = originalFailure + "\n" + Localizer.FormatUiText("Used the available default model {0} for this reply. Your saved model is unchanged.", defaultModel) + "\n\n";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            return ProviderErrors.Format("Gemini", System.Net.HttpStatusCode.NotFound) + "\n" + ProviderErrors.Connection("Gemini", ex);
+                        }
+                    }
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[Gemini API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("Gemini", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var root = doc.RootElement;
@@ -281,7 +316,7 @@ namespace Aurora.App.Services
                     foreach (var part in parts)
                         if (part.TryGetProperty("text", out var txt))
                             sb.Append(txt.GetString());
-                    return sb.Length > 0 ? sb.ToString() : "[Gemini returned an empty response.]";
+                    return fallbackNotice + (sb.Length > 0 ? sb.ToString() : "[Gemini returned an empty response.]");
                 }
 
                 // Feed the model's function-call turn back into the conversation.

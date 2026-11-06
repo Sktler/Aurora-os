@@ -91,7 +91,7 @@ namespace Aurora.App.Services
                     throw new OperationCanceledException("GitHub Copilot was disconnected.");
 
                 if (!response.IsSuccessStatusCode)
-                    throw new InvalidOperationException($"GitHub Copilot token exchange failed ({(int)response.StatusCode}): {text}. This account may not have an active Copilot subscription.");
+                    throw new InvalidOperationException(ProviderErrors.Format("GitHub Copilot", response.StatusCode));
 
                 using var doc = JsonDocument.Parse(text);
                 var token = doc.RootElement.GetProperty("token").GetString()
@@ -134,7 +134,7 @@ namespace Aurora.App.Services
             var response = await _http.SendAsync(request);
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"GitHub Copilot returned {(int)response.StatusCode}: {text}");
+                throw new InvalidOperationException(ProviderErrors.Format("GitHub Copilot", response.StatusCode));
 
             using var doc = JsonDocument.Parse(text);
             var ids = new List<string>();
@@ -174,7 +174,7 @@ namespace Aurora.App.Services
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[GitHub Copilot API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("GitHub Copilot", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");
@@ -188,7 +188,7 @@ namespace Aurora.App.Services
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching GitHub Copilot: {ex.Message}]";
+                return ProviderErrors.Connection("GitHub Copilot", ex);
             }
         }
 
@@ -243,11 +243,11 @@ namespace Aurora.App.Services
                 }
                 catch (Exception ex)
                 {
-                    return $"[Connection error reaching GitHub Copilot: {ex.Message}]";
+                    return ProviderErrors.Connection("GitHub Copilot", ex);
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[GitHub Copilot API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("GitHub Copilot", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");

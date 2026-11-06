@@ -57,7 +57,7 @@ namespace Aurora.App.Services
             var response = await _http.GetAsync("https://api.openai.com/v1/models");
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"OpenAI returned {(int)response.StatusCode}: {text}");
+                throw new InvalidOperationException(ProviderErrors.Format("OpenAI", response.StatusCode));
 
             using var doc = JsonDocument.Parse(text);
             var ids = new List<string>();
@@ -96,7 +96,7 @@ namespace Aurora.App.Services
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[OpenAI API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("OpenAI", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");
@@ -110,7 +110,7 @@ namespace Aurora.App.Services
             }
             catch (Exception ex)
             {
-                return $"[Connection error reaching OpenAI: {ex.Message}]";
+                return ProviderErrors.Connection("OpenAI", ex);
             }
         }
 
@@ -170,11 +170,11 @@ namespace Aurora.App.Services
                 }
                 catch (Exception ex)
                 {
-                    return $"[Connection error reaching OpenAI: {ex.Message}]";
+                    return ProviderErrors.Connection("OpenAI", ex);
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return $"[OpenAI API error {(int)response.StatusCode}: {responseText}]";
+                    return ProviderErrors.Format("OpenAI", response.StatusCode);
 
                 using var doc = JsonDocument.Parse(responseText);
                 var choices = doc.RootElement.GetProperty("choices");

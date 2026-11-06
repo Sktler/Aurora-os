@@ -121,7 +121,7 @@ namespace Aurora.App
                 await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
 
                 var permissions = new WindowsPermissionService();
-                await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
+                Settings.WindowsLocationEnabled = await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
                 Settings.WindowsMicrophoneEnabled = await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
                 await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
                 Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
