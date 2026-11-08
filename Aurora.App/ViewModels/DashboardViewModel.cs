@@ -64,6 +64,7 @@ namespace Aurora.App.ViewModels
             {
                 App.WakeWord.WakeWordDetected += OnWakeWordDetected;
                 App.WakeWord.CommandRecognized += OnWakeCommandRecognized;
+                App.WakeWord.WakeWordAcknowledged += OnWakeWordAcknowledged;
                 App.WakeWord.StatusChanged += OnWakeStatusChanged;
                 WakeWordStatus = Localizer.GetUiText(App.WakeWord.Status);
             }
@@ -233,6 +234,11 @@ namespace Aurora.App.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[Dashboard] Wake-word UI update failed: {ex}");
             }
+        }
+
+        private void OnWakeWordAcknowledged()
+        {
+            _ = DispatchToUiAsync(() => SelectedCompanion?.GreetWake());
         }
 
         private void OnWakeCommandRecognized(string command)

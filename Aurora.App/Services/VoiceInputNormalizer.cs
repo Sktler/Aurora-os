@@ -29,9 +29,8 @@ namespace Aurora.App.Services
 
         public static bool IsUsable(string? input)
         {
+            // Short complete replies such as "5" or "I" are valid speech and must not be dropped.
             var text = Normalize(input);
-            if (text.Length < 2) return false;
-
             foreach (var ch in text)
                 if (char.IsLetterOrDigit(ch)) return true;
 
