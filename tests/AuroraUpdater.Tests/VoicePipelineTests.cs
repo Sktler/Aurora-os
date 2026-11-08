@@ -64,6 +64,16 @@ public sealed class VoicePipelineTests
         Assert.DoesNotContain("Dictionary", code);
     }
 
+    [Theory]
+    [InlineData("5", true)]
+    [InlineData("what's the weather like in Boston tomorrow", true)]
+    [InlineData("...", false)]
+    [InlineData("  ", false)]
+    public void Voice_input_keeps_any_speech_containing_letters_or_digits(string input, bool usable)
+    {
+        Assert.Equal(usable, Aurora.App.Services.VoiceInputNormalizer.IsUsable(input));
+    }
+
     [Fact]
     public void Settings_ui_exposes_adjustable_voice_confidence_and_speaking_pace()
     {

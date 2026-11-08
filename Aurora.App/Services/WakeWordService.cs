@@ -30,6 +30,8 @@ namespace Aurora.App.Services
 
         public event Action? WakeWordDetected;
         public event Action<string>? CommandRecognized;
+        /// <summary>Raised when "Hey Aurora" was said on its own and a command is awaited.</summary>
+        public event Action? WakeWordAcknowledged;
         public event Action<string>? StatusChanged;
 
         public WakeWordService() : this(
@@ -126,6 +128,7 @@ namespace Aurora.App.Services
                     // inside SpeechRecognized can deadlock its callback thread.
                     recognizer.Cancel();
                     WakeWordDetected?.Invoke();
+                    WakeWordAcknowledged?.Invoke();
                     SetStatus("Wake word detected. Listening for your command…");
                 }
                 catch (Exception ex)

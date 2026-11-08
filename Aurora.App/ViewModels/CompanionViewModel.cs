@@ -235,6 +235,28 @@ namespace Aurora.App.ViewModels
             else dispatcher?.BeginInvoke(() => IsListening = false);
         }
 
+        public const string WakeGreeting = "What can I help you with today?";
+
+        public void GreetWake()
+        {
+            var greeting = new ChatMessage { CompanionId = Companion.Id, Role = "assistant", Content = Localizer.GetUiText(WakeGreeting) };
+            Messages.Add(greeting);
+            App.Memory.AppendMessage(greeting);
+            if (!SpeakRepliesEnabled || App.Voice == null) return;
+            _ = SpeakGreetingAsync(greeting.Content);
+        }
+
+        private async Task SpeakGreetingAsync(string text)
+        {
+            try
+            {
+                IsSpeechPlaying = true;
+                await App.Voice.SpeakAsync(text, SetSpeaking);
+            }
+            catch { /* the greeting is already shown in the chat */ }
+            finally { IsSpeechPlaying = false; }
+        }
+
         public void SubmitVoiceUtterance(string heard) =>
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => EnqueueHeardUtterance(heard));
 
@@ -243,6 +265,8 @@ namespace Aurora.App.ViewModels
             if (App.Settings.WindowsMicrophoneEnabled != true) return;
             var normalized = VoiceInputNormalizer.Normalize(heard);
             if (!VoiceInputNormalizer.IsUsable(normalized)) return;
+            // Ignore the microphone picking up Aurora's own spoken greeting.
+            if (string.Equals(normalized.TrimEnd('.', '?', '!'), WakeGreeting.TrimEnd('?'), StringComparison.OrdinalIgnoreCase)) return;
 
             if (App.Settings.SpeakerRecognitionEnabled && TryHandleSpeakerSuggestion())
                 return;
@@ -255,7 +279,7 @@ namespace Aurora.App.ViewModels
 
             _lastSubmittedUtterance = normalized;
             _lastSubmittedAtUtc = DateTime.UtcNow;
-            _pendingUtterances.Enqueue(normalized);
+            _pendingUtterances.Enqueue(VoiceIntentExpander.Expand(normalized));
             if (!_isDrainingQueue) _ = DrainUtteranceQueueAsync();
         }
 
