@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "visual-studio": {
+      "type": "sse",
+      "url": "http://localhost:5050/sse"
+    }
+  }
+}

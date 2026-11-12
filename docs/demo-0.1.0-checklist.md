@@ -72,12 +72,56 @@ Tests which write credentials/settings use `AppSettingsTestScope`; provider
 requests use fake HTTP handlers and keys. No personal settings, credentials,
 or conversation databases were used for validation.
 
+## Local Windows verification on November 12, 2026
+
+Verified at `1fb644b` with the existing local camera patch. Visual Studio MCP
+built the original solution in Release with zero build errors or warnings and
+ran **267 tests, all passed, zero skipped**. The separate WPF menu harness
+also reported zero failed checks.
+
+A disposable verification host loaded the real WPF resources and windows,
+with isolated settings, an in-memory credential store, and a fake chat provider.
+The following runtime checks passed.
+
+- Setup cancel/retry and saving/reloading a synthetic profile, password verifier,
+  and seeded recovery code.
+- Dashboard Enter and Send submission, immediate clearing, busy/blank input,
+  and preserving text typed while a response is pending.
+- Settings, Chat, and Profiles construction across four themes and four languages.
+  This construction result does not establish complete translation coverage.
+- Denied Aurora location consent returning no location.
+- Aurora's MCP client connecting to a disposable local stdio server, discovering
+  its test tool, disconnecting, and removing the connection.
+- One real webcam through discovery, permission check, initialization, preview,
+  concurrent refresh/permission checks, first JPEG capture, revocation, and
+  disposal during a pending scan. The captured test photo was checked and deleted.
+
+The pass found three remaining presentation/input defects.
+
+- The welcome window and language picker have inadequate contrast on a white
+  background.
+- Continue and some Settings/Profiles labels remain English after changing
+  the interface language.
+- The dashboard textbox has `AcceptsReturn=false`. Its WPF line-break command
+  is disabled, so the required Shift+Enter multiline behavior remains incomplete.
+
+These runtime checks use WPF routed events/commands and service calls. The
+physical keyboard/pointer, OS permission combinations, spoken microphone,
+live-account, second-camera, multi-monitor, and display-scaling cases below
+remain open. Full first-run process restart and recovery-code generation were
+also outside the runtime assertions.
+
+One initial fallback debugger launch briefly ran ordinary Aurora startup
+against the existing profile before it was stopped. No permission prompt was
+answered. Subsequent runtime assertions used the isolated host. The detailed
+local report and renders are under `artifacts/assessments/2026-11-12-demo-mcp-checklist.md`
+and `artifacts/demo-mcp-20261112/`.
+
 ## Outstanding Windows demo matrix and blockers
 
-The available workspace is Linux. Windows CI exercises isolated WPF windows
-and rendering, but cannot establish the following full desktop/device/account
-behaviors. These checks remain outstanding; no issue has been closed or PR
-merged on the strength of unavailable validation.
+The original verification workspace was Linux. Windows CI exercises isolated
+WPF windows and rendering. The full flows below still need interactive
+verification with a disposable Aurora profile and the listed prerequisites.
 
 | Flow | Required exercise | Environment needed |
 | --- | --- | --- |
@@ -86,7 +130,8 @@ merged on the strength of unavailable validation.
 | Provider/model | Switch rapidly between saved providers; use a custom model; invalid key; quota limit; retired Gemini model; default unavailable; switch during loading. | Test accounts/keys for selected providers; do not use production secrets |
 | Voice | Inline wake phrase plus a long open-ended request; standalone wake phrase then dictation; manual listening; low confidence; mic denied/revoked; selected microphone and recognition language. | Windows speech packs and physical input device |
 | Composer/Chat | Enter submits, Shift+Enter adds a line, Send clears accepted text immediately, text typed while waiting survives; blank/busy prompts remain safe; verify actual folder/provider selection text. | Interactive Windows session |
-| Settings/Tools | Save provider/model without a restart; reopen settings; old Models pin; change System language; toggle capability consent; enumerate/test camera; connect/discover/disconnect a local test MCP server. | Windows camera and explicitly permitted test MCP server |
+| Settings/Tools | Save provider/model without a restart; reopen settings; old Models pin; change System language; toggle capability consent; connect/discover/disconnect a local test MCP server. | Windows desktop and explicitly permitted test MCP server |
+| Camera | Save Camera off and verify that Tools and companion camera commands cannot open the device. Save Camera on, refresh the list, select and initialize a camera, and verify the first photo. With preview running, refresh and check permission. Save Camera off during preview and confirm the device is released. Reopen Aurora and close it during a camera scan. Repeat selection with a second camera if available. | Windows desktop with at least one webcam and approved Windows camera access |
 | Themes/Profiles | Open Main, Chat, Settings, Profiles, recovery dialogs, menus, and dropdowns together. Cycle all themes/languages; verify contrast, focus, wrapped names/actions, scrolling, and safety controls. | Windows at 100%, 150%, and 200% scale; small and large displays |
 | Safety | Move/resize/minimize/restore each window; test reserved Emergency Stop hit area; stop a pending provider request; confirm lockdown and no tool replay. Revoke only disposable test keys. | Interactive Windows desktop; disposable provider configuration |
 

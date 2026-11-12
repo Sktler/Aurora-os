@@ -35,10 +35,13 @@ namespace Aurora.App.Services
 
         public static Task<string> ExecuteAsync(string name, JsonElement input)
         {
+            if (App.Settings?.WindowsCameraEnabled != true)
+                return Task.FromResult("Camera permission is disabled in Aurora Settings.");
+
             return name switch
             {
                 "camera" => StartPreviewAsync(input),
-                "camera_open" => OpenAsync(input),
+                "camera_open" => StartPreviewAsync(input),
                 "camera_close" => CloseAsync(),
                 "camera_list" => ListAsync(),
                 "camera_permission" => PermissionAsync(),
@@ -51,16 +54,7 @@ namespace Aurora.App.Services
             };
         }
 
-        private static async Task<string> StatusAsync() => App.Camera.GetStatus();
-
-        private static async Task<string> OpenAsync(JsonElement input)
-        {
-            var deviceId = input.TryGetProperty("device_id", out var id) ? id.GetString() : null;
-            if (!App.Camera.IsInitialized)
-                await App.Camera.InitializeAsync(deviceId);
-            await App.Camera.StartPreviewAsync();
-            return App.Camera.GetStatus();
-        }
+        private static Task<string> StatusAsync() => Task.FromResult(App.Camera.GetStatus());
 
         private static async Task<string> CloseAsync()
         {
@@ -88,9 +82,7 @@ namespace Aurora.App.Services
         private static async Task<string> StartPreviewAsync(JsonElement input)
         {
             var deviceId = input.TryGetProperty("device_id", out var id) ? id.GetString() : null;
-            if (!App.Camera.IsInitialized)
-                await App.Camera.InitializeAsync(deviceId);
-            await App.Camera.StartPreviewAsync();
+            await App.Camera.StartPreviewAsync(deviceId: deviceId);
             return App.Camera.GetStatus();
         }
 
@@ -102,8 +94,6 @@ namespace Aurora.App.Services
 
         private static async Task<string> CaptureAsync(JsonElement input)
         {
-            if (!App.Camera.IsInitialized)
-                await App.Camera.InitializeAsync();
             var folder = input.TryGetProperty("destination_folder", out var value) ? value.GetString() : null;
             var result = await App.Camera.CapturePhotoAsync(folder);
             return $"Photo captured without stopping the live stream: {result.Path}";

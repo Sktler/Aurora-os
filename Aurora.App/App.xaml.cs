@@ -124,7 +124,7 @@ namespace Aurora.App
                 var permissions = new WindowsPermissionService();
                 Settings.WindowsLocationEnabled = await bootstrap.AskPermissionAsync("Location", permissions.RequestLocationAsync);
                 Settings.WindowsMicrophoneEnabled = await bootstrap.AskPermissionAsync("Microphone", permissions.RequestMicrophoneAsync);
-                await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
+                Settings.WindowsCameraEnabled = await bootstrap.AskPermissionAsync("Camera", permissions.RequestCameraAsync);
                 Settings.WindowsFilesEnabled = await bootstrap.AskCapabilityPermissionAsync("Files");
                 Settings.WindowsScreenEnabled = await bootstrap.AskCapabilityPermissionAsync("Screen capture");
                 Settings.WindowsClipboardEnabled = await bootstrap.AskCapabilityPermissionAsync("Clipboard");
@@ -170,7 +170,7 @@ namespace Aurora.App
                     Hubitat = new HubitatClient(IsLocalOnlyModeEnabled ? "" : Settings.HubitatUrl, IsLocalOnlyModeEnabled ? "" : Settings.HubitatToken);
                     WebSearch = new WebSearchClient();
                     Spotify = IsLocalOnlyModeEnabled ? new SpotifyClient("", "") : BuildSpotifyClient();
-                    Camera = new CameraService();
+                    Camera = new CameraService(() => Settings.WindowsCameraEnabled);
                     Mcp = new McpService();
                     WindowsAutomation = CreateWindowsService();
                     AppAdapters = new AppAdapterService(WindowsAutomation);
@@ -205,8 +205,16 @@ namespace Aurora.App
         {
             WindowsAutomation = CreateWindowsService();
             AppAdapters = new AppAdapterService(WindowsAutomation);
+            if (!Settings.WindowsCameraEnabled && Camera is { } camera)
+                _ = StopDisabledCameraAsync(camera);
             RefreshVoiceActivation();
             WindowsPermissionsChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        private static async Task StopDisabledCameraAsync(CameraService camera)
+        {
+            try { await camera.StopIfDisabledAsync(); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Camera] Could not release camera after permission was disabled: {ex}"); }
         }
 
         public static void RefreshVoiceActivation()

@@ -26,7 +26,11 @@ namespace Aurora.App.Views
             MicrophonePermission.IsChecked = App.Settings.WindowsMicrophoneEnabled;
             McpPermission.IsChecked = App.Settings.WindowsMcpEnabled;
             ImageProviderText.Text = Localizer.FormatUiText("Provider: {0}. Image generation uses Aurora's configured provider and API key.", App.Settings.ImageProvider);
-            Loaded += async (_, _) => await RefreshCamerasAsync();
+            Loaded += async (_, _) =>
+            {
+                if (App.Settings.WindowsCameraEnabled)
+                    await RefreshCamerasAsync();
+            };
         }
 
         private void SavePermissions_Click(object sender, RoutedEventArgs e)
@@ -45,17 +49,31 @@ namespace Aurora.App.Views
             App.Settings.WindowsMcpEnabled = McpPermission.IsChecked == true;
             App.Settings.Save();
             App.RefreshWindowsPermissions();
+            if (!App.Settings.WindowsCameraEnabled)
+                CameraPicker.ItemsSource = null;
             StatusText.Text = Localizer.GetUiText("Permissions saved. Aurora services will respect these settings.");
+        }
+
+        private bool CanUseCamera()
+        {
+            if (App.Settings.WindowsCameraEnabled)
+                return true;
+
+            StatusText.Text = Localizer.GetUiText("Camera permission is disabled in Aurora Settings.");
+            return false;
         }
 
         private async System.Threading.Tasks.Task RefreshCamerasAsync()
         {
             try
             {
+                if (!CanUseCamera()) return;
+                var selectedId = (CameraPicker.SelectedItem as CameraDeviceInfo)?.Id ?? App.Camera.SelectedDeviceId;
                 var devices = await App.Camera.RefreshDevicesAsync();
+                if (!App.Settings.WindowsCameraEnabled) return;
                 CameraPicker.ItemsSource = devices;
-                CameraPicker.DisplayMemberPath = "Name";
-                if (CameraPicker.Items.Count > 0) CameraPicker.SelectedIndex = 0;
+                CameraPicker.DisplayMemberPath = nameof(CameraDeviceInfo.Name);
+                CameraPicker.SelectedItem = devices.FirstOrDefault(device => device.Id == selectedId) ?? devices.FirstOrDefault();
                 StatusText.Text = devices.Count == 0 ? Localizer.GetUiText("No Windows camera devices were found.") : Localizer.FormatUiText("Found {0} camera device(s).", devices.Count);
             }
             catch (Exception ex) { StatusText.Text = Localizer.FormatUiText("Camera discovery failed: {0}", ex.Message); }
@@ -64,15 +82,28 @@ namespace Aurora.App.Views
         private async void RefreshCameras_Click(object sender, RoutedEventArgs e) => await RefreshCamerasAsync();
         private async void CheckCamera_Click(object sender, RoutedEventArgs e)
         {
-            try { StatusText.Text = await App.Camera.CheckPermissionAsync() == CameraPermissionResult.Allowed ? Localizer.GetUiText("Windows camera permission is allowed.") : Localizer.GetUiText("Camera permission is blocked. Enable it in Windows Settings > Privacy & security > Camera."); }
+            try
+            {
+                if (!CanUseCamera()) return;
+                var result = await App.Camera.CheckPermissionAsync((CameraPicker.SelectedItem as CameraDeviceInfo)?.Id);
+                if (!CanUseCamera()) return;
+                StatusText.Text = Localizer.GetUiText(result switch
+                {
+                    CameraPermissionResult.Allowed => "Windows camera permission is allowed.",
+                    CameraPermissionResult.Denied => "Camera permission is blocked. Enable it in Windows Settings > Privacy & security > Camera.",
+                    CameraPermissionResult.NoCamera => "No Windows camera devices were found.",
+                    CameraPermissionResult.Busy => "Initialize the selected camera before checking its permission.",
+                    _ => "Camera permission check failed."
+                });
+            }
             catch (Exception ex) { StatusText.Text = Localizer.FormatUiText("Permission check failed: {0}", ex.Message); }
         }
         private async void InitializeCamera_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (CameraPermission.IsChecked != true) { StatusText.Text = Localizer.GetUiText("Enable Camera access above first."); return; }
-                var device = CameraPicker.SelectedItem as DiscoveredDevice;
+                if (!CanUseCamera()) return;
+                var device = CameraPicker.SelectedItem as CameraDeviceInfo;
                 await App.Camera.InitializeAsync(device?.Id);
                 StatusText.Text = device == null ? Localizer.GetUiText("Camera initialized.") : Localizer.FormatUiText("Camera initialized: {0}", device.Name);
             }
@@ -82,9 +113,8 @@ namespace Aurora.App.Views
         {
             try
             {
-                if (CameraPermission.IsChecked != true) { StatusText.Text = Localizer.GetUiText("Enable Camera access above first."); return; }
-                if (!App.Camera.IsInitialized) await App.Camera.InitializeAsync((CameraPicker.SelectedItem as DiscoveredDevice)?.Id);
-                var file = await App.Camera.CapturePhotoAsync();
+                if (!CanUseCamera()) return;
+                var file = await App.Camera.CapturePhotoAsync(deviceId: (CameraPicker.SelectedItem as CameraDeviceInfo)?.Id);
                 StatusText.Text = Localizer.FormatUiText("Photo captured: {0}", file.Path);
             }
             catch (Exception ex) { StatusText.Text = Localizer.FormatUiText("Capture failed: {0}", ex.Message); }
