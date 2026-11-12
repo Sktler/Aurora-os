@@ -7,6 +7,8 @@ namespace Aurora.App.Views
     {
         public FirstRunWindow()
         {
+            SetResourceReference(BackgroundProperty, "BgDeepBrush");
+            SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
             Title = "Aurora";
             Width = 560;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;

@@ -96,7 +96,7 @@ The following runtime checks passed.
   concurrent refresh/permission checks, first JPEG capture, revocation, and
   disposal during a pending scan. The captured test photo was checked and deleted.
 
-The pass found three remaining presentation/input defects.
+The initial pass found three presentation/input defects.
 
 - The welcome window and language picker have inadequate contrast on a white
   background.
@@ -104,6 +104,22 @@ The pass found three remaining presentation/input defects.
   the interface language.
 - The dashboard textbox has `AcceptsReturn=false`. Its WPF line-break command
   is disabled, so the required Shift+Enter multiline behavior remains incomplete.
+
+The follow-up fixes corrected all three. The welcome window and language picker
+now use the shared theme resources. Continue, Settings tiles, and the affected
+Profiles labels refresh in all four languages. The shared localization markup
+now applies its binding correctly. The composer accepts line breaks, wraps text,
+and scrolls at a bounded height while retaining the preview Enter-to-send handler.
+
+Follow-up verification passed **271 tests, zero failed or skipped**, including
+four new WPF regressions in the main test project. The Release application build
+had zero warnings or errors. The isolated host passed welcome contrast and
+translation, composer submission/pending edits, loaded Settings/Chat/Profiles
+translation and theme changes, and the line-break editing command. The existing
+menu harness binary also passed against the current XAML. These checks used a
+locally restored SDK 10.0.401 under `artifacts/local-dotnet/` because the system
+SDK copy was missing. The menu harness could run on the installed .NET 8 runtime,
+but rebuilding it with the local SDK lacked the .NET 8 targeting packs.
 
 These runtime checks use WPF routed events/commands and service calls. The
 physical keyboard/pointer, OS permission combinations, spoken microphone,

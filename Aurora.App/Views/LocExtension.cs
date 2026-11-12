@@ -21,6 +21,6 @@ namespace Aurora.App.Views
             {
                 Source = Localizer.Resources,
                 Mode = BindingMode.OneWay
-            };
+            }.ProvideValue(serviceProvider);
     }
 }

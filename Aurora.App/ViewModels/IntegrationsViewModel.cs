@@ -34,6 +34,7 @@ namespace Aurora.App.ViewModels
             LoadMicrophones(App.Settings.MicrophoneDeviceName);
             LoadSpeakers(App.Settings.SpeakerDeviceName);
             App.AIProviderStatusChanged += OnAIProviderStatusChanged;
+            Localizer.LanguageChanged += OnLanguageChanged;
         }
 
         // --- Navigation (hub + dedicated pages) ---
@@ -342,7 +343,13 @@ namespace Aurora.App.ViewModels
 
         private void OnAIProviderStatusChanged(object? sender, EventArgs e) => RefreshProviderDependentState();
 
-        public void Dispose() => App.AIProviderStatusChanged -= OnAIProviderStatusChanged;
+        private void OnLanguageChanged(object? sender, EventArgs e) => SettingsNavigation.RefreshLabels();
+
+        public void Dispose()
+        {
+            App.AIProviderStatusChanged -= OnAIProviderStatusChanged;
+            Localizer.LanguageChanged -= OnLanguageChanged;
+        }
 
         private static string GetActiveModel() => ActiveProvider.Key switch
         {

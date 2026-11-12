@@ -282,6 +282,7 @@ namespace Aurora.App.Services
             Add("Send", "Enviar", "Envoyer", "Senden");
             Add("Aurora Setup", "Configuración de Aurora", "Configuration d'Aurora", "Aurora-Einrichtung");
             Add("Interface language", "Idioma de la interfaz", "Langue de l'interface", "Oberflächensprache");
+            Add("Continue", "Continuar", "Continuer", "Weiter");
             Add("Welcome to Aurora", "Te damos la bienvenida a Aurora", "Bienvenue dans Aurora", "Willkommen bei Aurora");
             Add("Let's get Aurora installed and ready to use.", "Vamos a instalar Aurora y dejarlo listo para usar.", "Installons Aurora et préparons-le à l'emploi.", "Richten wir Aurora ein und machen es einsatzbereit.");
             Add("The setup wizard will help you choose an AI provider and model. After that, Aurora will ask which device permissions and Windows capabilities you want to enable.", "El asistente te ayudará a elegir un proveedor y un modelo de IA. Después, Aurora te preguntará qué permisos del dispositivo y capacidades de Windows quieres activar.", "L'assistant vous aidera à choisir un fournisseur et un modèle d'IA. Aurora vous demandera ensuite quelles autorisations et fonctionnalités Windows activer.", "Der Einrichtungsassistent hilft dir bei der Wahl eines KI-Anbieters und -Modells. Danach fragt Aurora, welche Geräteberechtigungen und Windows-Funktionen aktiviert werden sollen.");
@@ -411,7 +412,7 @@ namespace Aurora.App.Services
             Add("📁 Recovery storage", "📁 Almacenamiento de recuperación", "📁 Stockage de récupération", "📁 Wiederherstellungsspeicher");
             Add("Open recovery folder", "Abrir carpeta de recuperación", "Ouvrir le dossier de récupération", "Wiederherstellungsordner öffnen");
             Add("Recovery storage:", "Almacenamiento de recuperación:", "Stockage de récupération :", "Wiederherstellungsspeicher:");
-            Add(" Enable speaker suggestions", " Activar sugerencias por voz", " Activer les suggestions vocales", " Stimmvorschläge aktivieren");
+            Add("Enable speaker suggestions", "Activar sugerencias por voz", "Activer les suggestions vocales", "Stimmvorschläge aktivieren");
             Add("Aurora Recovery Code", "Código de recuperación de Aurora", "Code de récupération Aurora", "Aurora-Wiederherstellungscode");
             Add("Profile recovery", "Recuperación del perfil", "Récupération du profil", "Profilwiederherstellung");
             Add("Create a recovery code for this profile. Aurora stores only a secure verifier; the code itself is shown to you once.", "Crea un código de recuperación para este perfil. Aurora solo guarda un verificador seguro; el código se muestra una sola vez.", "Créez un code de récupération pour ce profil. Aurora ne conserve qu'un vérificateur sécurisé ; le code lui-même ne s'affiche qu'une seule fois.", "Erstelle einen Wiederherstellungscode für dieses Profil. Aurora speichert nur einen sicheren Prüfwert; der Code wird dir nur einmal angezeigt.");

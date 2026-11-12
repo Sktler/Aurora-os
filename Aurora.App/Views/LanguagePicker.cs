@@ -9,6 +9,7 @@ public sealed class LanguagePicker : ComboBox
 {
     public LanguagePicker()
     {
+        SetResourceReference(StyleProperty, typeof(ComboBox));
         ItemsSource = Localizer.SupportedLanguages;
         DisplayMemberPath = nameof(AppLanguage.NativeName);
         SelectedValuePath = nameof(AppLanguage.Code);
