@@ -93,7 +93,9 @@ namespace Aurora.App.Services
 
         public void StartWakeWord()
         {
-            _wakeGrammar.Enabled = false;
+            // The phrase grammar gives reliable, high-confidence matches for a bare wake phrase;
+            // dictation stays on so "Hey Aurora, <command>" in one breath still works.
+            _wakeGrammar.Enabled = true;
             _dictationGrammar.Enabled = true;
             _engine.RecognizeAsync(RecognizeMode.Multiple);
             if (!_captureStarted)
