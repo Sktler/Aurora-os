@@ -48,7 +48,7 @@ namespace Aurora.App.Services
         private readonly bool _synthAvailable;
         private readonly HttpClient _http = new();
         private SpeechRecognitionEngine? _continuousRecognizer;
-        private WaveInEvent? _micCapture;
+        private WaveIn? _micCapture;
         private LiveMicrophoneStream? _micStream;
         private Action? _onStoppedExternally;
         private Action<string>? _onUtterance;
@@ -57,7 +57,7 @@ namespace Aurora.App.Services
         private int _speechGeneration;
         private readonly System.Threading.AsyncLocal<int> _callGeneration = new();
         private readonly object _outputLock = new();
-        private WaveOutEvent? _activeOutput;
+        private WaveOut? _activeOutput;
 
         private bool IsStopRequested => _callGeneration.Value != System.Threading.Volatile.Read(ref _speechGeneration);
 
@@ -117,7 +117,9 @@ namespace Aurora.App.Services
             {
                 return _synth!.GetInstalledVoices()
                     .Where(v => v.Enabled)
-                    .Select(v => new VoiceOption(v.VoiceInfo.Name, v.VoiceInfo.Gender.ToString(), v.VoiceInfo.Culture.Name))
+                    .Select(v => v.VoiceInfo)
+                    .Where(voice => !string.IsNullOrWhiteSpace(voice.Name))
+                    .Select(voice => new VoiceOption(voice.Name ?? string.Empty, voice.Gender.ToString(), voice.Culture?.Name ?? string.Empty))
                     .ToList();
             }
             catch
@@ -377,7 +379,7 @@ namespace Aurora.App.Services
 
             using var stream = new MemoryStream(wavBytes);
             using var reader = new WaveFileReader(stream);
-            using var output = deviceNumber >= 0 ? new WaveOutEvent { DeviceNumber = deviceNumber } : new WaveOutEvent();
+            using var output = deviceNumber >= 0 ? new WaveOut { DeviceNumber = deviceNumber } : new WaveOut();
             output.Init(reader);
             output.Volume = (float)(SpeechFormatter.ClampVolumePercent(App.Settings.TtsVolumePercent) / 100.0);
 
@@ -474,7 +476,7 @@ namespace Aurora.App.Services
                 _continuousRecognizer = recognizer;
 
                 var micDeviceNumber = AudioDeviceCatalog.ResolveInputDeviceNumber(App.Settings.MicrophoneDeviceName);
-                WaveInEvent? micCapture = null;
+                WaveIn? micCapture = null;
                 LiveMicrophoneStream? micStream = null;
                 if (micDeviceNumber >= 0)
                 {
@@ -483,7 +485,7 @@ namespace Aurora.App.Services
                     // recognizer reads that audio through a small bridging stream instead.
                     micStream = new LiveMicrophoneStream();
                     _micStream = micStream;
-                    micCapture = new WaveInEvent { DeviceNumber = micDeviceNumber, WaveFormat = new WaveFormat(16000, 16, 1) };
+                    micCapture = new WaveIn { DeviceNumber = micDeviceNumber, WaveFormat = new WaveFormat(16000, 16, 1) };
                     _micCapture = micCapture;
                     micCapture.DataAvailable += (_, e) =>
                     {
@@ -613,7 +615,7 @@ namespace Aurora.App.Services
                 using var output = new MemoryStream();
                 var buffer = new byte[pcm.WaveFormat.AverageBytesPerSecond];
                 int read;
-                while ((read = pcm.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, read);
+                while ((read = pcm.Read(buffer.AsSpan())) > 0) output.Write(buffer, 0, read);
                 return output.ToArray();
             }
             catch { return Array.Empty<byte>(); }

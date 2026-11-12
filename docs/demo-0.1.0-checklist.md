@@ -121,6 +121,25 @@ locally restored SDK 10.0.401 under `artifacts/local-dotnet/` because the system
 SDK copy was missing. The menu harness could run on the installed .NET 8 runtime,
 but rebuilding it with the local SDK lacked the .NET 8 targeting packs.
 
+Before the .NET 11 upgrade, the dependency migration retained the five updated NuGet references and
+passed the 271-test suite and a warning-free Release build with SDK 10.0.404.
+The menu harness then targeted `net10.0-windows10.0.17763.0`, matching the app and
+main tests at that time. It was rebuilt and passed all rendering checks on .NET 10. The
+updated MCP client and real webcam service checks also passed. The camera
+checks required execution outside the workspace sandbox to access the device.
+
+On 2026-11-12, the .NET 11 migration was verified with SDK 11.0.100 and the
+.NET 11.0.0 Windows Desktop runtime. The app, main tests, and menu harness all
+target `net11.0-windows10.0.17763.0`, with minimum Windows version 10.0.17763.0.
+Solution and menu-harness restore passed, the Release build succeeded, all
+271 tests passed with zero failures or skips, and the rebuilt menu harness
+passed all assertions. The build emitted three distinct WFO2000 warnings in
+the `Definitions` getters of `FileTools`, `HomeTools`, and `SystemTools`, each
+reported for both WPF compilation passes. NuGet reported no known vulnerable
+direct or transitive packages. Physical microphone/speaker, webcam, and live
+MCP checks were not repeated for .NET 11; the earlier device checks above are
+historical evidence.
+
 These runtime checks use WPF routed events/commands and service calls. The
 physical keyboard/pointer, OS permission combinations, spoken microphone,
 live-account, second-camera, multi-monitor, and display-scaling cases below

@@ -22,7 +22,7 @@ namespace Aurora.App.Services
         private readonly SpeechRecognitionEngine _engine;
         private readonly Grammar _wakeGrammar;
         private readonly DictationGrammar _dictationGrammar;
-        private WaveInEvent? _capture;
+        private WaveIn? _capture;
         private LiveMicrophoneStream? _stream;
         private bool _captureStarted;
 
@@ -49,7 +49,7 @@ namespace Aurora.App.Services
                 else
                 {
                     _stream = new LiveMicrophoneStream();
-                    _capture = new WaveInEvent { DeviceNumber = device, WaveFormat = new WaveFormat(16000, 16, 1) };
+                    _capture = new WaveIn { DeviceNumber = device, WaveFormat = new WaveFormat(16000, 16, 1) };
                     _capture.DataAvailable += OnDataAvailable;
                     _capture.RecordingStopped += OnRecordingStopped;
                     _engine.SetInputToAudioStream(_stream,

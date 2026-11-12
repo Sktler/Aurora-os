@@ -1,16 +1,18 @@
 # Getting it running
 
 1. **Install prerequisites**
-   - Visual Studio 2022 (Community is fine), with the **.NET desktop
+   - A Visual Studio release that supports .NET 11 (Community is fine), with the **.NET desktop
      development** workload checked during install.
-   - .NET 8 SDK (Visual Studio installer will offer this automatically).
+   - The .NET 11 SDK selected by `global.json` (11.0.100 or a later compatible
+     11.0 feature band or patch).
+   - To run a framework-dependent build without the SDK, install the .NET 11
+     Windows Desktop runtime.
 
 2. **Open it**
    - Double-click `Aurora.sln`, or open Visual Studio → *Open a project or
      solution* → select `Aurora.sln`.
-   - Let NuGet restore packages (Sqlite, System.Text.Json,
-     CommunityToolkit.Mvvm, System.Speech) — happens automatically on first
-     build.
+   - Let NuGet restore the dependencies declared in the project files. This
+     happens automatically on the first build.
 
 3. **Add your API key**
    - Press F5 to run. On first launch (no key saved yet), a **setup window**

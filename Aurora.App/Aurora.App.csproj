@@ -17,10 +17,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="11.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio" Version="3.3.0" />
     <PackageReference Include="System.Speech" Version="11.0.0" />
-    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
-    <PackageReference Include="OpenCvSharp4.Windows" Version="4.13.0.20260627" />
+    <PackageReference Include="ModelContextProtocol" Version="2.4.0" />
+    <PackageReference Include="OpenCvSharp4.Windows" Version="4.13.0.20261107" />
   </ItemGroup>
 
   <ItemGroup>

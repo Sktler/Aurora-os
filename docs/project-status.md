@@ -2,9 +2,12 @@
 
 _Last reviewed against `master`: 2026-09-19._
 
+_Runtime and build prerequisites updated: 2026-11-12. The feature inventory below
+has not been reassessed as part of the runtime migration._
+
 ## Current application
 
-Aurora is currently a **Windows WPF desktop application** targeting **.NET 10** (`net10.0-windows10.0.17763.0`). The current repository contains `Aurora.App` plus focused test projects.
+Aurora is currently a **Windows WPF desktop application** targeting **.NET 11** (`net11.0-windows10.0.17763.0`). The current repository contains `Aurora.App` plus focused test projects. All three projects use the same target framework and minimum Windows version. The SDK is selected by `global.json`; framework-dependent builds require the .NET 11 Windows Desktop runtime.
 
 ### AI and companions
 
@@ -49,7 +52,7 @@ Current code includes integrations or clients for:
 
 ## Documentation drift to clean up
 
-Some older docs still describe the earlier v1.x state and older prerequisites. The project file now targets .NET 10, so setup/overview docs should be kept aligned with `master` as features land.
+Some older docs still describe the earlier v1.x state and older prerequisites. The project file now targets .NET 11, so setup/overview docs should be kept aligned with `master` as features land. References to .NET 8 or .NET 10 in dated verification records describe the environment used for those earlier checks.
 
 ## Platform note
 

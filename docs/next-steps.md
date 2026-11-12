@@ -7,7 +7,7 @@ This is a suggested engineering order based on dependencies in the current code.
 Before broad feature expansion:
 
 - Review the existing bug queue and close or reproduce stale reports.
-- Bring setup and architecture docs in line with the current .NET 10 codebase.
+- Keep setup and architecture docs in line with the current .NET 11 codebase.
 - Expand automated coverage around provider switching, permissions, file safety, tool routing, and startup.
 - Keep optional integrations from blocking startup or core chat.
 

@@ -1,7 +1,8 @@
 # Context-menu theme regression checks (issue #5)
 
 Run from the repository root on Windows with the SDK selected by `global.json`
-and the .NET 8 Windows Desktop runtime for the separate harness:
+and the .NET 11 Windows Desktop runtime. The separate harness uses the same
+target framework and minimum Windows version as the application and main tests:
 
 ```powershell
 dotnet run --project tests/MenuThemeChecks -- .
