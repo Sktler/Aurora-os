@@ -51,7 +51,7 @@ Discovery is treated as untrusted metadata; a device must be authenticated and t
 - **Platform:** Windows
 - **UI:** WPF
 - **Language:** C#
-- **Target:** .NET 11
+- **Target:** .NET 10
 - **Repository:** `Sktler/Aurora-os`
 
 For the complete guide, see **[docs/README.md](docs/README.md)**.

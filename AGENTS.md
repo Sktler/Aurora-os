@@ -22,7 +22,7 @@ Before changing behavior, inspect the existing implementation and related tests.
 
 - Target platform: Windows.
 - Main project: `Aurora.App/Aurora.App.csproj`.
-- Target framework: `.NET 11` with WPF and Windows Forms enabled.
+- Target framework: `.NET 10` with WPF and Windows Forms enabled.
 - Nullable reference types are enabled.
 - Preserve the existing package versions and project configuration unless the task specifically requires changing them.
 
@@ -41,7 +41,7 @@ For a normal local development build, this is also acceptable after restore:
 dotnet build Aurora.App/Aurora.App.csproj
 ```
 
-CI currently uses Windows with .NET 11 and performs restore followed by a Release build. Keep changes compatible with that environment.
+CI currently uses Windows with .NET 10 and performs restore followed by a Release build. Keep changes compatible with that environment.
 
 ### Tests
 
