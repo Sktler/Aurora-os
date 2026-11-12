@@ -23,6 +23,8 @@ namespace Aurora.App.Services
         private bool _enabled;
         private bool _disposed;
 
+        private const double MaxCommandConfidence = 0.4;
+
         public bool IsAvailable { get; private set; }
         public bool IsEnabled => _enabled;
         public string WakePhrase => "Hey Aurora";
@@ -36,7 +38,9 @@ namespace Aurora.App.Services
 
         public WakeWordService() : this(
             () => App.Settings?.WindowsMicrophoneEnabled == true,
-            () => App.Settings?.VoiceConfidenceThreshold ?? VoiceTranscriptFilter.DefaultConfidenceThreshold,
+            // Single-shot dictation after "Hey Aurora" scores lower than continuous listening,
+            // so the saved threshold is capped here or spoken commands get silently dropped.
+            () => Math.Min(App.Settings?.VoiceConfidenceThreshold ?? VoiceTranscriptFilter.DefaultConfidenceThreshold, MaxCommandConfidence),
             () => new WakeWordRecognizer(App.Settings?.MicrophoneDeviceName))
         {
         }
