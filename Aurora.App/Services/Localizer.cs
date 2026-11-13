@@ -330,10 +330,13 @@ namespace Aurora.App.Services
             Add("Save permissions", "Guardar permisos", "Enregistrer les autorisations", "Berechtigungen speichern");
             Add("Weather", "Clima", "Météo", "Wetter");
             Add("Save weather location", "Guardar ubicación del clima", "Enregistrer le lieu météo", "Wetterort speichern");
-            Add("Enter a U.S. city (for example Boston, MA) to show its weather on the dashboard. Leave it empty to use your Windows location.",
-                "Introduce una ciudad de EE. UU. (por ejemplo, Boston, MA) para mostrar su clima en el panel. Déjalo vacío para usar tu ubicación de Windows.",
-                "Saisissez une ville américaine (par exemple Boston, MA) pour afficher sa météo sur le tableau de bord. Laissez vide pour utiliser votre position Windows.",
-                "Geben Sie eine US-Stadt ein (zum Beispiel Boston, MA), um das Wetter im Dashboard anzuzeigen. Leer lassen, um Ihren Windows-Standort zu verwenden.");
+            Add("Enter a city (for example Boston, MA) to show its weather on the dashboard. Leave it empty to use your Windows location.",
+                "Introduce una ciudad (por ejemplo, Boston, MA) para mostrar su clima en el panel. Déjalo vacío para usar tu ubicación de Windows.",
+                "Saisissez une ville (par exemple Boston, MA) pour afficher sa météo sur le tableau de bord. Laissez vide pour utiliser votre position Windows.",
+                "Geben Sie eine Stadt ein (zum Beispiel Boston, MA), um das Wetter im Dashboard anzuzeigen. Leer lassen, um Ihren Windows-Standort zu verwenden.");
+            Add("Weather source", "Fuente del clima", "Source météo", "Wetterquelle");
+            Add("National Weather Service (U.S. only)", "Servicio Meteorológico Nacional (solo EE. UU.)", "National Weather Service (États-Unis uniquement)", "National Weather Service (nur USA)");
+            Add("Open-Meteo (worldwide)", "Open-Meteo (todo el mundo)", "Open-Meteo (monde entier)", "Open-Meteo (weltweit)");
             Add("Weather location cleared. Aurora will use Windows location if it is enabled.", "Ubicación del clima borrada. Aurora usará la ubicación de Windows si está activada.", "Lieu météo effacé. Aurora utilisera la position Windows si elle est activée.", "Wetterort gelöscht. Aurora verwendet den Windows-Standort, falls aktiviert.");
             Add("Weather location saved.", "Ubicación del clima guardada.", "Lieu météo enregistré.", "Wetterort gespeichert.");
             Add("Camera", "Cámara", "Caméra", "Kamera");

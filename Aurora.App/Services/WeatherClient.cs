@@ -33,8 +33,46 @@ namespace Aurora.App.Services
                 _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/geo+json"));
         }
 
+        /// <summary>When true, weather comes from Open-Meteo (worldwide) instead of the U.S. National Weather Service.</summary>
+        public bool UseOpenMeteo { get; set; }
+
+        private async Task<WeatherSnapshot> GetOpenMeteoWeatherAsync(double latitude, double longitude, string location)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            var url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude.ToString(inv)}&longitude={longitude.ToString(inv)}" +
+                      "&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m&hourly=precipitation_probability" +
+                      "&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=auto";
+            using var doc = await GetJsonUrlAsync(url);
+            var current = doc.RootElement.GetProperty("current");
+            var temp = current.GetProperty("temperature_2m").GetDouble();
+            var condition = DescribeWeatherCode(current.GetProperty("weather_code").GetInt32());
+            var wind = $"{current.GetProperty("wind_speed_10m").GetDouble():0} mph {current.GetProperty("wind_direction_10m").GetDouble():0}°";
+            double? pop = null;
+            if (doc.RootElement.TryGetProperty("hourly", out var hourly) && hourly.TryGetProperty("precipitation_probability", out var probs)
+                && probs.ValueKind == JsonValueKind.Array && probs.GetArrayLength() > 0 && probs[0].ValueKind == JsonValueKind.Number)
+                pop = probs[0].GetDouble();
+            return new WeatherSnapshot(location, temp, condition, wind, pop, true, 0, "Alerts are only available from the National Weather Service.");
+        }
+
+        private static string DescribeWeatherCode(int code) => code switch
+        {
+            0 => "Clear sky",
+            1 => "Mainly clear",
+            2 => "Partly cloudy",
+            3 => "Overcast",
+            45 or 48 => "Fog",
+            >= 51 and <= 57 => "Drizzle",
+            >= 61 and <= 67 => "Rain",
+            >= 71 and <= 77 => "Snow",
+            >= 80 and <= 82 => "Rain showers",
+            85 or 86 => "Snow showers",
+            >= 95 => "Thunderstorm",
+            _ => "Unknown conditions"
+        };
+
         public async Task<WeatherSnapshot> GetCurrentWeatherAsync(double latitude, double longitude)
         {
+            if (UseOpenMeteo) return await GetOpenMeteoWeatherAsync(latitude, longitude, "Current location");
             using var point = await GetJsonAsync($"/points/{latitude.ToString(CultureInfo.InvariantCulture)},{longitude.ToString(CultureInfo.InvariantCulture)}");
             var p = point.RootElement.GetProperty("properties");
             var city = p.GetProperty("relativeLocation").GetProperty("properties").GetProperty("city").GetString() ?? "Current location";
@@ -69,9 +107,10 @@ namespace Aurora.App.Services
             if (string.IsNullOrWhiteSpace(place)) return "No location given.";
             try
             {
-                var (lat, lon) = await ResolveLocationAsync(place);
-                var weather = await GetCurrentWeatherAsync(lat, lon);
+                var weather = await GetCurrentWeatherForPlaceAsync(place);
                 var pop = weather.PrecipitationChance.HasValue ? $", precipitation chance {weather.PrecipitationChance.Value:0}%" : "";
+                if (UseOpenMeteo)
+                    return $"Weather in {weather.Location}: {weather.Condition}, {weather.TemperatureF:0}°F, wind {weather.Wind}{pop}. Source: Open-Meteo.";
                 var observed = weather.IsObserved ? ", current observation" : ", NWS forecast";
                 return $"Weather in {weather.Location}: {weather.Condition}, {weather.TemperatureF:0}°F, wind {weather.Wind}{pop}{observed}. {weather.ActiveAlertSummary} Source: National Weather Service.";
             }
@@ -86,7 +125,7 @@ namespace Aurora.App.Services
 
             try
             {
-                var (lat, lon) = await ResolveLocationAsync(place);
+                var (lat, lon, _) = await ResolveLocationAsync(place);
                 var alerts = await GetActiveAlertsAsync(lat, lon);
                 return $"{alerts.Summary}{Environment.NewLine}{FormatAlertDetails(alerts.Items)} Source: National Weather Service.";
             }
@@ -98,11 +137,11 @@ namespace Aurora.App.Services
         /// <summary>Weather for a user-entered U.S. place such as "Boston" or "Boston, MA".</summary>
         public async Task<WeatherSnapshot> GetCurrentWeatherForPlaceAsync(string place)
         {
-            var (lat, lon) = await ResolveLocationAsync(place);
-            return await GetCurrentWeatherAsync(lat, lon);
+            var (lat, lon, name) = await ResolveLocationAsync(place);
+            return UseOpenMeteo ? await GetOpenMeteoWeatherAsync(lat, lon, name) : await GetCurrentWeatherAsync(lat, lon);
         }
 
-        private async Task<(double Lat, double Lon)> ResolveLocationAsync(string place)
+        private async Task<(double Lat, double Lon, string Name)> ResolveLocationAsync(string place)
         {
             // The geocoder matches a bare place name, so "City, ST" is searched by its city part.
             var name = place.Split(',')[0].Trim();
@@ -110,9 +149,11 @@ namespace Aurora.App.Services
             using var geo = await GetJsonUrlAsync(url);
             var results = geo.RootElement.TryGetProperty("results", out var array) ? array : default;
             if (results.ValueKind != JsonValueKind.Array || results.GetArrayLength() == 0) throw new InvalidOperationException($"Couldn't find a location matching \"{place}\".");
-            var us = results.EnumerateArray()
-                .Where(r => r.TryGetProperty("country_code", out var cc) && string.Equals(cc.GetString(), "US", StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var us = UseOpenMeteo
+                ? results.EnumerateArray().ToList()
+                : results.EnumerateArray()
+                    .Where(r => r.TryGetProperty("country_code", out var cc) && string.Equals(cc.GetString(), "US", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
             if (us.Count == 0) throw new InvalidOperationException("The National Weather Service API provides U.S. weather data.");
             var state = place.Contains(',') ? place.Split(',')[1].Trim() : "";
             var first = state.Length == 0 ? us[0]
@@ -120,7 +161,10 @@ namespace Aurora.App.Services
                         (string.Equals(a.GetString(), state, StringComparison.OrdinalIgnoreCase) ||
                          (a.GetString() ?? "").StartsWith(state, StringComparison.OrdinalIgnoreCase)))
                   is { ValueKind: JsonValueKind.Object } match ? match : us[0];
-            return (first.GetProperty("latitude").GetDouble(), first.GetProperty("longitude").GetDouble());
+            var city = first.TryGetProperty("name", out var n) ? n.GetString() ?? name : name;
+            var region = first.TryGetProperty("admin1", out var adm) ? adm.GetString() : null;
+            var label = string.IsNullOrWhiteSpace(region) ? city : $"{city}, {region}";
+            return (first.GetProperty("latitude").GetDouble(), first.GetProperty("longitude").GetDouble(), label);
         }
 
         private async Task<ActiveAlerts> GetActiveAlertsAsync(double latitude, double longitude)

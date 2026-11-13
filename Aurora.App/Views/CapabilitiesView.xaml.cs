@@ -15,6 +15,7 @@ namespace Aurora.App.Views
             InitializeComponent();
             LocationPermission.IsChecked = App.Settings.WindowsLocationEnabled;
             WeatherLocationBox.Text = App.Settings.WeatherLocation ?? "";
+            WeatherSourceBox.SelectedIndex = App.Settings.WeatherSource == "openmeteo" ? 1 : 0;
             FilesPermission.IsChecked = App.Settings.WindowsFilesEnabled;
             ScreenPermission.IsChecked = App.Settings.WindowsScreenEnabled;
             ClipboardPermission.IsChecked = App.Settings.WindowsClipboardEnabled;
@@ -58,6 +59,8 @@ namespace Aurora.App.Views
         private void SaveWeatherLocation_Click(object sender, RoutedEventArgs e)
         {
             App.Settings.WeatherLocation = WeatherLocationBox.Text.Trim();
+            App.Settings.WeatherSource = (WeatherSourceBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "nws";
+            if (App.Weather != null) App.Weather.UseOpenMeteo = App.Settings.WeatherSource == "openmeteo";
             App.Settings.Save();
             App.RefreshWindowsPermissions();
             StatusText.Text = Localizer.GetUiText(App.Settings.WeatherLocation.Length == 0
