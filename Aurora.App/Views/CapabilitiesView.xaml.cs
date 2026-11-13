@@ -16,6 +16,7 @@ namespace Aurora.App.Views
             LocationPermission.IsChecked = App.Settings.WindowsLocationEnabled;
             WeatherLocationBox.Text = App.Settings.WeatherLocation ?? "";
             WeatherSourceBox.SelectedIndex = App.Settings.WeatherSource == "openmeteo" ? 1 : 0;
+            WeatherPageUrlBox.Text = App.Settings.WeatherPageUrl ?? "";
             FilesPermission.IsChecked = App.Settings.WindowsFilesEnabled;
             ScreenPermission.IsChecked = App.Settings.WindowsScreenEnabled;
             ClipboardPermission.IsChecked = App.Settings.WindowsClipboardEnabled;
@@ -60,6 +61,8 @@ namespace Aurora.App.Views
         {
             App.Settings.WeatherLocation = WeatherLocationBox.Text.Trim();
             App.Settings.WeatherSource = (WeatherSourceBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "nws";
+            App.Settings.WeatherPageUrl = WeatherPageUrlBox.Text.Trim();
+            if (App.Weather != null) App.Weather.WebPageUrl = App.Settings.WeatherPageUrl;
             if (App.Weather != null) App.Weather.UseOpenMeteo = App.Settings.WeatherSource == "openmeteo";
             App.Settings.Save();
             App.RefreshWindowsPermissions();

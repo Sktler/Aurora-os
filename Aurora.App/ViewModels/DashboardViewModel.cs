@@ -88,7 +88,7 @@ namespace Aurora.App.ViewModels
 
         private void OnWindowsPermissionsChanged(object? sender, EventArgs e)
         {
-            if (!App.Settings.WindowsLocationEnabled && string.IsNullOrWhiteSpace(App.Settings.WeatherLocation)) ShowLocationUnavailable();
+            if (!App.Settings.WindowsLocationEnabled && string.IsNullOrWhiteSpace(App.Settings.WeatherLocation) && string.IsNullOrWhiteSpace(App.Settings.WeatherPageUrl)) ShowLocationUnavailable();
             else _ = RefreshWeatherAsync();
         }
 
@@ -173,7 +173,11 @@ namespace Aurora.App.ViewModels
 
                 var manualPlace = App.Settings.WeatherLocation?.Trim();
                 WeatherSnapshot weather;
-                if (!string.IsNullOrWhiteSpace(manualPlace))
+                if (App.Weather.UsesWebPage)
+                {
+                    weather = await App.Weather.GetCurrentWeatherFromPageAsync();
+                }
+                else if (!string.IsNullOrWhiteSpace(manualPlace))
                 {
                     weather = await App.Weather.GetCurrentWeatherForPlaceAsync(manualPlace);
                 }

@@ -364,6 +364,8 @@ namespace Aurora.App.Services
         public string WeatherLocation { get; set; } = "";
         /// <summary>"nws" (U.S. National Weather Service) or "openmeteo" (worldwide).</summary>
         public string WeatherSource { get; set; } = "nws";
+        /// <summary>Optional web page to scrape for weather; overrides the source and location when set.</summary>
+        public string WeatherPageUrl { get; set; } = "";
         public bool WindowsCameraEnabled { get; set; } = false;
         public bool WindowsMicrophoneEnabled { get; set; } = false;
         public bool WindowsMcpEnabled { get; set; } = false;

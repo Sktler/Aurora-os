@@ -33,6 +33,45 @@ namespace Aurora.App.Services
                 _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/geo+json"));
         }
 
+        /// <summary>When set, weather is scraped from this web page instead of an API.</summary>
+        public string? WebPageUrl { get; set; }
+        public bool UsesWebPage => !string.IsNullOrWhiteSpace(WebPageUrl);
+
+        private static readonly HttpClient PageHttp = CreatePageClient();
+
+        private static HttpClient CreatePageClient()
+        {
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Aurora/1.0");
+            client.DefaultRequestHeaders.Accept.ParseAdd("text/html");
+            return client;
+        }
+
+        /// <summary>Best-effort scrape: takes the first temperature, condition and wind found in the page text.</summary>
+        public async Task<WeatherSnapshot> GetCurrentWeatherFromPageAsync()
+        {
+            if (!Uri.TryCreate(WebPageUrl?.Trim(), UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                throw new InvalidOperationException("The weather page URL must start with http:// or https://.");
+            var html = await PageHttp.GetStringAsync(uri);
+            var title = System.Text.RegularExpressions.Regex.Match(html, "<title[^>]*>(.*?)</title>", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var text = System.Text.RegularExpressions.Regex.Replace(html, "<(script|style|noscript)[^>]*>.*?</\\1>", " ", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            text = System.Text.RegularExpressions.Regex.Replace(text, "<[^>]+>", " ");
+            text = System.Text.RegularExpressions.Regex.Replace(System.Net.WebUtility.HtmlDecode(text), "\\s+", " ");
+
+            var temp = System.Text.RegularExpressions.Regex.Match(text, "(-?\\d{1,3})\\s*(?:°|º|˚)\\s*([FC])?");
+            if (!temp.Success) throw new InvalidOperationException("Couldn't find a temperature on that page. It may load its weather with JavaScript.");
+            var degrees = double.Parse(temp.Groups[1].Value, CultureInfo.InvariantCulture);
+            if (temp.Groups[2].Value == "C") degrees = CelsiusToFahrenheit(degrees);
+
+            var condition = System.Text.RegularExpressions.Regex.Match(text,
+                "\\b(Thunderstorms?|Showers?|Rain|Snow|Sleet|Fog|Haze|Mostly Cloudy|Partly Cloudy|Mostly Sunny|Partly Sunny|Cloudy|Overcast|Sunny|Clear)\\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var wind = System.Text.RegularExpressions.Regex.Match(text, "(?:[NSEW]{1,3}\\s*)?(\\d{1,3})\\s*mph", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var name = title.Success ? System.Net.WebUtility.HtmlDecode(title.Groups[1].Value).Trim() : uri.Host;
+            if (name.Length > 40) name = name[..40].TrimEnd() + "…";
+            return new WeatherSnapshot(name, degrees, condition.Success ? condition.Value : "Conditions on page", wind.Success ? $"{wind.Groups[1].Value} mph" : "Unknown", null, true, 0, "Alerts are only available from the National Weather Service.");
+        }
+
         /// <summary>When true, weather comes from Open-Meteo (worldwide) instead of the U.S. National Weather Service.</summary>
         public bool UseOpenMeteo { get; set; }
 
@@ -104,9 +143,14 @@ namespace Aurora.App.Services
 
         public async Task<string> GetCurrentWeatherAsync(string place)
         {
-            if (string.IsNullOrWhiteSpace(place)) return "No location given.";
+            if (string.IsNullOrWhiteSpace(place) && !UsesWebPage) return "No location given.";
             try
             {
+                if (UsesWebPage)
+                {
+                    var page = await GetCurrentWeatherFromPageAsync();
+                    return $"Weather from {page.Location}: {page.Condition}, {page.TemperatureF:0}°F, wind {page.Wind}. Source: {WebPageUrl}.";
+                }
                 var weather = await GetCurrentWeatherForPlaceAsync(place);
                 var pop = weather.PrecipitationChance.HasValue ? $", precipitation chance {weather.PrecipitationChance.Value:0}%" : "";
                 if (UseOpenMeteo)

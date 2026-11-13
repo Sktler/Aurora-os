@@ -141,7 +141,7 @@ namespace Aurora.App
                 Memory.SetActiveProfile(Settings.ProfileId);
                 Memory.Initialize();
                 ActionRecovery = new ActionRecoveryService(RestoreClipboardTextAsync);
-                Weather = new WeatherClient { UseOpenMeteo = string.Equals(Settings.WeatherSource, "openmeteo", StringComparison.OrdinalIgnoreCase) };
+                Weather = new WeatherClient { UseOpenMeteo = string.Equals(Settings.WeatherSource, "openmeteo", StringComparison.OrdinalIgnoreCase), WebPageUrl = Settings.WeatherPageUrl };
 
                 try { Metrics = new SystemMetricsService(); }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Startup] Metrics initialization failed: {ex}"); }

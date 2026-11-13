@@ -335,6 +335,11 @@ namespace Aurora.App.Services
                 "Saisissez une ville (par exemple Boston, MA) pour afficher sa météo sur le tableau de bord. Laissez vide pour utiliser votre position Windows.",
                 "Geben Sie eine Stadt ein (zum Beispiel Boston, MA), um das Wetter im Dashboard anzuzeigen. Leer lassen, um Ihren Windows-Standort zu verwenden.");
             Add("Weather source", "Fuente del clima", "Source météo", "Wetterquelle");
+            Add("Weather page URL (optional)", "URL de la página del clima (opcional)", "URL de la page météo (facultatif)", "URL der Wetterseite (optional)");
+            Add("If set, Aurora reads the temperature from this page instead (best effort, for example a local news weather page).",
+                "Si se define, Aurora lee la temperatura de esta página (mejor esfuerzo, por ejemplo una página del clima de noticias locales).",
+                "Si défini, Aurora lit la température sur cette page (dans la mesure du possible, par exemple une page météo d'actualités locales).",
+                "Falls festgelegt, liest Aurora die Temperatur von dieser Seite (bestmöglich, zum Beispiel eine lokale Nachrichten-Wetterseite).");
             Add("National Weather Service (U.S. only)", "Servicio Meteorológico Nacional (solo EE. UU.)", "National Weather Service (États-Unis uniquement)", "National Weather Service (nur USA)");
             Add("Open-Meteo (worldwide)", "Open-Meteo (todo el mundo)", "Open-Meteo (monde entier)", "Open-Meteo (weltweit)");
             Add("Weather location cleared. Aurora will use Windows location if it is enabled.", "Ubicación del clima borrada. Aurora usará la ubicación de Windows si está activada.", "Lieu météo effacé. Aurora utilisera la position Windows si elle est activée.", "Wetterort gelöscht. Aurora verwendet den Windows-Standort, falls aktiviert.");
