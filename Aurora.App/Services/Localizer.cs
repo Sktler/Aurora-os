@@ -328,6 +328,14 @@ namespace Aurora.App.Services
             Add("Microphone access", "Acceso al micrófono", "Accès au microphone", "Mikrofonzugriff");
             Add("MCP servers & tools", "Servidores y herramientas MCP", "Serveurs et outils MCP", "MCP-Server und -Tools");
             Add("Save permissions", "Guardar permisos", "Enregistrer les autorisations", "Berechtigungen speichern");
+            Add("Weather", "Clima", "Météo", "Wetter");
+            Add("Save weather location", "Guardar ubicación del clima", "Enregistrer le lieu météo", "Wetterort speichern");
+            Add("Enter a U.S. city (for example Boston, MA) to show its weather on the dashboard. Leave it empty to use your Windows location.",
+                "Introduce una ciudad de EE. UU. (por ejemplo, Boston, MA) para mostrar su clima en el panel. Déjalo vacío para usar tu ubicación de Windows.",
+                "Saisissez une ville américaine (par exemple Boston, MA) pour afficher sa météo sur le tableau de bord. Laissez vide pour utiliser votre position Windows.",
+                "Geben Sie eine US-Stadt ein (zum Beispiel Boston, MA), um das Wetter im Dashboard anzuzeigen. Leer lassen, um Ihren Windows-Standort zu verwenden.");
+            Add("Weather location cleared. Aurora will use Windows location if it is enabled.", "Ubicación del clima borrada. Aurora usará la ubicación de Windows si está activada.", "Lieu météo effacé. Aurora utilisera la position Windows si elle est activée.", "Wetterort gelöscht. Aurora verwendet den Windows-Standort, falls aktiviert.");
+            Add("Weather location saved.", "Ubicación del clima guardada.", "Lieu météo enregistré.", "Wetterort gespeichert.");
             Add("Camera", "Cámara", "Caméra", "Kamera");
             Add("Select a detected Windows camera, check permission, initialize it, or capture a photo.", "Selecciona una cámara detectada por Windows, comprueba el permiso, inicialízala o toma una foto.", "Sélectionnez une caméra Windows détectée, vérifiez l'autorisation, initialisez-la ou prenez une photo.", "Wähle eine erkannte Windows-Kamera aus, prüfe die Berechtigung, initialisiere sie oder nimm ein Foto auf.");
             Add("Refresh cameras", "Actualizar cámaras", "Actualiser les caméras", "Kameras aktualisieren");

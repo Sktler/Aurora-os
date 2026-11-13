@@ -88,7 +88,7 @@ namespace Aurora.App.ViewModels
 
         private void OnWindowsPermissionsChanged(object? sender, EventArgs e)
         {
-            if (!App.Settings.WindowsLocationEnabled) ShowLocationUnavailable();
+            if (!App.Settings.WindowsLocationEnabled && string.IsNullOrWhiteSpace(App.Settings.WeatherLocation)) ShowLocationUnavailable();
             else _ = RefreshWeatherAsync();
         }
 
@@ -171,15 +171,24 @@ namespace Aurora.App.ViewModels
                     return;
                 }
 
-                var location = await new LocationService().GetCurrentLocationAsync();
-                if (location == null)
+                var manualPlace = App.Settings.WeatherLocation?.Trim();
+                WeatherSnapshot weather;
+                if (!string.IsNullOrWhiteSpace(manualPlace))
                 {
-                    ShowLocationUnavailable();
-                    return;
+                    weather = await App.Weather.GetCurrentWeatherForPlaceAsync(manualPlace);
                 }
+                else
+                {
+                    var location = await new LocationService().GetCurrentLocationAsync();
+                    if (location == null)
+                    {
+                        ShowLocationUnavailable();
+                        return;
+                    }
 
-                var weather = await App.Weather.GetCurrentWeatherAsync(location.Latitude, location.Longitude);
-                if (!App.Settings.WindowsLocationEnabled) { ShowLocationUnavailable(); return; }
+                    weather = await App.Weather.GetCurrentWeatherAsync(location.Latitude, location.Longitude);
+                    if (!App.Settings.WindowsLocationEnabled) { ShowLocationUnavailable(); return; }
+                }
                 WeatherLocation = weather.Location;
                 WeatherTemperature = $"{weather.TemperatureF:0}°F";
                 WeatherCondition = weather.Condition;

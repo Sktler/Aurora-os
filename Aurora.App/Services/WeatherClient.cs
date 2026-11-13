@@ -95,15 +95,31 @@ namespace Aurora.App.Services
             catch (Exception ex) { return $"Couldn't get NWS alerts: {ex.Message}"; }
         }
 
+        /// <summary>Weather for a user-entered U.S. place such as "Boston" or "Boston, MA".</summary>
+        public async Task<WeatherSnapshot> GetCurrentWeatherForPlaceAsync(string place)
+        {
+            var (lat, lon) = await ResolveLocationAsync(place);
+            return await GetCurrentWeatherAsync(lat, lon);
+        }
+
         private async Task<(double Lat, double Lon)> ResolveLocationAsync(string place)
         {
-            var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(place)}&count=1&language=en&format=json";
+            // The geocoder matches a bare place name, so "City, ST" is searched by its city part.
+            var name = place.Split(',')[0].Trim();
+            var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(name)}&count=10&language=en&format=json";
             using var geo = await GetJsonUrlAsync(url);
             var results = geo.RootElement.TryGetProperty("results", out var array) ? array : default;
             if (results.ValueKind != JsonValueKind.Array || results.GetArrayLength() == 0) throw new InvalidOperationException($"Couldn't find a location matching \"{place}\".");
-            var first = results[0];
-            var country = first.TryGetProperty("country_code", out var cc) ? cc.GetString() : null;
-            if (!string.Equals(country, "US", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("The National Weather Service API provides U.S. weather data.");
+            var us = results.EnumerateArray()
+                .Where(r => r.TryGetProperty("country_code", out var cc) && string.Equals(cc.GetString(), "US", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (us.Count == 0) throw new InvalidOperationException("The National Weather Service API provides U.S. weather data.");
+            var state = place.Contains(',') ? place.Split(',')[1].Trim() : "";
+            var first = state.Length == 0 ? us[0]
+                : us.FirstOrDefault(r => r.TryGetProperty("admin1", out var a) &&
+                        (string.Equals(a.GetString(), state, StringComparison.OrdinalIgnoreCase) ||
+                         (a.GetString() ?? "").StartsWith(state, StringComparison.OrdinalIgnoreCase)))
+                  is { ValueKind: JsonValueKind.Object } match ? match : us[0];
             return (first.GetProperty("latitude").GetDouble(), first.GetProperty("longitude").GetDouble());
         }
 

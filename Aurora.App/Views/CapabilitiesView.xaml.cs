@@ -14,6 +14,7 @@ namespace Aurora.App.Views
         {
             InitializeComponent();
             LocationPermission.IsChecked = App.Settings.WindowsLocationEnabled;
+            WeatherLocationBox.Text = App.Settings.WeatherLocation ?? "";
             FilesPermission.IsChecked = App.Settings.WindowsFilesEnabled;
             ScreenPermission.IsChecked = App.Settings.WindowsScreenEnabled;
             ClipboardPermission.IsChecked = App.Settings.WindowsClipboardEnabled;
@@ -52,6 +53,16 @@ namespace Aurora.App.Views
             if (!App.Settings.WindowsCameraEnabled)
                 CameraPicker.ItemsSource = null;
             StatusText.Text = Localizer.GetUiText("Permissions saved. Aurora services will respect these settings.");
+        }
+
+        private void SaveWeatherLocation_Click(object sender, RoutedEventArgs e)
+        {
+            App.Settings.WeatherLocation = WeatherLocationBox.Text.Trim();
+            App.Settings.Save();
+            App.RefreshWindowsPermissions();
+            StatusText.Text = Localizer.GetUiText(App.Settings.WeatherLocation.Length == 0
+                ? "Weather location cleared. Aurora will use Windows location if it is enabled."
+                : "Weather location saved.");
         }
 
         private bool CanUseCamera()

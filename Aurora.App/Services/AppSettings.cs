@@ -360,6 +360,8 @@ namespace Aurora.App.Services
         public bool WindowsNetworkEnabled { get; set; } = false;
         public bool WindowsPowerEnabled { get; set; } = false;
         public bool WindowsLocationEnabled { get; set; } = false;
+        /// <summary>Optional U.S. city for the dashboard weather; when set, Windows location is not needed.</summary>
+        public string WeatherLocation { get; set; } = "";
         public bool WindowsCameraEnabled { get; set; } = false;
         public bool WindowsMicrophoneEnabled { get; set; } = false;
         public bool WindowsMcpEnabled { get; set; } = false;
