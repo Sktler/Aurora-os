@@ -21,6 +21,7 @@ namespace Aurora.App.Services
     {
         private readonly SpeechRecognitionEngine _engine;
         private readonly Grammar _wakeGrammar;
+        private readonly Grammar _inlineCommandGrammar;
         private readonly DictationGrammar _dictationGrammar;
         private WaveIn? _capture;
         private LiveMicrophoneStream? _stream;
@@ -34,12 +35,11 @@ namespace Aurora.App.Services
             _engine = CreateEngine();
             try
             {
-                _wakeGrammar = new Grammar(new GrammarBuilder(new Choices(WakeWordMatcher.Phrases))
-                {
-                    Culture = _engine.RecognizerInfo.Culture
-                }) { Name = "AuroraWakeWord" };
+                _wakeGrammar = CreateWakeGrammar(_engine.RecognizerInfo.Culture);
+                _inlineCommandGrammar = CreateInlineCommandGrammar(_engine.RecognizerInfo.Culture);
                 _dictationGrammar = new DictationGrammar { Enabled = false };
                 _engine.LoadGrammar(_wakeGrammar);
+                _engine.LoadGrammar(_inlineCommandGrammar);
                 _engine.LoadGrammar(_dictationGrammar);
                 var device = AudioDeviceCatalog.ResolveInputDeviceNumber(microphoneName);
                 if (device < 0)
@@ -75,6 +75,21 @@ namespace Aurora.App.Services
                 : new SpeechRecognitionEngine(info);
         }
 
+        internal static Grammar CreateWakeGrammar(CultureInfo culture)
+        {
+            var wake = new GrammarBuilder(new Choices(WakeWordMatcher.Phrases)) { Culture = culture };
+            return new Grammar(wake) { Name = "AuroraWakeWord", Priority = 127 };
+        }
+
+        internal static Grammar CreateInlineCommandGrammar(CultureInfo culture)
+        {
+            var wake = new GrammarBuilder(new Choices(WakeWordMatcher.Phrases)) { Culture = culture };
+            var command = new GrammarBuilder { Culture = culture };
+            command.AppendDictation();
+            wake.Append(command);
+            return new Grammar(wake) { Name = "AuroraInlineCommand" };
+        }
+
         /// <summary>Prefers an installed recognizer matching the app language, then the Windows
         /// culture, then English, then anything installed. Returns null if none are installed.</summary>
         internal static CultureInfo? PickRecognizerCulture(System.Collections.Generic.IEnumerable<CultureInfo> installed, string? appLanguage, CultureInfo current)
@@ -93,10 +108,11 @@ namespace Aurora.App.Services
 
         public void StartWakeWord()
         {
-            // The phrase grammar gives reliable, high-confidence matches for a bare wake phrase;
-            // dictation stays on so "Hey Aurora, <command>" in one breath still works.
+            // Keep the bare wake phrase independent of dictation so it scores reliably.
+            // Inline commands also require a wake prefix; unrestricted dictation is off.
             _wakeGrammar.Enabled = true;
-            _dictationGrammar.Enabled = true;
+            _inlineCommandGrammar.Enabled = true;
+            _dictationGrammar.Enabled = false;
             _engine.RecognizeAsync(RecognizeMode.Multiple);
             if (!_captureStarted)
             {
@@ -108,6 +124,7 @@ namespace Aurora.App.Services
         public void StartCommand()
         {
             _wakeGrammar.Enabled = false;
+            _inlineCommandGrammar.Enabled = false;
             _dictationGrammar.Enabled = true;
             _engine.RecognizeAsync(RecognizeMode.Single);
         }

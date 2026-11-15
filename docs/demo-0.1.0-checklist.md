@@ -152,6 +152,95 @@ answered. Subsequent runtime assertions used the isolated host. The detailed
 local report and renders are under `artifacts/assessments/2026-11-12-demo-mcp-checklist.md`
 and `artifacts/demo-mcp-20261112/`.
 
+## Local Windows verification on November 14, 2026
+
+Verified against `f6247b2`, which matched GitHub `master`, plus a local fix to
+`LiveMicrophoneStream` and three new regression tests. Visual Studio MCP built
+the solution in Release with zero failed projects and no build diagnostics, then
+ran **274 tests: all passed, zero failed, skipped, or not run**.
+The separately rebuilt Release WPF menu harness also passed with zero failed
+checks, including normal, highlighted, disabled, custom-header, and live-brush
+rendering behavior.
+
+The debugger output confirmed a wake-word startup failure: System.Speech's
+SAPI stream wrapper queried `LiveMicrophoneStream.Length`, which threw before
+listening could start. The shared stream now supplies an open-ended length,
+tracks consumed bytes through `Position`, and permits a zero-offset current
+position query without allowing audio to be rewound. The new tests first failed
+against the original stream and passed after the fix. The speech-engine test
+attaches the actual PCM stream and consumes queued silence without opening a
+microphone.
+
+A disposable WPF host under `artifacts/demo-mcp-20261114/` passed six checks:
+
+- Welcome contrast and translation through all four supported languages.
+- Actual MainWindow routed Enter and Send submission, immediate composer
+  clearing, blank/busy handling, and preservation of edits during a reply.
+- Loaded Settings, Chat, and Profiles theme/language transitions.
+- The dashboard line-break editing command.
+- Inline AI Engine navigation, provider/custom-model save and reopen, legacy
+  Models routing, embedded Tools visibility, and System language persistence.
+- Actual rendered folder/provider selection labels in Chat.
+
+The host uses isolated settings, an in-memory credential store, a disposable
+database, local-only mode, synthetic keys, and a fake chat provider. Its first
+settings attempt correctly rejected a missing synthetic key; adding the key
+allowed the intended save test. An initial composer attempt failed, but the
+complete repeat passed; physical keyboard interaction is still unverified.
+
+A separate two-check microphone run outside the sandbox passed selected-device
+startup, live PCM consumption, cancellation/disposal, and Windows default-input
+startup/disposal. No audio file was saved. The sandbox could enumerate input
+devices but could not access the installed speech recognizer. A prior debug-log
+failure in the default-input path did not recur in the unrestricted smoke run.
+At this stage, spoken wake-word activation, complete utterance routing, and
+microphone privacy changes still required a user/device acceptance test; see
+the follow-up results below.
+
+This evidence supports closing #260, #262, #264, #265, #266, and #267. It does
+not establish complete application-wide localization/theme coverage or
+multi-monitor/DPI Emergency Stop behavior; #241, #242, #263, #268, and the
+overall demo sign-off remain open. #248's investigation is already closed.
+Packaging/distribution #210 remains outside this verification.
+
+### Follow-up: spoken wake-word recognition
+
+The user still saw no reaction after the stream fix. The running Release app
+reported listening with the en-US recognizer and no new startup exception.
+A live breakpoint caught a dictation result at approximately 0.003 confidence.
+
+A 25-second isolated comparison fed the same Windows microphone PCM to
+different recognition configurations. With unrestricted dictation active,
+repeated wake phrases became unrelated text at low confidence. With only the
+phrase grammar active, the recognizer repeatedly returned `hey aurora` at
+approximately 0.85–0.93 confidence. Windows also reported a soft input signal.
+
+Wake mode now uses a dedicated high-priority bare-phrase grammar and a separate
+inline-command grammar that requires a wake prefix before dictation. The
+unrestricted dictation grammar is enabled only in command mode. An earlier
+single-rule attempt with an optional dictation tail passed synthetic checks but
+did not activate in the user's live test; it was replaced before completion.
+No confidence threshold, microphone consent, or saved device selection changed.
+
+Six new real-SAPI grammar tests exercise bare phrases, complete inline requests,
+and rejection of unrelated dictation. The final Visual Studio MCP Release build
+passed with no build diagnostics, and the full suite passed **280 tests, zero
+failed, skipped, or not run**. Synthetic PCM was recognized by the intended bare
+and inline grammars, although the inline transcript was imperfect.
+
+In the user's final 25-second isolated service test, `hey aurora` was recognized
+at approximately 0.76 confidence. The real WakeWordService raised activation
+and acknowledgment, switched to command dictation, and forwarded a command.
+Windows transcribed the intended `tell me a story` as `Tom you store` at about
+0.42 confidence. No provider was called and no audio file was saved. This
+establishes wake activation and the two-stage service flow; it does not establish
+accurate dictation, live inline-request acceptance, or visible app behavior.
+The user subsequently relaunched the application and confirmed that the wake
+phrase works. This supplies the visible app acceptance for #215 and #240.
+Accurate dictation, a live inline request, and microphone privacy changes remain
+separate verification gaps; the overall demo is not signed off. Probe sources
+are in `artifacts/wake-probe-20261114/`.
+
 ## Outstanding Windows demo matrix and blockers
 
 The original verification workspace was Linux. Windows CI exercises isolated
