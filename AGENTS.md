@@ -196,6 +196,13 @@ For UI-only changes where automated tests are not practical, at minimum perform 
 
 ## Agent workflow
 
+### GitHub access
+
+- Prefer the authenticated `gh` CLI for issues, pull requests, milestones, and project-board work. Use browser automation only when the CLI cannot perform the needed operation.
+- The Aurora project board is https://github.com/users/Sktler/projects/2. Check current issue and board state before making changes.
+- A sandbox network failure can make `gh auth status` misleadingly report an invalid token. Before asking the user to log in again, verify outside the network-restricted sandbox through the normal approval mechanism.
+- Project-board updates require the `project` token scope and project write permission. Check scopes and `viewerCanUpdate` if access fails; do not request authorization again when existing access works.
+
 Before editing:
 
 1. Identify the relevant project, service, view model, view, and tests.
