@@ -16,6 +16,7 @@ namespace Aurora.App.Services
         private readonly BlockingCollection<byte[]> _chunks = new();
         private byte[] _current = Array.Empty<byte>();
         private int _currentOffset;
+        private long _position;
 
         /// <summary>Called from the NAudio capture callback thread whenever a new buffer of
         /// microphone audio is available.</summary>
@@ -51,6 +52,7 @@ namespace Aurora.App.Services
                 Array.Copy(_current, _currentOffset, buffer, offset + total, toCopy);
                 _currentOffset += toCopy;
                 total += toCopy;
+                Interlocked.Add(ref _position, toCopy);
             }
             return total;
         }
@@ -58,10 +60,14 @@ namespace Aurora.App.Services
         public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
-        public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        // System.Speech's SAPI wrapper reads Length even for non-seekable input,
+        // and uses Position to bound each read. Live audio has no known end;
+        // Complete(), rather than a snapshot of the queued bytes, signals EOF.
+        public override long Length => long.MaxValue;
+        public override long Position { get => Interlocked.Read(ref _position); set => throw new NotSupportedException(); }
         public override void Flush() { }
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) =>
+            offset == 0 && origin == SeekOrigin.Current ? Position : throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
