@@ -351,7 +351,7 @@ namespace Aurora.App.Services
             Add("Initialize", "Inicializar", "Initialiser", "Initialisieren");
             Add("Capture photo", "Tomar foto", "Prendre une photo", "Foto aufnehmen");
             Add("MCP & tools", "MCP y herramientas", "MCP et outils", "MCP und Tools");
-            Add("Connect a stdio MCP server and discover the tools it exposes.", "Conecta un servidor MCP stdio y descubre las herramientas que ofrece.", "Connectez un serveur MCP stdio et découvrez les outils qu'il expose.", "Verbinde einen stdio-MCP-Server und entdecke seine Tools.");
+            Add("Connect a stdio MCP server (or an SSE server by entering its http:// URL as the command) and discover the tools it exposes.", "Conecta un servidor MCP stdio (o un servidor SSE escribiendo su URL http:// como comando) y descubre las herramientas que ofrece.", "Connectez un serveur MCP stdio (ou un serveur SSE en saisissant son URL http:// comme commande) et découvrez les outils qu'il expose.", "Verbinde einen stdio-MCP-Server (oder einen SSE-Server, indem du seine http://-URL als Befehl eingibst) und entdecke seine Tools.");
             Add("Server name", "Nombre del servidor", "Nom du serveur", "Servername");
             Add("Command", "Comando", "Commande", "Befehl");
             Add("Arguments", "Argumentos", "Arguments", "Argumente");
