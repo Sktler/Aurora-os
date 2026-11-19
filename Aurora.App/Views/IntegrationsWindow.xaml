@@ -517,7 +517,7 @@
                     <StackPanel>
                         <TextBlock Text="Weather &amp; web search" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,4,0,0"
-                                   Text="Nothing to set up here - Aurora and Scout can already check real-time weather (free, no key) and search the web (a quick free instant-answer lookup, falling back to opening full results in your browser) right now."/>
+                                   Text="Aurora and Scout can check real-time weather and look up quick web answers without an API key. If there is no instant answer, they can share a search results link. Opening results in your browser requires your approval."/>
                     </StackPanel>
                 </Border>
 

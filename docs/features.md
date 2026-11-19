@@ -23,8 +23,9 @@
 - **WeatherClient** (`Services/WeatherClient.cs`) — real-time conditions via
   Open-Meteo, completely free, no API key, no account.
 - **WebSearchClient** (`Services/WebSearchClient.cs`) — a quick free
-  instant-answer lookup (DuckDuckGo, no key) for simple facts; falls back to
-  opening full results in your browser for anything deeper.
+  instant-answer lookup (DuckDuckGo, no key) for simple facts. If there is no
+  instant answer, Aurora can share a search results link. Ask Aurora to open
+  the results in your browser and approve the action to open the page.
 - **SpotifyClient** / **SpotifyAuthClient** (`Services/Spotify*.cs`) — real
   OAuth sign-in (Authorization Code + PKCE, no client secret needed) and
   Web API calls for what's playing, searching, and play/pause/skip.

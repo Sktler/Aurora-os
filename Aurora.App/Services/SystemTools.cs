@@ -13,7 +13,8 @@ namespace Aurora.App.Services
         {
             new { name = "get_weather", description = "Gets current real-time weather conditions for a place.", input_schema = new { type = "object", properties = new { location = new { type = "string" } }, required = new[] { "location" } } },
             new { name = "get_weather_alerts", description = "Gets active National Weather Service alerts affecting a U.S. place.", input_schema = new { type = "object", properties = new { location = new { type = "string", description = "A U.S. city, ZIP code, or place name." } }, required = new[] { "location" } } },
-            new { name = "web_search", description = "Searches the web for a query.", input_schema = new { type = "object", properties = new { query = new { type = "string" } }, required = new[] { "query" } } },
+            new { name = "web_search", description = "Looks up a quick web answer. If no instant answer is available, returns a search results link.", input_schema = new { type = "object", properties = new { query = new { type = "string" } }, required = new[] { "query" } } },
+            new { name = WebSearchClient.OpenBrowserTool, description = "Asks for approval to open full search results in the user's browser. Use only when the user explicitly asks to open the browser for the search.", input_schema = new { type = "object", properties = new { query = new { type = "string" } }, required = new[] { "query" } } },
             new { name = "generate_image", description = "Generates an image from a text prompt.", input_schema = new { type = "object", properties = new { prompt = new { type = "string", description = "A text description of the image to generate." } }, required = new[] { "prompt" } } },
             new { name = "get_now_playing", description = "Gets the Windows media currently playing.", input_schema = new { type = "object", properties = new { } } },
             new { name = "list_media_sessions", description = "Lists Windows media sessions.", input_schema = new { type = "object", properties = new { } } },
@@ -59,11 +60,11 @@ namespace Aurora.App.Services
         public static async Task<string> ExecuteAsync(string toolName, JsonElement input)
         {
             if (App.IsLocalOnlyModeEnabled &&
-                (toolName == "get_weather" || toolName == "get_weather_alerts" || toolName == "web_search" || toolName == "mcp_list_servers" || toolName == "mcp_list_tools" || toolName == "mcp_call_tool"))
+                (toolName == "get_weather" || toolName == "get_weather_alerts" || toolName == "web_search" || toolName == WebSearchClient.OpenBrowserTool || toolName == "mcp_list_servers" || toolName == "mcp_list_tools" || toolName == "mcp_call_tool"))
                 return App.LocalOnlyModeBlockedMessage(toolName switch
                 {
                     "get_weather" or "get_weather_alerts" => "weather",
-                    "web_search" => "web search",
+                    "web_search" or WebSearchClient.OpenBrowserTool => "web search",
                     _ => "MCP tools"
                 });
 
@@ -76,7 +77,8 @@ namespace Aurora.App.Services
                 case "camera_permission": return await CameraTools.ExecuteAsync("camera_permission", input);
                 case "get_weather": return await App.Weather.GetCurrentWeatherAsync(input.GetProperty("location").GetString() ?? "");
                 case "get_weather_alerts": return await App.Weather.GetActiveAlertsAsync(input.GetProperty("location").GetString() ?? "");
-                case "web_search": { var q = input.GetProperty("query").GetString() ?? ""; return await App.WebSearch.TryInstantAnswerAsync(q) ?? App.WebSearch.OpenSearchInBrowser(q); }
+                case "web_search": return await App.WebSearch.SearchAsync(input.GetProperty("query").GetString() ?? "");
+                case WebSearchClient.OpenBrowserTool: return App.WebSearch.OpenSearchInBrowser(input.GetProperty("query").GetString() ?? "");
                 case "generate_image": return await App.ImageGen.GenerateImageAsync(input.GetProperty("prompt").GetString() ?? "");
                 case "get_now_playing": { var x = await Media.GetNowPlayingAsync(); return x == null ? "Nothing is currently playing." : $"App: {x.AppName}\nTitle: {x.Title}\nArtist: {x.Artist}\nPlayback: {x.PlaybackStatus}"; }
                 case "list_media_sessions": { var xs = await Media.ListSessionsAsync(); return xs.Count == 0 ? "No Windows media sessions." : string.Join("\n", xs.ConvertAll(x => $"{x.AppName}: {x.Title} — {x.Artist} — {x.PlaybackStatus}")); }

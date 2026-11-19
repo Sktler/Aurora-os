@@ -7,18 +7,31 @@ using System.Threading.Tasks;
 namespace Aurora.App.Services
 {
     /// <summary>
-    /// Web search kept genuinely free: a quick instant-answer lookup via DuckDuckGo's
-    /// free API (no key, no account) for simple factual queries the model can read
-    /// directly, plus a fallback that just opens full results in the user's browser -
-    /// no paid search API, no rate-limited quota to manage.
+    /// Looks up instant answers and provides search results links. Opening a results
+    /// page in the user's browser is a separate, approval-gated action.
     /// </summary>
     public class WebSearchClient
     {
-        private readonly HttpClient _http = new();
+        internal const string OpenBrowserTool = "web_search_open_browser";
+        private readonly HttpClient _http;
+
+        public WebSearchClient() : this(new HttpClient()) { }
+
+        public WebSearchClient(HttpClient http)
+        {
+            _http = http;
+        }
+
+        public async Task<string> SearchAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return "No search query given.";
+
+            return await TryInstantAnswerAsync(query)
+                ?? $"No instant answer found. Full search results: {GetResultsUrl(query)}";
+        }
 
         /// <summary>Tries DuckDuckGo's Instant Answer API for a quick factual snippet.
-        /// Returns null if it doesn't have a good answer (common for anything beyond
-        /// simple facts/definitions) - callers should fall back to OpenSearchInBrowser.</summary>
+        /// Returns null if the lookup is unavailable or has no answer.</summary>
         public async Task<string?> TryInstantAnswerAsync(string query)
         {
             if (App.IsLocalOnlyModeEnabled)
@@ -47,12 +60,11 @@ namespace Aurora.App.Services
             }
             catch
             {
-                return null; // Non-fatal - caller falls back to opening a browser search.
+                return null;
             }
         }
 
-        /// <summary>Opens a full search results page in the user's default browser.
-        /// Always works, never costs anything, no rate limit.</summary>
+        /// <summary>Opens full results in the user's default browser after approval.</summary>
         public string OpenSearchInBrowser(string query)
         {
             if (App.IsLocalOnlyModeEnabled)
@@ -60,10 +72,13 @@ namespace Aurora.App.Services
 
             if (string.IsNullOrWhiteSpace(query)) return "No search query given.";
 
+            var url = GetResultsUrl(query);
+            if (!ActionApprovalCenter.ConfirmAction(OpenBrowserTool, $"Open Google search results in your browser for \"{query}\".", requireOneTimeApproval: true))
+                return $"Browser opening was not approved. Full search results: {url}";
+
             try
             {
-                var url = $"https://www.google.com/search?q={Uri.EscapeDataString(query)}";
-                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                using var process = Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
                 return $"Opened a browser search for \"{query}\".";
             }
             catch (Exception ex)
@@ -71,5 +86,7 @@ namespace Aurora.App.Services
                 return $"Couldn't open the browser: {ex.Message}";
             }
         }
+
+        private static string GetResultsUrl(string query) => $"https://www.google.com/search?q={Uri.EscapeDataString(query)}";
     }
 }
