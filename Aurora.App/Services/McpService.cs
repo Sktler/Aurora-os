@@ -22,13 +22,28 @@ namespace Aurora.App.Services
             await _gate.WaitAsync();
             try
             {
-                var client = await McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions { Name = name, Command = command, Arguments = arguments?.ToList() ?? new List<string>() }));
+                IClientTransport transport = TryGetRemoteEndpoint(command, out var endpoint)
+                    ? new HttpClientTransport(new HttpClientTransportOptions { Name = name, Endpoint = endpoint, TransportMode = HttpTransportMode.Sse })
+                    : new StdioClientTransport(new StdioClientTransportOptions { Name = name, Command = command, Arguments = arguments?.ToList() ?? new List<string>() });
+                var client = await McpClient.CreateAsync(transport);
                 var connection = new McpServerConnection(name, command, client);
                 _servers.RemoveAll(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
                 _servers.Add(connection);
                 return connection;
             }
             finally { _gate.Release(); }
+        }
+
+        /// <summary>True when the "command" is an http(s) URL of an SSE MCP server rather than a program to launch.</summary>
+        public static bool TryGetRemoteEndpoint(string? command, out Uri endpoint)
+        {
+            if (Uri.TryCreate((command ?? "").Trim(), UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                endpoint = uri;
+                return true;
+            }
+            endpoint = null!;
+            return false;
         }
 
         public async Task<IReadOnlyList<McpToolInfo>> DiscoverToolsAsync(McpServerConnection server, CancellationToken cancellationToken = default)

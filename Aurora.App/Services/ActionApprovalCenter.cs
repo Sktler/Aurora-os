@@ -339,7 +339,8 @@ namespace Aurora.App.Services
             var window = new Window
             {
                 Width = 480,
-                Height = 260,
+                SizeToContent = SizeToContent.Height,
+                MaxHeight = SystemParameters.WorkArea.Height * 0.9,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
                 Title = "Aurora approval required",
