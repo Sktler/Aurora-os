@@ -28,6 +28,8 @@ namespace Aurora.App.Views
 
             if (DataContext is IntegrationsViewModel vm && !string.IsNullOrEmpty(vm.GoogleClientSecret))
                 GoogleSecretBox.Password = vm.GoogleClientSecret;
+            if (DataContext is IntegrationsViewModel emailVm && !string.IsNullOrEmpty(emailVm.EmailPassword))
+                EmailPasswordBox.Password = emailVm.EmailPassword;
 
             Loaded += (_, _) =>
             {
@@ -105,6 +107,7 @@ namespace Aurora.App.Views
 
             vm.SetCompanionColor(companion, $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}");
         }
+        private void EmailPasswordBox_PasswordChanged(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) vm.EmailPassword = EmailPasswordBox.Password; }
         private void GoogleSecretBox_PasswordChanged(object sender, RoutedEventArgs e) { if (DataContext is IntegrationsViewModel vm) vm.GoogleClientSecret = GoogleSecretBox.Password; }
         private void ResetAurora_Click(object sender, RoutedEventArgs e)
         {
