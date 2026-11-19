@@ -388,7 +388,9 @@ namespace Aurora.App.ViewModels
                     "AUTHORITATIVE AURORA TOOL INVENTORY FOR THIS REQUEST: " + string.Join(", ", toolNames) +
                     ". Never claim to have inspected the source code or an internal registry. " +
                     "If asked which tools are available, use this inventory; do not invent or omit tools. " +
-                    "The camera tool is available when `camera` appears in this inventory.";
+                    "The camera tool is available when `camera` appears in this inventory. " +
+                    "Share links in your reply for ordinary web searches. Only use tools to open or navigate the user's browser when explicitly asked. " +
+                    "If browser approval is denied, do not retry or use another tool to open it.";
                 var localNow = DateTimeOffset.Now;
                 var systemTimeContext =
                     $"AUTHORITATIVE WINDOWS SYSTEM DATE/TIME: {localNow:dddd, MMMM d, yyyy h:mm:ss tt zzz}. " +

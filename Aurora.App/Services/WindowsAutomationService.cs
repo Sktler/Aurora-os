@@ -61,20 +61,22 @@ namespace Aurora.App.Services
         {
             if (!ApplicationsEnabled) throw new UnauthorizedAccessException("Application access is disabled.");
             if (string.IsNullOrWhiteSpace(executableOrPath)) throw new ArgumentException("An application path or command is required.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_launch_application", $"Launch application: {executableOrPath}", companion: "system"))
+            // Windows can resolve a URI, shortcut, or executable to a browser. Approve the specific target.
+            if (!ActionApprovalCenter.ConfirmAction("windows_launch_application", $"Launch application: {executableOrPath}", companion: "system", requireOneTimeApproval: true))
                 throw new UnauthorizedAccessException("Application launch was denied by Aurora approval policy.");
-            Process.Start(new ProcessStartInfo { FileName = executableOrPath, UseShellExecute = true });
-            ActionAuditLog.Record("windows_launch_application", "system", $"Launch application: {executableOrPath}", "Application started successfully.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_launch_application").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_launch_application").ToString(), source: "windows");
+            using var process = Process.Start(new ProcessStartInfo { FileName = executableOrPath, UseShellExecute = true });
+            ActionAuditLog.Record("windows_launch_application", "system", $"Launch application: {executableOrPath}", "Application started successfully.", success: true, approved: true, grantScope: ActionGrantScope.OneTime.ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_launch_application").ToString(), source: "windows");
         }
 
         public void OpenPath(string path)
         {
             if (!FilesEnabled) throw new UnauthorizedAccessException("File access is disabled.");
             if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A path is required.");
-            if (!ActionApprovalCenter.ConfirmAction("windows_open_path", $"Open path: {path}", companion: "system"))
+            // A shell file association can open a browser even for a local path.
+            if (!ActionApprovalCenter.ConfirmAction("windows_open_path", $"Open path: {path}", companion: "system", requireOneTimeApproval: true))
                 throw new UnauthorizedAccessException("Opening the requested path was denied by Aurora approval policy.");
-            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
-            ActionAuditLog.Record("windows_open_path", "system", $"Open path: {path}", "Path opened successfully.", success: true, approved: true, grantScope: ActionApprovalCenter.GetGrantScope("windows_open_path").ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_open_path").ToString(), source: "windows");
+            using var process = Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            ActionAuditLog.Record("windows_open_path", "system", $"Open path: {path}", "Path opened successfully.", success: true, approved: true, grantScope: ActionGrantScope.OneTime.ToString(), riskLevel: ActionApprovalCenter.GetRiskLevel("windows_open_path").ToString(), source: "windows");
         }
 
         public async Task<string> ReadTextAsync(string path, CancellationToken cancellationToken = default)

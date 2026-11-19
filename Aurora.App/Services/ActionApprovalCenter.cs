@@ -25,6 +25,7 @@ namespace Aurora.App.Services
     {
         private static readonly Dictionary<string, ToolRiskLevel> RiskLevels = new(StringComparer.OrdinalIgnoreCase)
         {
+            [WebSearchClient.OpenBrowserTool] = ToolRiskLevel.Medium,
             ["windows_app_action"] = ToolRiskLevel.High,
             ["windows_launch_application"] = ToolRiskLevel.Medium,
             ["windows_open_path"] = ToolRiskLevel.Low,
@@ -208,11 +209,11 @@ namespace Aurora.App.Services
             };
         }
 
-        public static bool ConfirmAction(string toolName, string actionDescription, AppSettings? settings = null, ToolRiskLevel? explicitRiskLevel = null, string? companion = null)
+        public static bool ConfirmAction(string toolName, string actionDescription, AppSettings? settings = null, ToolRiskLevel? explicitRiskLevel = null, string? companion = null, bool requireOneTimeApproval = false)
         {
             var currentSettings = settings ?? App.Settings ?? new AppSettings();
             var risk = explicitRiskLevel ?? GetRiskLevel(toolName);
-            var existingScope = GetGrantScope(toolName, currentSettings);
+            var existingScope = requireOneTimeApproval ? ActionGrantScope.None : GetGrantScope(toolName, currentSettings);
             if (existingScope == ActionGrantScope.OneTime)
             {
                 ConsumeOneTimeGrant(toolName);
@@ -229,7 +230,7 @@ namespace Aurora.App.Services
                 return true;
             }
 
-            if (!RequiresConfirmation(toolName, currentSettings, risk))
+            if (!requireOneTimeApproval && !RequiresConfirmation(toolName, currentSettings, risk))
             {
                 ActionAuditLog.Record(
                     toolName,
@@ -270,7 +271,7 @@ namespace Aurora.App.Services
                 return false;
             }
 
-            var grantScope = Application.Current.Dispatcher.Invoke(() => ShowApprovalWindow(message, toolName));
+            var grantScope = Application.Current.Dispatcher.Invoke(() => ShowApprovalWindow(message, requireOneTimeApproval));
             switch (grantScope)
             {
                 case ActionGrantScope.Persistent:
@@ -301,8 +302,6 @@ namespace Aurora.App.Services
                         source: "approval");
                     return true;
                 case ActionGrantScope.OneTime:
-                    GrantAction(toolName, ActionGrantScope.OneTime, currentSettings);
-                    ConsumeOneTimeGrant(toolName);
                     ActionAuditLog.Record(
                         toolName,
                         companion,
@@ -315,7 +314,8 @@ namespace Aurora.App.Services
                         source: "approval");
                     return true;
                 default:
-                    RevokeAction(toolName, currentSettings);
+                    if (!requireOneTimeApproval)
+                        RevokeAction(toolName, currentSettings);
                     ActionAuditLog.Record(
                         toolName,
                         companion,
@@ -331,66 +331,63 @@ namespace Aurora.App.Services
             }
         }
 
-        private static ActionGrantScope ShowApprovalWindow(string message, string toolName)
+        private static ActionGrantScope ShowApprovalWindow(string message, bool requireOneTimeApproval)
         {
+            var buttons = new System.Windows.Controls.WrapPanel
+            {
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                ItemWidth = 170,
+                ItemHeight = 32
+            };
+            var allowOnce = CreateGrantButton("Allow once", ActionGrantScope.OneTime);
+            allowOnce.IsDefault = !requireOneTimeApproval;
+            buttons.Children.Add(allowOnce);
+            if (!requireOneTimeApproval)
+            {
+                buttons.Children.Add(CreateGrantButton("Allow for this session", ActionGrantScope.Session));
+                buttons.Children.Add(CreateGrantButton("Always allow", ActionGrantScope.Persistent));
+            }
+            buttons.Children.Add(CreateGrantButton("Deny", ActionGrantScope.None));
+
+            var owner = Application.Current?.MainWindow is { IsVisible: true } mainWindow ? mainWindow : null;
             var window = new Window
             {
                 Width = 480,
-                Height = 260,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                SizeToContent = SizeToContent.Height,
+                MaxHeight = SystemParameters.WorkArea.Height,
+                WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
                 Title = "Aurora approval required",
                 ShowInTaskbar = false,
-                Owner = Application.Current?.MainWindow,
+                Owner = owner,
                 Topmost = true,
-                Content = new System.Windows.Controls.StackPanel
+                Content = new System.Windows.Controls.ScrollViewer
                 {
-                    Margin = new System.Windows.Thickness(16),
-                    Children =
+                    Content = new System.Windows.Controls.StackPanel
                     {
-                        new System.Windows.Controls.TextBlock
+                        Margin = new System.Windows.Thickness(16),
+                        Children =
                         {
-                            Text = message,
-                            TextWrapping = System.Windows.TextWrapping.Wrap,
-                            Margin = new System.Windows.Thickness(0, 0, 0, 12)
-                        },
-                        new System.Windows.Controls.TextBlock
-                        {
-                            Text = $"Tool: {toolName}",
-                            FontWeight = System.Windows.FontWeights.SemiBold,
-                            Margin = new System.Windows.Thickness(0, 0, 0, 16)
-                        },
-                        new System.Windows.Controls.WrapPanel
-                        {
-                            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
-                            ItemWidth = 170,
-                            ItemHeight = 32,
-                            Margin = new System.Windows.Thickness(0, 0, 0, 0),
-                            Children =
+                            new System.Windows.Controls.TextBlock
                             {
-                                CreateGrantButton("Allow once", ActionGrantScope.OneTime),
-                                CreateGrantButton("Allow for this session", ActionGrantScope.Session),
-                                CreateGrantButton("Always allow", ActionGrantScope.Persistent),
-                                CreateGrantButton("Deny", ActionGrantScope.None)
-                            }
+                                Text = message,
+                                TextWrapping = System.Windows.TextWrapping.Wrap,
+                                Margin = new System.Windows.Thickness(0, 0, 0, 12)
+                            },
+                            buttons
                         }
                     }
                 }
             };
 
             ActionGrantScope result = ActionGrantScope.None;
-            window.Closed += (_, _) => { };
-            foreach (var button in ((System.Windows.Controls.WrapPanel)((System.Windows.Controls.StackPanel)window.Content).Children[2]).Children)
+            foreach (System.Windows.Controls.Button button in buttons.Children)
             {
-                if (button is System.Windows.Controls.Button b)
+                button.Click += (_, _) =>
                 {
-                    b.Click += (_, _) =>
-                    {
-                        result = (ActionGrantScope)b.Tag;
-                        window.DialogResult = true;
-                        window.Close();
-                    };
-                }
+                    result = (ActionGrantScope)button.Tag;
+                    window.DialogResult = true;
+                };
             }
 
             window.ShowDialog();
@@ -405,7 +402,6 @@ namespace Aurora.App.Services
                 Tag = scope,
                 Margin = new System.Windows.Thickness(8),
                 MinWidth = 150,
-                IsDefault = scope == ActionGrantScope.OneTime,
                 IsCancel = scope == ActionGrantScope.None
             };
         }

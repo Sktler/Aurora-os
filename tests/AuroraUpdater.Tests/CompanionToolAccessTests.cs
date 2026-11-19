@@ -21,6 +21,7 @@ public class CompanionToolAccessTests
             .ToList();
 
         Assert.Contains("get_weather", toolNames, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("web_search_open_browser", toolNames, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("generate_image", toolNames, StringComparer.OrdinalIgnoreCase);
         Assert.DoesNotContain("control_smart_home_device", toolNames, StringComparer.OrdinalIgnoreCase);
     }
@@ -33,6 +34,7 @@ public class CompanionToolAccessTests
         Assert.True(CompanionToolAccessExtensions.IsToolAllowed("control_smart_home_device", companion.ToolAccess));
         Assert.False(CompanionToolAccessExtensions.IsToolAllowed("windows_read_file", companion.ToolAccess));
         Assert.False(CompanionToolAccessExtensions.IsToolAllowed("web_search", companion.ToolAccess));
+        Assert.False(CompanionToolAccessExtensions.IsToolAllowed("web_search_open_browser", companion.ToolAccess));
     }
 
     [Fact]
