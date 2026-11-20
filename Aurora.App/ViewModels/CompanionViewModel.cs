@@ -299,8 +299,9 @@ namespace Aurora.App.ViewModels
 
             var confirm = System.Windows.MessageBox.Show(
                 System.Windows.Application.Current?.MainWindow,
-                $"Aurora heard a voice that resembles the profile \"{profile.DisplayName}\" ({suggestion.Confidence:P0} match). Switch profiles?\n\nSpeaker matching is only a suggestion and is not authentication.",
-                "Switch profile?",
+                Localizer.FormatUiText("Aurora heard a voice that resembles the profile \"{0}\" ({1} match). Switch profiles?\n\nSpeaker matching is only a suggestion and is not authentication.",
+                    profile.DisplayName, suggestion.Confidence.ToString("P0", System.Globalization.CultureInfo.CurrentUICulture)),
+                Localizer.GetUiText("Switch profile?"),
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Question);
 
@@ -311,8 +312,8 @@ namespace Aurora.App.ViewModels
                 main.ReloadAfterProfileSwitch();
             System.Windows.MessageBox.Show(
                 System.Windows.Application.Current?.MainWindow,
-                $"Switched to {profile.DisplayName}. Please repeat your request.",
-                "Profile switched",
+                Localizer.FormatUiText("Switched to {0}. Please repeat your request.", profile.DisplayName),
+                Localizer.GetUiText("Profile switched"),
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
             return true;

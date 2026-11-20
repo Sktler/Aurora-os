@@ -36,6 +36,8 @@ public sealed class EmergencyStopButtonService : IDisposable
         {
             pair.Key.SizeChanged -= Window_SizeChanged;
             pair.Key.LocationChanged -= Window_LocationChanged;
+            pair.Key.DpiChanged -= Window_DpiChanged;
+            pair.Key.StateChanged -= Window_StateChanged;
             pair.Key.IsVisibleChanged -= Window_IsVisibleChanged;
             pair.Key.Closed -= Window_Closed;
             pair.Value.IsOpen = false;
@@ -98,7 +100,6 @@ public sealed class EmergencyStopButtonService : IDisposable
             VerticalOffset = 10,
             AllowsTransparency = true,
             StaysOpen = true,
-            IsOpen = window.IsVisible,
             Child = new Border
             {
                 CornerRadius = new CornerRadius(8),
@@ -117,9 +118,12 @@ public sealed class EmergencyStopButtonService : IDisposable
         };
         window.SizeChanged += Window_SizeChanged;
         window.LocationChanged += Window_LocationChanged;
+        window.DpiChanged += Window_DpiChanged;
+        window.StateChanged += Window_StateChanged;
         window.IsVisibleChanged += Window_IsVisibleChanged;
         window.Closed += Window_Closed;
         _buttons[window] = popup;
+        UpdateVisibility(window);
         return popup;
     }
 
@@ -132,8 +136,8 @@ public sealed class EmergencyStopButtonService : IDisposable
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"The active AI provider was disconnected for this session, but Aurora could not save the cleared credential to local settings. {ex.Message}",
-                "Emergency stop incomplete",
+                Localizer.FormatUiText("The active AI provider was disconnected for this session, but Aurora could not save the cleared credential to local settings. {0}", ex.Message),
+                Localizer.GetUiText("Emergency stop incomplete"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
@@ -141,19 +145,26 @@ public sealed class EmergencyStopButtonService : IDisposable
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePosition(sender as Window);
     private void Window_LocationChanged(object? sender, EventArgs e) => UpdatePosition(sender as Window);
+    private void Window_DpiChanged(object sender, DpiChangedEventArgs e) => UpdatePosition(sender as Window);
+    private void Window_StateChanged(object? sender, EventArgs e) => UpdateVisibility(sender as Window);
+    private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility(sender as Window);
 
-    private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void UpdateVisibility(Window? window)
     {
-        if (sender is not Window window || !_buttons.TryGetValue(window, out var popup)) return;
-        popup.IsOpen = window.IsVisible && !App.Security.IsLockedDown;
+        if (window == null || !_buttons.TryGetValue(window, out var popup)) return;
+        var canShow = window.IsVisible && window.WindowState != WindowState.Minimized && !App.Security.IsLockedDown;
+        if (canShow) UpdatePosition(window);
+        popup.IsOpen = canShow;
     }
 
     private void UpdatePosition(Window? window)
     {
         if (window == null || !_buttons.TryGetValue(window, out var popup)) return;
+        var contentWidth = popup.PlacementTarget.RenderSize.Width;
+        if (contentWidth == 0) contentWidth = window.ActualWidth;
         if (popup.Child is Border { Child: Button button })
-            button.Width = Math.Max(40, Math.Min(165, window.ActualWidth - 20));
-        var horizontalOffset = Math.Max(8, window.ActualWidth - 185);
+            button.Width = Math.Clamp(contentWidth - 20, 40, 165);
+        var horizontalOffset = Math.Max(8, contentWidth - 185);
         // WPF does not move an open Popup with its target. Change an offset to
         // force placement to refresh even when a move leaves the offsets unchanged.
         popup.HorizontalOffset = horizontalOffset + 1;
@@ -166,6 +177,8 @@ public sealed class EmergencyStopButtonService : IDisposable
         if (sender is not Window window || !_buttons.Remove(window, out var popup)) return;
         window.SizeChanged -= Window_SizeChanged;
         window.LocationChanged -= Window_LocationChanged;
+        window.DpiChanged -= Window_DpiChanged;
+        window.StateChanged -= Window_StateChanged;
         window.IsVisibleChanged -= Window_IsVisibleChanged;
         window.Closed -= Window_Closed;
         popup.IsOpen = false;

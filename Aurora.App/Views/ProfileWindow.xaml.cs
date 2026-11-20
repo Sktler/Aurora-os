@@ -49,11 +49,10 @@ namespace Aurora.App.Views
             var username = p.DisplayName?.Trim() ?? "";
             if (string.IsNullOrWhiteSpace(username)) return;
 
-            var input = new TextBox { Margin = new Thickness(0, 14, 0, 14), Padding = new Thickness(10, 10, 10, 10), MinWidth = 400, FontSize = 15 };
+            var input = new TextBox { Margin = new Thickness(0, 14, 0, 14), Padding = new Thickness(10, 10, 10, 10), FontSize = 15 };
             var confirm = new Button { Content = "Delete profile", Padding = new Thickness(14, 10, 14, 10), IsEnabled = false, MinWidth = 150, HorizontalAlignment = HorizontalAlignment.Right };
             input.TextChanged += (_, _) => { confirm.IsEnabled = string.Equals(input.Text, username, StringComparison.Ordinal); };
 
-            var brushConverter = new System.Windows.Media.BrushConverter();
             var dialog = new Window
             {
                 Owner = this,
@@ -61,10 +60,10 @@ namespace Aurora.App.Views
                 Width = 520,
                 MinWidth = 520,
                 MinHeight = 320,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Background = brushConverter.ConvertFromString("#0B1018") as System.Windows.Media.Brush,
-                Foreground = brushConverter.ConvertFromString("#F2F6FA") as System.Windows.Media.Brush
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
+            dialog.SetResourceReference(BackgroundProperty, "BgDeepBrush");
+            dialog.SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
 
             var panel = new StackPanel { Margin = new Thickness(28), VerticalAlignment = VerticalAlignment.Stretch };
             panel.Children.Add(new TextBlock
@@ -75,13 +74,14 @@ namespace Aurora.App.Views
                 FontSize = 16,
                 LineHeight = 24
             });
-            panel.Children.Add(new TextBlock
+            var instruction = new TextBlock
             {
                 Text = Localizer.FormatUiText("Type {0} exactly to enable deletion.", username),
-                Foreground = brushConverter.ConvertFromString("#9AA8B8") as System.Windows.Media.Brush,
                 Margin = new Thickness(0, 14, 0, 0),
                 TextWrapping = TextWrapping.Wrap
-            });
+            };
+            instruction.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+            panel.Children.Add(instruction);
             panel.Children.Add(input);
             panel.Children.Add(confirm);
             dialog.Content = panel;

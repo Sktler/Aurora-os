@@ -134,7 +134,7 @@ public sealed class EmergencyStopButtonServiceTests
                 window.Show();
                 DrainDispatcher();
                 Assert.True(popup.IsOpen);
-                Assert.Equal(Math.Max(8, window.ActualWidth - 185), GetAnchor(popup).X, 0);
+                AssertPoint(new Point(Math.Max(8, popup.PlacementTarget.RenderSize.Width - 185), popup.VerticalOffset), GetAnchor(popup));
 
                 security.EnterLockdown("popup regression test");
                 window.Hide();
@@ -147,6 +147,47 @@ public sealed class EmergencyStopButtonServiceTests
             finally
             {
                 window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void Minimizing_hides_only_the_owners_popup_and_restoring_reanchors_it()
+    {
+        RunOnSta(security =>
+        {
+            var first = CreateWindow(40, 40);
+            var second = CreateWindow(100, 100);
+            using var service = new EmergencyStopButtonService();
+            try
+            {
+                first.Show();
+                second.Show();
+                var firstPopup = Assert.IsType<Popup>(service.AttachToWindow(first));
+                var secondPopup = Assert.IsType<Popup>(service.AttachToWindow(second));
+                DrainDispatcher();
+                var anchor = GetAnchor(firstPopup);
+
+                first.WindowState = WindowState.Minimized;
+                DrainDispatcher();
+                Assert.False(firstPopup.IsOpen);
+                Assert.True(secondPopup.IsOpen);
+
+                first.WindowState = WindowState.Normal;
+                DrainDispatcher();
+                Assert.True(firstPopup.IsOpen);
+                AssertPoint(anchor, GetAnchor(firstPopup));
+
+                first.WindowState = WindowState.Minimized;
+                security.EnterLockdown("minimized popup regression test");
+                first.WindowState = WindowState.Normal;
+                DrainDispatcher();
+                Assert.False(firstPopup.IsOpen);
+            }
+            finally
+            {
+                first.Close();
+                second.Close();
             }
         });
     }

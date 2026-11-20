@@ -68,6 +68,39 @@ public sealed class LocalizerTests
         Assert.Equal("Almacenamiento de recuperación:", Localizer.GetUiText("Recovery storage:", "es"));
     }
 
+    [Theory]
+    [InlineData("The developer password was not accepted. Aurora was not reset.")]
+    [InlineData("This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?")]
+    [InlineData("All files (*.*)")]
+    [InlineData("Choose a folder Sift can read files from")]
+    [InlineData("Emergency stop incomplete")]
+    [InlineData("The active AI provider was disconnected for this session, but Aurora could not save the cleared credential to local settings. {0}")]
+    [InlineData("Switch profile?")]
+    [InlineData("Aurora heard a voice that resembles the profile \"{0}\" ({1} match). Switch profiles?\n\nSpeaker matching is only a suggestion and is not authentication.")]
+    [InlineData("Switched to {0}. Please repeat your request.")]
+    [InlineData("Enable microphone access in Windows capabilities and Windows privacy settings to use voice input.")]
+    [InlineData("Voice input could not start. Check microphone access, the selected input device, and installed speech recognition languages.")]
+    [InlineData("Listening for “Hey Aurora”.")]
+    [InlineData("Wake word is off.")]
+    [InlineData("Wake word is off. Enable microphone access in Windows capabilities to use voice input.")]
+    [InlineData("Wake word could not start. Check Windows microphone privacy settings, the selected input device, and installed speech recognition languages.")]
+    [InlineData("Wake word detected. Listening for your command…")]
+    [InlineData("Listening timed out. Listening for “Hey Aurora”.")]
+    [InlineData("I didn't catch a command. Listening for “Hey Aurora”.")]
+    [InlineData("Wake word stopped. Check Windows microphone privacy settings, the selected input device, and speech recognition settings.")]
+    public void Native_dialog_and_voice_status_text_has_translations_and_preserves_format_arguments(string english)
+    {
+        Assert.Equal(english, Localizer.GetUiText(english, "en"));
+        foreach (var language in Localizer.SupportedLanguages.Where(language => language.Code != "en"))
+        {
+            var translation = Localizer.GetUiText(english, language.Code);
+            Assert.NotEqual(english, translation);
+            var formatted = string.Format(translation, "Disposable data", "87%");
+            if (english.Contains("{0}")) Assert.Contains("Disposable data", formatted);
+            if (english.Contains("{1}")) Assert.Contains("87%", formatted);
+        }
+    }
+
     private static string FindRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

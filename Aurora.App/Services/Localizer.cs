@@ -326,6 +326,14 @@ namespace Aurora.App.Services
             Add("Power controls", "Controles de energía", "Commandes d'alimentation", "Energieverwaltung");
             Add("Camera access", "Acceso a la cámara", "Accès à la caméra", "Kamerazugriff");
             Add("Microphone access", "Acceso al micrófono", "Accès au microphone", "Mikrofonzugriff");
+            Add("Enable microphone access in Windows capabilities and Windows privacy settings to use voice input.",
+                "Para usar la entrada de voz, habilita el acceso al micrófono en las funciones de Windows de Aurora y en la configuración de privacidad de Windows.",
+                "Pour utiliser la saisie vocale, activez l’accès au microphone dans les fonctionnalités Windows d’Aurora et dans les paramètres de confidentialité de Windows.",
+                "Aktiviere für die Spracheingabe den Mikrofonzugriff in den Windows-Funktionen von Aurora und in den Datenschutzeinstellungen von Windows.");
+            Add("Voice input could not start. Check microphone access, the selected input device, and installed speech recognition languages.",
+                "No se pudo iniciar la entrada de voz. Comprueba el acceso al micrófono, el dispositivo de entrada seleccionado y los idiomas instalados para el reconocimiento de voz.",
+                "La saisie vocale n’a pas pu démarrer. Vérifiez l’accès au microphone, le périphérique d’entrée sélectionné et les langues de reconnaissance vocale installées.",
+                "Die Spracheingabe konnte nicht gestartet werden. Prüfe den Mikrofonzugriff, das ausgewählte Eingabegerät und die installierten Spracherkennungssprachen.");
             Add("MCP servers & tools", "Servidores y herramientas MCP", "Serveurs et outils MCP", "MCP-Server und -Tools");
             Add("Save permissions", "Guardar permisos", "Enregistrer les autorisations", "Berechtigungen speichern");
             Add("Weather", "Clima", "Météo", "Wetter");
@@ -410,6 +418,7 @@ namespace Aurora.App.Services
             Add("Show me today's schedule, tasks, and reminders.", "Muéstrame la agenda, las tareas y los recordatorios de hoy.", "Montre-moi le programme, les tâches et les rappels du jour.", "Zeig mir den heutigen Zeitplan, die Aufgaben und Erinnerungen.");
             Add("Create a reminder: ", "Crear un recordatorio: ", "Créer un rappel : ", "Erinnerung erstellen: ");
             Add("Attach a file", "Adjuntar un archivo", "Joindre un fichier", "Datei anhängen");
+            Add("All files (*.*)", "Todos los archivos (*.*)", "Tous les fichiers (*.*)", "Alle Dateien (*.*)");
             Add("Photo saved to:", "Foto guardada en:", "Photo enregistrée dans :", "Foto gespeichert unter:");
             Add("Aurora Camera", "Cámara de Aurora", "Caméra Aurora", "Aurora-Kamera");
             Add("Restore", "Restaurar", "Restaurer", "Wiederherstellen");
@@ -565,6 +574,14 @@ namespace Aurora.App.Services
             Add("Add profile", "Añadir perfil", "Ajouter un profil", "Profil hinzufügen");
             Add("Connected", "Conectado", "Connecté", "Verbunden");
             Add("Not connected", "No conectado", "Non connecté", "Nicht verbunden");
+            Add("Mark as connected", "Marcar como conectado", "Marquer comme connecté", "Als verbunden markieren");
+            Add("Mark as not connected", "Marcar como desconectado", "Marquer comme non connecté", "Als nicht verbunden markieren");
+            Add("Connected as {0}", "Conectado como {0}", "Connecté en tant que {0}", "Verbunden als {0}");
+            Add("{0} items", "{0} elementos", "{0} éléments", "{0} Einträge");
+            Add("Capabilities: {0}", "Funciones: {0}", "Fonctionnalités : {0}", "Funktionen: {0}");
+            Add("Actions: {0}", "Acciones: {0}", "Actions : {0}", "Aktionen: {0}");
+            Add("Settings: {0}", "Configuración: {0}", "Paramètres : {0}", "Einstellungen: {0}");
+            Add("Chat history: {0}", "Historial del chat: {0}", "Historique des conversations : {0}", "Chatverlauf: {0}");
             Add("Hi, this is Aurora. This is what I sound like.", "Hola, soy Aurora. Así es como sueno.", "Bonjour, c'est Aurora. Voici ma voix.", "Hallo, ich bin Aurora. So klinge ich.");
             Add("Provider: {0}. Image generation uses Aurora's configured provider and API key.", "Proveedor: {0}. La generación de imágenes usa el proveedor y la clave de API configurados en Aurora.", "Fournisseur : {0}. La génération d'images utilise le fournisseur et la clé API configurés dans Aurora.", "Anbieter: {0}. Die Bildgenerierung verwendet den in Aurora konfigurierten Anbieter und API-Schlüssel.");
             Add("Provider: {0}. Integration clients refreshed.", "Proveedor: {0}. Clientes de integración actualizados.", "Fournisseur : {0}. Clients d'intégration actualisés.", "Anbieter: {0}. Integrationsclients aktualisiert.");
@@ -620,6 +637,32 @@ namespace Aurora.App.Services
             Add("{0} configured", "{0} configurado", "{0} configuré", "{0} konfiguriert");
             Add("{0} disconnected", "{0} desconectado", "{0} déconnecté", "{0} getrennt");
             Add("Listening for “Hey Aurora”", "Escuchando «Hey Aurora»", "À l'écoute de « Hey Aurora »", "Höre auf „Hey Aurora“");
+            Add("Listening for “Hey Aurora”.", "Escuchando «Hey Aurora».", "À l’écoute de « Hey Aurora ».", "Warte auf „Hey Aurora“.");
+            Add("Wake word is off.", "La activación por voz está desactivada.", "L’activation vocale est désactivée.", "Die Sprachaktivierung ist ausgeschaltet.");
+            Add("Wake word is off. Enable microphone access in Windows capabilities to use voice input.",
+                "La activación por voz está desactivada. Para usar la entrada de voz, habilita el micrófono en las funciones de Windows de Aurora.",
+                "L’activation vocale est désactivée. Pour utiliser la saisie vocale, activez le microphone dans les fonctionnalités Windows d’Aurora.",
+                "Die Sprachaktivierung ist ausgeschaltet. Aktiviere für die Spracheingabe das Mikrofon in den Windows-Funktionen von Aurora.");
+            Add("Wake word could not start. Check Windows microphone privacy settings, the selected input device, and installed speech recognition languages.",
+                "No se pudo iniciar la activación por voz. Comprueba la privacidad del micrófono en Windows, el dispositivo de entrada seleccionado y los idiomas instalados para el reconocimiento de voz.",
+                "L’activation vocale n’a pas pu démarrer. Vérifiez les paramètres de confidentialité du microphone dans Windows, le périphérique d’entrée sélectionné et les langues de reconnaissance vocale installées.",
+                "Die Sprachaktivierung konnte nicht gestartet werden. Prüfe die Datenschutzeinstellungen für das Mikrofon in Windows, das ausgewählte Eingabegerät und die installierten Spracherkennungssprachen.");
+            Add("Wake word detected. Listening for your command…",
+                "Frase de activación detectada. Escuchando tu solicitud…",
+                "Phrase d’activation détectée. À l’écoute de votre demande…",
+                "Aktivierungsphrase erkannt. Warte auf deine Anfrage…");
+            Add("Listening timed out. Listening for “Hey Aurora”.",
+                "Se agotó el tiempo de escucha. Escuchando «Hey Aurora».",
+                "Le délai d’écoute est écoulé. À l’écoute de « Hey Aurora ».",
+                "Die Wartezeit ist abgelaufen. Warte auf „Hey Aurora“.");
+            Add("I didn't catch a command. Listening for “Hey Aurora”.",
+                "No entendí la solicitud. Escuchando «Hey Aurora».",
+                "Je n’ai pas compris la demande. À l’écoute de « Hey Aurora ».",
+                "Ich habe keine Anfrage verstanden. Warte auf „Hey Aurora“.");
+            Add("Wake word stopped. Check Windows microphone privacy settings, the selected input device, and speech recognition settings.",
+                "La activación por voz se detuvo. Comprueba la privacidad del micrófono en Windows, el dispositivo de entrada seleccionado y la configuración del reconocimiento de voz.",
+                "L’activation vocale s’est arrêtée. Vérifiez les paramètres de confidentialité du microphone dans Windows, le périphérique d’entrée sélectionné et les paramètres de reconnaissance vocale.",
+                "Die Sprachaktivierung wurde beendet. Prüfe die Datenschutzeinstellungen für das Mikrofon in Windows, das ausgewählte Eingabegerät und die Einstellungen für die Spracherkennung.");
             Add("What can I do for you?", "¿En qué puedo ayudarte?", "Que puis-je faire pour vous ?", "Was kann ich für dich tun?");
             Add("Waiting for location permission…", "Esperando el permiso de ubicación…", "En attente de l'autorisation de localisation…", "Warte auf Standortberechtigung…");
             Add("Finding your location…", "Buscando tu ubicación…", "Recherche de votre position…", "Dein Standort wird ermittelt…");
@@ -838,6 +881,37 @@ namespace Aurora.App.Services
             Add("Developer password created. Use it to unlock developer mode and authorize a complete Aurora reset.", "Contraseña de desarrollador creada. Úsala para desbloquear el modo de desarrollador y autorizar un reinicio completo.", "Mot de passe développeur créé. Utilisez-le pour déverrouiller le mode développeur et autoriser une réinitialisation complète.", "Entwicklerpasswort erstellt. Verwende es zum Entsperren des Entwicklermodus und zum Freigeben eines vollständigen Aurora-Resets.");
             Add("Developer credential required to reset Aurora.", "Se requiere la credencial de desarrollador para restablecer Aurora.", "Identifiant développeur requis pour réinitialiser Aurora.", "Zum Zurücksetzen von Aurora sind Entwickleranmeldedaten erforderlich.");
             Add("Developer reset", "Restablecimiento de desarrollador", "Réinitialisation développeur", "Entwickler-Reset");
+            Add("The developer password was not accepted. Aurora was not reset.",
+                "No se aceptó la contraseña de desarrollador. Aurora no se restableció.",
+                "Le mot de passe développeur a été refusé. Aurora n’a pas été réinitialisée.",
+                "Das Entwicklerpasswort wurde nicht akzeptiert. Aurora wurde nicht zurückgesetzt.");
+            Add("This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?",
+                "Esto elimina todas las claves de API guardadas, los tokens de integración, los nombres personalizados y el historial de chat de todos los compañeros. Después, Aurora se reiniciará como si se acabara de instalar. Esta acción no se puede deshacer.\n\n¿Restablecer Aurora ahora?",
+                "Cette action supprime toutes les clés API enregistrées, les jetons d’intégration, ainsi que les noms personnalisés et l’historique des conversations de tous les compagnons. Aurora redémarrera ensuite comme après une nouvelle installation. Cette action est irréversible.\n\nRéinitialiser Aurora maintenant ?",
+                "Dadurch werden alle gespeicherten API-Schlüssel und Integrationstoken sowie die benutzerdefinierten Namen und Chatverläufe aller Begleiter gelöscht. Anschließend startet Aurora wie nach einer Neuinstallation. Diese Aktion kann nicht rückgängig gemacht werden.\n\nAurora jetzt zurücksetzen?");
+            Add("Couldn't open the browser automatically ({0}). Go to {1} manually.",
+                "No se pudo abrir el navegador automáticamente ({0}). Ve manualmente a {1}.",
+                "Impossible d’ouvrir automatiquement le navigateur ({0}). Accédez manuellement à {1}.",
+                "Der Browser konnte nicht automatisch geöffnet werden ({0}). Öffne {1} manuell.");
+            Add("Couldn't generate a recovery code: {0}",
+                "No se pudo generar un código de recuperación: {0}",
+                "Impossible de générer un code de récupération : {0}",
+                "Der Wiederherstellungscode konnte nicht generiert werden: {0}");
+            Add("Switch profile?", "¿Cambiar de perfil?", "Changer de profil ?", "Profil wechseln?");
+            Add("Profile switched", "Perfil cambiado", "Profil changé", "Profil gewechselt");
+            Add("Switched to {0}. Please repeat your request.",
+                "Se cambió al perfil {0}. Repite tu solicitud.",
+                "Le profil {0} est maintenant actif. Répétez votre demande.",
+                "Zu {0} gewechselt. Bitte wiederhole deine Anfrage.");
+            Add("Aurora heard a voice that resembles the profile \"{0}\" ({1} match). Switch profiles?\n\nSpeaker matching is only a suggestion and is not authentication.",
+                "Aurora oyó una voz parecida a la del perfil «{0}» ({1} de coincidencia). ¿Cambiar de perfil?\n\nLa coincidencia de voz solo sirve como sugerencia y no autentica al usuario.",
+                "Aurora a entendu une voix qui ressemble à celle du profil « {0} » ({1} de correspondance). Changer de profil ?\n\nLa reconnaissance vocale sert uniquement à suggérer un profil et ne permet pas d’authentifier l’utilisateur.",
+                "Aurora hat eine Stimme gehört, die der des Profils „{0}“ ähnelt ({1} Übereinstimmung). Profil wechseln?\n\nDer Stimmabgleich schlägt nur ein Profil vor und dient nicht zur Authentifizierung.");
+            Add("Emergency stop incomplete", "Parada de emergencia incompleta", "Arrêt d’urgence incomplet", "Notstopp unvollständig");
+            Add("The active AI provider was disconnected for this session, but Aurora could not save the cleared credential to local settings. {0}",
+                "Se desconectó el proveedor de IA activo durante esta sesión, pero Aurora no pudo guardar la eliminación de la credencial en la configuración local. {0}",
+                "Le fournisseur IA actif a été déconnecté pour cette session, mais Aurora n’a pas pu enregistrer la suppression de l’identifiant dans les paramètres locaux. {0}",
+                "Der aktive KI-Anbieter wurde für diese Sitzung getrennt, aber Aurora konnte die Entfernung der Zugangsdaten nicht in den lokalen Einstellungen speichern. {0}");
             Add("AI provider disconnected", "Proveedor de IA desconectado", "Fournisseur IA déconnecté", "KI-Anbieter getrennt");
             Add("Done", "Listo", "Terminé", "Fertig");
             Add("Hide", "Ocultar", "Masquer", "Ausblenden");
@@ -906,14 +980,12 @@ namespace Aurora.App.Services
                 ["Setup.Examples"] = "Examples: {0}",
                 ["Setup.CheckingKey"] = "Checking your {0} key...",
                 ["Setup.ModelsLoaded"] = "{0} models loaded live from {1}.",
-                ["Setup.OpenBrowserError"] = "Couldn't open the browser automatically ({0}). Go to {1} manually.",
                 ["Setup.ProfileNameRequired"] = "Enter a profile name before continuing.",
                 ["Setup.ProfilePasswordRequired"] = "Create or generate a profile password before continuing.",
                 ["Setup.ApiKeyRequired"] = "A {0} API key is required to bring your companions online. Use \"Cancel\" if you'd rather add it later.",
                 ["Setup.RecoveryTitle"] = "Aurora Recovery Code",
                 ["Setup.RecoveryLead"] = "Save this recovery code somewhere safe.",
                 ["Setup.RecoveryBody"] = "It can be used to recover this profile. Aurora will store only a verifier.",
-                ["Setup.RecoveryError"] = "Couldn't generate a recovery code: {0}"
             },
             ["es"] = new Dictionary<string, string>
             {
@@ -951,14 +1023,12 @@ namespace Aurora.App.Services
                 ["Setup.Examples"] = "Ejemplos: {0}",
                 ["Setup.CheckingKey"] = "Comprobando tu clave de {0}...",
                 ["Setup.ModelsLoaded"] = "{0} modelos cargados en directo desde {1}.",
-                ["Setup.OpenBrowserError"] = "No se pudo abrir el navegador automáticamente ({0}). Ve manualmente a {1}.",
                 ["Setup.ProfileNameRequired"] = "Introduce un nombre de perfil antes de continuar.",
                 ["Setup.ProfilePasswordRequired"] = "Crea o genera una contraseña de perfil antes de continuar.",
                 ["Setup.ApiKeyRequired"] = "Se necesita una clave de API de {0} para conectar tus compañeros. Usa «Cancelar» si prefieres añadirla más tarde.",
                 ["Setup.RecoveryTitle"] = "Código de recuperación de Aurora",
                 ["Setup.RecoveryLead"] = "Guarda este código de recuperación en un lugar seguro.",
                 ["Setup.RecoveryBody"] = "Se puede usar para recuperar este perfil. Aurora solo guardará un verificador.",
-                ["Setup.RecoveryError"] = "No se pudo generar un código de recuperación: {0}"
             },
             ["fr"] = new Dictionary<string, string>
             {
@@ -995,14 +1065,12 @@ namespace Aurora.App.Services
                 ["Setup.Examples"] = "Exemples : {0}",
                 ["Setup.CheckingKey"] = "Vérification de votre clé {0}...",
                 ["Setup.ModelsLoaded"] = "{0} modèles chargés en direct depuis {1}.",
-                ["Setup.OpenBrowserError"] = "Impossible d'ouvrir automatiquement le navigateur ({0}). Accédez manuellement à {1}.",
                 ["Setup.ProfileNameRequired"] = "Saisissez un nom de profil avant de continuer.",
                 ["Setup.ProfilePasswordRequired"] = "Créez ou générez un mot de passe de profil avant de continuer.",
                 ["Setup.ApiKeyRequired"] = "Une clé API {0} est nécessaire pour connecter vos compagnons. Cliquez sur « Annuler » pour l'ajouter plus tard.",
                 ["Setup.RecoveryTitle"] = "Code de récupération Aurora",
                 ["Setup.RecoveryLead"] = "Conservez ce code de récupération dans un endroit sûr.",
                 ["Setup.RecoveryBody"] = "Il peut servir à récupérer ce profil. Aurora ne stockera qu'un vérificateur.",
-                ["Setup.RecoveryError"] = "Impossible de générer un code de récupération : {0}"
             },
             ["de"] = new Dictionary<string, string>
             {
@@ -1039,14 +1107,12 @@ namespace Aurora.App.Services
                 ["Setup.Examples"] = "Beispiele: {0}",
                 ["Setup.CheckingKey"] = "Schlüssel von {0} wird überprüft...",
                 ["Setup.ModelsLoaded"] = "{0} Modelle live von {1} geladen.",
-                ["Setup.OpenBrowserError"] = "Browser konnte nicht automatisch geöffnet werden ({0}). Öffne {1} manuell.",
                 ["Setup.ProfileNameRequired"] = "Gib vor dem Fortfahren einen Profilnamen ein.",
                 ["Setup.ProfilePasswordRequired"] = "Erstelle oder generiere vor dem Fortfahren ein Profilpasswort.",
                 ["Setup.ApiKeyRequired"] = "Ein {0}-API-Schlüssel ist erforderlich, um deine Begleiter zu verbinden. Wähle „Abbrechen“, wenn du ihn später hinzufügen möchtest.",
                 ["Setup.RecoveryTitle"] = "Aurora-Wiederherstellungscode",
                 ["Setup.RecoveryLead"] = "Bewahre diesen Wiederherstellungscode an einem sicheren Ort auf.",
                 ["Setup.RecoveryBody"] = "Mit ihm kann dieses Profil wiederhergestellt werden. Aurora speichert nur einen Prüfwert.",
-                ["Setup.RecoveryError"] = "Wiederherstellungscode konnte nicht generiert werden: {0}"
             }
         };
     }

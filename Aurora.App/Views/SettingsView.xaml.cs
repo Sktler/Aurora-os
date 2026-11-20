@@ -50,16 +50,13 @@ namespace Aurora.App.Views
             App.Settings.Language = Localizer.NormalizeLanguage(code);
             App.Settings.Save();
             Localizer.SetLanguage(App.Settings.Language);
-            LanguageStatusText.Text = Localizer.Get("Settings.Language.RestartNote");
-            UpdateLocalOnlyModeStatus();
-            UpdateJamendoStatus();
+            LanguageStatusText.SetBinding(TextBlock.TextProperty, new LocExtension("Settings.Language.RestartNote").CreateBinding());
         }
 
         private void UpdateLocalOnlyModeStatus()
         {
-            LocalOnlyModeStatusText.Text = Localizer.Get(App.Settings.LocalOnlyMode
-                ? "Settings.Privacy.StatusOn"
-                : "Settings.Privacy.StatusOff");
+            var key = App.Settings.LocalOnlyMode ? "Settings.Privacy.StatusOn" : "Settings.Privacy.StatusOff";
+            LocalOnlyModeStatusText.SetBinding(TextBlock.TextProperty, new LocExtension(key).CreateBinding());
         }
 
         private void AuditLogSearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -130,9 +127,10 @@ namespace Aurora.App.Views
 
         private void UpdateJamendoStatus()
         {
-            JamendoStatusText.Text = App.Settings.JamendoConnected && !string.IsNullOrWhiteSpace(App.Settings.JamendoClientId)
-                ? Localizer.Get("Settings.Music.Connected")
-                : Localizer.Get("Settings.Music.NotConnected");
+            var key = App.Settings.JamendoConnected && !string.IsNullOrWhiteSpace(App.Settings.JamendoClientId)
+                ? "Settings.Music.Connected"
+                : "Settings.Music.NotConnected";
+            JamendoStatusText.SetBinding(TextBlock.TextProperty, new LocExtension(key).CreateBinding());
         }
 
         private static void OpenUrl(string url)

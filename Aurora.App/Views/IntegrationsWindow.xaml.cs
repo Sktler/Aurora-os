@@ -56,7 +56,7 @@ namespace Aurora.App.Views
         private void OpenUrl(string url)
         {
             try { Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true }); }
-            catch (Exception ex) { if (DataContext is IntegrationsViewModel vm) vm.VoiceStatus = $"Couldn't open the browser automatically ({ex.Message}). Go to {url} manually."; }
+            catch (Exception ex) { if (DataContext is IntegrationsViewModel vm) vm.VoiceStatus = Localizer.FormatUiText("Couldn't open the browser automatically ({0}). Go to {1} manually.", ex.Message, url); }
         }
 
         private void GetOpenAiKey_Click(object sender, RoutedEventArgs e) => OpenUrl("https://platform.openai.com/api-keys");
@@ -77,20 +77,21 @@ namespace Aurora.App.Views
 
         private void DeveloperPasswordToggle_Click(object sender, RoutedEventArgs e)
         {
-            if (DeveloperPasswordTextBox.Visibility == Visibility.Visible)
+            var showingPassword = DeveloperPasswordTextBox.Visibility == Visibility.Visible;
+            if (showingPassword)
             {
                 DeveloperPasswordBox.Password = DeveloperPasswordTextBox.Text;
                 DeveloperPasswordTextBox.Visibility = Visibility.Collapsed;
                 DeveloperPasswordBox.Visibility = Visibility.Visible;
-                DeveloperPasswordToggleButton.Content = "Show";
             }
             else
             {
                 DeveloperPasswordTextBox.Text = DeveloperPasswordBox.Password;
                 DeveloperPasswordBox.Visibility = Visibility.Collapsed;
                 DeveloperPasswordTextBox.Visibility = Visibility.Visible;
-                DeveloperPasswordToggleButton.Content = "Hide";
             }
+            DeveloperPasswordToggleButton.SetBinding(ContentControl.ContentProperty,
+                new LocExtension(showingPassword ? "Show" : "Hide").CreateBinding());
         }
         private void SaveOverrides_Click(object sender, RoutedEventArgs e) { if (sender is Button { DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SaveCompanionOverrides(companion); }
         private void ColorSwatch_Click(object sender, RoutedEventArgs e) { if (sender is Button { Tag: string hex, DataContext: Companion companion } && DataContext is IntegrationsViewModel vm) vm.SetCompanionColor(companion, hex); }
@@ -157,18 +158,21 @@ namespace Aurora.App.Views
 
             if (!validDeveloperPassword)
             {
-                MessageBox.Show(this, "The developer password was not accepted. Aurora was not reset.", "Developer reset", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, Localizer.GetUiText("The developer password was not accepted. Aurora was not reset."),
+                    Localizer.GetUiText("Developer reset"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            var confirm = MessageBox.Show(this, "This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?", "Reset Aurora completely", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+            var confirm = MessageBox.Show(this,
+                Localizer.GetUiText("This deletes every saved API key, integration token, and every companion's renamed name and chat history, then restarts Aurora as if freshly installed. This can't be undone.\n\nReset Aurora now?"),
+                Localizer.GetUiText("Reset Aurora completely"), MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
             if (confirm == MessageBoxResult.Yes)
                 App.ResetEverythingAndRestart();
         }
 
         private void ChooseTrustedFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Choose a folder Sift can read files from", Multiselect = false };
+            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = Localizer.GetUiText("Choose a folder Sift can read files from"), Multiselect = false };
             if (dialog.ShowDialog(this) == true && DataContext is IntegrationsViewModel vm) vm.SetTrustedFolder(dialog.FolderName);
         }
     }
