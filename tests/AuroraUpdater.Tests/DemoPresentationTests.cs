@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -53,6 +54,7 @@ public sealed class DemoPresentationTests
                 {
                     Localizer.SetLanguage(language);
                     Assert.Equal(string.Format(Localizer.GetUiText("Connected as {0}", language), userName), label.Text);
+                    if (language != "en") Assert.NotEqual($"Connected as {userName}", label.Text);
                     Assert.Contains(userName, label.Text);
                     Assert.NotNull(BindingOperations.GetMultiBinding(label, TextBlock.TextProperty));
                 }
@@ -134,6 +136,21 @@ public sealed class DemoPresentationTests
             if (text.StartsWith('{') || !text.Any(char.IsLetter) || unchanged.Contains(text) || text.StartsWith("-y @modelcontextprotocol/") || text.All(c => !char.IsLetter(c) || char.IsUpper(c))) continue;
             foreach (var language in new[] { "es", "fr", "de" })
                 Assert.True(Localizer.HasUiTranslation(text, language), $"Missing {language} translation in {Path.GetFileName(file)}: {text}");
+        }
+    }
+
+    [Fact]
+    public void Explicit_live_Xaml_binding_labels_have_supported_translations()
+    {
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(Root(), "Aurora.App"), "*.xaml", SearchOption.AllDirectories))
+        foreach (var attribute in XDocument.Load(file).Descendants().Attributes().Where(a =>
+            a.Value.StartsWith("{local:LocBinding ", StringComparison.Ordinal)))
+        foreach (Match match in Regex.Matches(attribute.Value, @"(?:Template|TrueText|FalseText)=(?:'([^']+)'|([^,}\s]+))"))
+        {
+            var text = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
+            if (text.StartsWith("{}")) text = text[2..];
+            foreach (var language in Localizer.SupportedLanguages.Where(language => language.Code != Localizer.DefaultLanguage))
+                Assert.True(Localizer.HasUiTranslation(text, language.Code), $"Missing {language.Code} translation in {Path.GetFileName(file)}: {text}");
         }
     }
 

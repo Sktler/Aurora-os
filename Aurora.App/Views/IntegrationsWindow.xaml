@@ -892,7 +892,7 @@
                                              Background="{DynamicResource BgCardBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                              BorderThickness="0"/>
                                 </Grid>
-                                <Button Content="Show" x:Name="DeveloperPasswordToggleButton" Margin="8,0,0,0" Padding="12,6,12,6"
+                                <Button Content="{local:Loc Show}" x:Name="DeveloperPasswordToggleButton" Margin="8,0,0,0" Padding="12,6,12,6"
                                         Click="DeveloperPasswordToggle_Click"
                                         Background="{DynamicResource BgCardBrush}" BorderThickness="0"
                                         Foreground="{DynamicResource TextPrimaryBrush}"/>

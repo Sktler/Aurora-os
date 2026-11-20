@@ -76,18 +76,24 @@ namespace Aurora.App.Views
                 var dialog = new Window
                 {
                     Owner = this,
-                    Title = Localizer.Get("Setup.RecoveryTitle"),
                     Width = 560,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
+                dialog.SetBinding(TitleProperty, new LocExtension("Setup.RecoveryTitle").CreateBinding());
                 var panel = new StackPanel { Margin = new Thickness(24, 24, 24, 24) };
-                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryLead"), TextWrapping = TextWrapping.Wrap, FontSize = 18, FontWeight = FontWeights.SemiBold });
-                panel.Children.Add(new TextBlock { Text = Localizer.Get("Setup.RecoveryBody"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) });
+                var lead = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 18, FontWeight = FontWeights.SemiBold };
+                lead.SetBinding(TextBlock.TextProperty, new LocExtension("Setup.RecoveryLead").CreateBinding());
+                panel.Children.Add(lead);
+                var body = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14) };
+                body.SetBinding(TextBlock.TextProperty, new LocExtension("Setup.RecoveryBody").CreateBinding());
+                panel.Children.Add(body);
                 var box = new TextBox { Text = _generatedRecoveryCode, IsReadOnly = true, FontSize = 20, Padding = new Thickness(10, 10, 10, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
                 panel.Children.Add(box);
                 var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
-                var copy = new Button { Content = "Copy", Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 0) };
-                var close = new Button { Content = "Done", Padding = new Thickness(14, 8, 14, 8) };
+                var copy = new Button { Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 0) };
+                copy.SetBinding(ContentControl.ContentProperty, new LocExtension("Copy").CreateBinding());
+                var close = new Button { Padding = new Thickness(14, 8, 14, 8) };
+                close.SetBinding(ContentControl.ContentProperty, new LocExtension("Done").CreateBinding());
                 copy.Click += (_, _) => Clipboard.SetText(_generatedRecoveryCode);
                 close.Click += (_, _) => dialog.Close();
                 actions.Children.Add(copy);
@@ -99,7 +105,7 @@ namespace Aurora.App.Views
             }
             catch (Exception ex)
             {
-                ErrorText.Text = string.Format(Localizer.Get("Setup.RecoveryError"), ex.Message);
+                ErrorText.Text = Localizer.FormatUiText("Couldn't generate a recovery code: {0}", ex.Message);
                 ErrorText.Visibility = Visibility.Visible;
             }
         }
@@ -108,14 +114,12 @@ namespace Aurora.App.Views
         {
             if (string.IsNullOrWhiteSpace(ProfileNameBox.Text))
             {
-                ErrorText.Text = Localizer.Get("Setup.ProfileNameRequired");
-                ErrorText.Visibility = Visibility.Visible;
+                ShowValidationError("Setup.ProfileNameRequired");
                 return;
             }
             if (string.IsNullOrWhiteSpace(ProfilePasswordBox.Password))
             {
-                ErrorText.Text = Localizer.Get("Setup.ProfilePasswordRequired");
-                ErrorText.Visibility = Visibility.Visible;
+                ShowValidationError("Setup.ProfilePasswordRequired");
                 return;
             }
             try
@@ -137,6 +141,12 @@ namespace Aurora.App.Views
                 ErrorText.Text = Localizer.FormatUiText("Could not save settings: {0}", ex.Message);
                 ErrorText.Visibility = Visibility.Visible;
             }
+        }
+
+        private void ShowValidationError(string key)
+        {
+            ErrorText.SetBinding(TextBlock.TextProperty, new LocExtension(key).CreateBinding());
+            ErrorText.Visibility = Visibility.Visible;
         }
 
         private static void RestartApp()

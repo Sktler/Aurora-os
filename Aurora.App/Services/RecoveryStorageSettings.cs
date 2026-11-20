@@ -12,6 +12,7 @@ public static class RecoveryStorageSettings
     }
 
     private static readonly object Sync = new();
+    private static string? _configDirectory;
     private static string? _directoryPath;
 
     public static string DirectoryPath
@@ -20,22 +21,23 @@ public static class RecoveryStorageSettings
         {
             lock (Sync)
             {
-                if (_directoryPath != null) return _directoryPath;
-                var defaultPath = Path.Combine(AppSettings.ConfigDir, "recovery");
+                var configDirectory = AppSettings.ConfigDir;
+                if (_directoryPath != null && _configDirectory == configDirectory) return _directoryPath;
+                var directoryPath = Path.Combine(configDirectory, "recovery");
                 try
                 {
-                    var path = Path.Combine(AppSettings.ConfigDir, "recovery-storage.json");
+                    var path = Path.Combine(configDirectory, "recovery-storage.json");
                     if (File.Exists(path))
                     {
                         var document = JsonSerializer.Deserialize<Document>(File.ReadAllText(path));
                         if (!string.IsNullOrWhiteSpace(document?.DirectoryPath))
-                            _directoryPath = Path.GetFullPath(document.DirectoryPath);
+                            directoryPath = Path.GetFullPath(document.DirectoryPath);
                     }
                 }
                 catch { }
 
-                _directoryPath ??= defaultPath;
-                return _directoryPath;
+                _configDirectory = configDirectory;
+                return _directoryPath = directoryPath;
             }
         }
     }

@@ -335,7 +335,12 @@ namespace Aurora.App.Views
 
         private void Attach_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Attach a file", Multiselect = false, Filter = "All files (*.*)|*.*" };
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Localizer.GetUiText("Attach a file"),
+                Multiselect = false,
+                Filter = Localizer.GetUiText("All files (*.*)") + "|*.*"
+            };
             if (dialog.ShowDialog(this) != true) return;
             if (DataContext is DashboardViewModel dvm && dvm.SelectedCompanion != null)
                 dvm.SelectedCompanion.AttachFile(dialog.FileName);

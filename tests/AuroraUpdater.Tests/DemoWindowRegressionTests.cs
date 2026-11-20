@@ -7,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Threading;
 using System.Xml.Linq;
 using Aurora.App;
 using Aurora.App.Services;
@@ -97,6 +98,50 @@ public sealed class DemoWindowRegressionTests
                     Assert.Equal(Localizer.GetUiText("Delete", language), delete.Content);
                     Assert.Equal(Localizer.GetUiText("Enable speaker suggestions", language), suggestions.Content);
                 }
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    [Fact]
+    public void Delete_profile_dialog_follows_live_theme_changes()
+    {
+        RunOnSta(() =>
+        {
+            using var scope = new AppSettingsTestScope();
+            var profiles = new ProfileManager();
+            SetService(nameof(App.Profiles), profiles);
+            profiles.Initialize(App.Settings);
+            var resources = LoadResources();
+            var window = new ProfileWindow { Resources = resources, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                var delete = Descendants<Button>(window).Single(button =>
+                    BindingOperations.GetBinding(button, ContentControl.ContentProperty)?.Path.Path == "[Delete]");
+                var check = window.Dispatcher.InvokeAsync(() =>
+                {
+                    var dialog = window.OwnedWindows.Cast<Window>().Single();
+                    try
+                    {
+                        dialog.Resources = resources;
+                        var panel = Assert.IsType<StackPanel>(Assert.IsType<ScrollViewer>(dialog.Content).Content);
+                        var instruction = panel.Children.OfType<TextBlock>().Last();
+                        foreach (var theme in ThemeCatalog.Themes)
+                        {
+                            ThemeCatalog.Apply(theme.Name, resources);
+                            Assert.Equal((Color)ColorConverter.ConvertFromString(theme.BgDeep), Assert.IsType<SolidColorBrush>(dialog.Background).Color);
+                            Assert.Same(resources["TextPrimaryBrush"], dialog.Foreground);
+                            Assert.Same(resources["TextMutedBrush"], instruction.Foreground);
+                        }
+                    }
+                    finally { dialog.Close(); }
+                }, DispatcherPriority.ApplicationIdle);
+                delete.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                window.Dispatcher.Invoke(() => { }, DispatcherPriority.SystemIdle);
+                check.Task.GetAwaiter().GetResult();
+                Assert.Single(profiles.Profiles);
             }
             finally { window.Close(); }
         });

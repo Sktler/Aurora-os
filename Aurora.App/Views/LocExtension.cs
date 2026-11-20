@@ -17,10 +17,13 @@ namespace Aurora.App.Views
         public string Key { get; set; } = "";
 
         public override object ProvideValue(IServiceProvider serviceProvider) =>
-            new Binding($"[{Key}]")
+            CreateBinding().ProvideValue(serviceProvider);
+
+        internal Binding CreateBinding() =>
+            new($"[{Key}]")
             {
                 Source = Localizer.Resources,
                 Mode = BindingMode.OneWay
-            }.ProvideValue(serviceProvider);
+            };
     }
 }

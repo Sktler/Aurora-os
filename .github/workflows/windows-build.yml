@@ -31,6 +31,10 @@ jobs:
       - name: WPF menu rendering regression
         run: dotnet run --project tests/MenuThemeChecks/MenuThemeChecks.csproj --configuration Release -- .
 
+      - name: Demo window interaction regressions
+        timeout-minutes: 2
+        run: dotnet run --project tests/DemoWindowChecks/DemoWindowChecks.csproj --configuration Release -- .
+
       - name: Save presentation check images
         if: always()
         uses: actions/upload-artifact@v4

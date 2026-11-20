@@ -21,6 +21,20 @@ public sealed class AppSettingsStorageTests
     }
 
     [Fact]
+    public void Recovery_storage_follows_the_current_isolated_settings_directory()
+    {
+        using var outer = new AppSettingsTestScope();
+        var custom = Path.Combine(outer.DirectoryPath, "custom-recovery");
+        RecoveryStorageSettings.ChangeDirectory(custom);
+        Assert.Equal(custom, RecoveryStorageSettings.DirectoryPath);
+
+        using (var inner = new AppSettingsTestScope())
+            Assert.Equal(Path.Combine(inner.DirectoryPath, "recovery"), RecoveryStorageSettings.DirectoryPath);
+
+        Assert.Equal(custom, RecoveryStorageSettings.DirectoryPath);
+    }
+
+    [Fact]
     public void Scope_restores_production_defaults_without_accessing_production_storage()
     {
         var previousDirectory = AppSettings.ConfigDirectoryOverride;
