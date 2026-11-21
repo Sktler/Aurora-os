@@ -137,6 +137,7 @@ namespace Aurora.App.Services
         private string _openAiTtsApiKey = "";
         private string _elevenLabsApiKey = "";
         private string _azureSpeechKey = "";
+        private string _emailPassword = "";
 
         private static readonly string[] SecretPropertyNames =
         {
@@ -154,7 +155,8 @@ namespace Aurora.App.Services
             nameof(SpotifyRefreshToken),
             nameof(OpenAiTtsApiKey),
             nameof(ElevenLabsApiKey),
-            nameof(AzureSpeechKey)
+            nameof(AzureSpeechKey),
+            nameof(EmailPassword)
         };
 
         public string Language { get; set; } = Localizer.DefaultLanguage;
@@ -238,6 +240,21 @@ namespace Aurora.App.Services
         {
             get => GetSecretValue(nameof(SmartThingsToken), _smartThingsToken);
             set => SetSecretValue(nameof(SmartThingsToken), ref _smartThingsToken, value);
+        }
+
+        // Email (IMAP receive / SMTP send). The password - usually an app password - is kept in the Credential Vault.
+        public string EmailAddress { get; set; } = "";
+        public string EmailUsername { get; set; } = "";
+        public string EmailImapHost { get; set; } = "";
+        public int EmailImapPort { get; set; } = 993;
+        public string EmailSmtpHost { get; set; } = "";
+        public int EmailSmtpPort { get; set; } = 587;
+
+        [JsonIgnore]
+        public string EmailPassword
+        {
+            get => GetSecretValue(nameof(EmailPassword), _emailPassword);
+            set => SetSecretValue(nameof(EmailPassword), ref _emailPassword, value);
         }
 
         public string HomeAssistantUrl { get; set; } = "";
@@ -446,6 +463,9 @@ namespace Aurora.App.Services
                     break;
                 case nameof(AzureSpeechKey):
                     AzureSpeechKey = value;
+                    break;
+                case nameof(EmailPassword):
+                    EmailPassword = value;
                     break;
             }
         }

@@ -43,7 +43,7 @@ namespace Aurora.App.Models
         public static List<object> GetAllowedToolDefinitions(CompanionToolAccess access)
         {
             var result = new List<object>();
-            foreach (var definition in SystemTools.Definitions.Concat(CameraTools.Definitions).Concat(HomeTools.Definitions))
+            foreach (var definition in SystemTools.Definitions.Concat(CameraTools.Definitions).Concat(EmailTools.Definitions).Concat(HomeTools.Definitions))
             {
                 var name = definition.GetType().GetProperty("name")?.GetValue(definition)?.ToString();
                 if (string.IsNullOrWhiteSpace(name)) continue;
@@ -75,6 +75,7 @@ namespace Aurora.App.Models
                 || toolName.StartsWith("windows_bluetooth_status", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("windows_capture_screen", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("camera", StringComparison.OrdinalIgnoreCase)
+                || toolName.StartsWith("email_", StringComparison.OrdinalIgnoreCase)
                 || toolName.StartsWith("mcp_", StringComparison.OrdinalIgnoreCase);
         }
 

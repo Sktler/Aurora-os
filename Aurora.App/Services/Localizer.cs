@@ -861,6 +861,24 @@ namespace Aurora.App.Services
             Add("Downloading the latest Windows package...", "Descargando el último paquete de Windows...", "Téléchargement du dernier paquet Windows...", "Aktuelles Windows-Paket wird heruntergeladen...");
             Add("Discovering devices...", "Buscando dispositivos...", "Recherche d’appareils...", "Geräte werden gesucht...");
             Add("Testing connection...", "Probando conexión...", "Test de connexion...", "Verbindung wird geprüft...");
+            Add("Email (send & receive)", "Correo (enviar y recibir)", "E-mail (envoyer et recevoir)", "E-Mail (senden und empfangen)");
+            Add("Works with any provider over IMAP and SMTP. Gmail, Outlook, Yahoo and iCloud need an app password instead of your normal password. Companions can list and read your inbox, and send mail only after you approve each message.",
+                "Funciona con cualquier proveedor mediante IMAP y SMTP. Gmail, Outlook, Yahoo e iCloud requieren una contraseña de aplicación en lugar de tu contraseña normal. Los compañeros pueden listar y leer tu bandeja de entrada, y solo envían correos tras aprobar cada mensaje.",
+                "Fonctionne avec tout fournisseur via IMAP et SMTP. Gmail, Outlook, Yahoo et iCloud exigent un mot de passe d'application au lieu de votre mot de passe habituel. Les compagnons peuvent lister et lire votre boîte de réception, et n'envoient un e-mail qu'après votre approbation.",
+                "Funktioniert mit jedem Anbieter über IMAP und SMTP. Gmail, Outlook, Yahoo und iCloud benötigen ein App-Passwort statt Ihres normalen Passworts. Begleiter können Ihren Posteingang auflisten und lesen und senden E-Mails erst nach Ihrer Genehmigung.");
+            Add("Email address", "Dirección de correo", "Adresse e-mail", "E-Mail-Adresse");
+            Add("Username (leave blank to use the address)", "Usuario (déjalo vacío para usar la dirección)", "Nom d'utilisateur (laisser vide pour utiliser l'adresse)", "Benutzername (leer lassen, um die Adresse zu verwenden)");
+            Add("Password or app password", "Contraseña o contraseña de aplicación", "Mot de passe ou mot de passe d'application", "Passwort oder App-Passwort");
+            Add("Incoming server (IMAP)", "Servidor de entrada (IMAP)", "Serveur entrant (IMAP)", "Posteingangsserver (IMAP)");
+            Add("Outgoing server (SMTP)", "Servidor de salida (SMTP)", "Serveur sortant (SMTP)", "Postausgangsserver (SMTP)");
+            Add("Port", "Puerto", "Port", "Port");
+            Add("Email username", "Usuario de correo", "Nom d'utilisateur e-mail", "E-Mail-Benutzername");
+            Add("Email password", "Contraseña de correo", "Mot de passe e-mail", "E-Mail-Passwort");
+            Add("IMAP server", "Servidor IMAP", "Serveur IMAP", "IMAP-Server");
+            Add("IMAP port", "Puerto IMAP", "Port IMAP", "IMAP-Port");
+            Add("SMTP server", "Servidor SMTP", "Serveur SMTP", "SMTP-Server");
+            Add("SMTP port", "Puerto SMTP", "Port SMTP", "SMTP-Port");
+            Add("Ports must be numbers between 1 and 65535.", "Los puertos deben ser números entre 1 y 65535.", "Les ports doivent être des nombres entre 1 et 65535.", "Ports müssen Zahlen zwischen 1 und 65535 sein.");
             Add("Loading voices from Azure...", "Cargando voces de Azure...", "Chargement des voix Azure...", "Azure-Stimmen werden geladen...");
             Add("Loading voices from ElevenLabs...", "Cargando voces de ElevenLabs...", "Chargement des voix ElevenLabs...", "ElevenLabs-Stimmen werden geladen...");
             Add("Speaking a sample now...", "Reproduciendo una muestra...", "Lecture d’un échantillon...", "Stimmprobe wird abgespielt...");

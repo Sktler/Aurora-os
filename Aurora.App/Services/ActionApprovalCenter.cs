@@ -40,7 +40,10 @@ namespace Aurora.App.Services
             ["windows_network_toggle"] = ToolRiskLevel.High,
             ["camera_capture_photo"] = ToolRiskLevel.Medium,
             ["camera_start_preview"] = ToolRiskLevel.Low,
-            ["mcp_call_tool"] = ToolRiskLevel.High
+            ["mcp_call_tool"] = ToolRiskLevel.High,
+            ["email_send"] = ToolRiskLevel.High,
+            ["email_read"] = ToolRiskLevel.Low,
+            ["email_list_inbox"] = ToolRiskLevel.Low
         };
 
         private static readonly HashSet<string> SessionGrantedTools = new(StringComparer.OrdinalIgnoreCase);

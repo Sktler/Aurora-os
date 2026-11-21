@@ -75,6 +75,65 @@ namespace Aurora.App.ViewModels
         // --- Alexa (Smart Home Skill setup happens outside the app - see note in UI) ---
         [ObservableProperty] private bool _alexaConnected = App.Settings.AlexaConnected;
 
+        // --- Email (IMAP / SMTP with an app password) ---
+        [ObservableProperty] private string _emailAddress = App.Settings.EmailAddress;
+        [ObservableProperty] private string _emailUsername = App.Settings.EmailUsername;
+        [ObservableProperty] private string _emailPassword = App.Settings.EmailPassword;
+        [ObservableProperty] private string _emailImapHost = App.Settings.EmailImapHost;
+        [ObservableProperty] private string _emailImapPort = App.Settings.EmailImapPort.ToString();
+        [ObservableProperty] private string _emailSmtpHost = App.Settings.EmailSmtpHost;
+        [ObservableProperty] private string _emailSmtpPort = App.Settings.EmailSmtpPort.ToString();
+        [ObservableProperty] private string _emailStatus = "";
+        [ObservableProperty] private bool _emailVerified;
+        [ObservableProperty] private bool _isTestingEmail;
+
+        [RelayCommand]
+        private async Task SaveAndTestEmailAsync()
+        {
+            if (IsTestingEmail) return;
+
+            var address = (EmailAddress ?? "").Trim();
+            var imapHost = (EmailImapHost ?? "").Trim();
+            var smtpHost = (EmailSmtpHost ?? "").Trim();
+            if (SuggestEmailServers(address) is { } suggested)
+            {
+                if (imapHost.Length == 0) imapHost = EmailImapHost = suggested.ImapHost;
+                if (smtpHost.Length == 0) smtpHost = EmailSmtpHost = suggested.SmtpHost;
+            }
+
+            if (!int.TryParse(EmailImapPort, out var imapPort) || imapPort is < 1 or > 65535 ||
+                !int.TryParse(EmailSmtpPort, out var smtpPort) || smtpPort is < 1 or > 65535)
+            {
+                EmailVerified = false;
+                EmailStatus = Localizer.GetUiText("Ports must be numbers between 1 and 65535.");
+                return;
+            }
+
+            App.Settings.EmailAddress = address;
+            App.Settings.EmailUsername = (EmailUsername ?? "").Trim();
+            App.Settings.EmailPassword = EmailPassword ?? "";
+            App.Settings.EmailImapHost = imapHost;
+            App.Settings.EmailImapPort = imapPort;
+            App.Settings.EmailSmtpHost = smtpHost;
+            App.Settings.EmailSmtpPort = smtpPort;
+            App.Settings.Save();
+
+            IsTestingEmail = true;
+            EmailStatus = Localizer.GetUiText("Testing connection...");
+            try
+            {
+                var (success, message) = await new EmailService(App.Settings).TestConnectionAsync();
+                EmailVerified = success;
+                EmailStatus = message;
+            }
+            finally
+            {
+                IsTestingEmail = false;
+            }
+        }
+
+        private static (string ImapHost, string SmtpHost)? SuggestEmailServers(string address) => EmailService.SuggestServers(address);
+
         // --- Google (Gmail / Drive & Docs) - real OAuth ---
         [ObservableProperty] private string _googleClientId = App.Settings.GoogleClientId;
         [ObservableProperty] private string _googleClientSecret = App.Settings.GoogleClientSecret;

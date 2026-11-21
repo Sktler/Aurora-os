@@ -862,6 +862,79 @@
                                    Visibility="{Binding GoogleConnected, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                     </StackPanel>
                 </Border>
+
+                <Border Background="{StaticResource BgPanelBrush}" CornerRadius="12" Padding="18" Margin="0,14,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Email (send &amp; receive)" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding EmailVerified, Converter={x:Static local:BoolToStatusTextConverter.Instance}}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource AccentGreenBrush}"/>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,2,0,10"
+                                   Text="Works with any provider over IMAP and SMTP. Gmail, Outlook, Yahoo and iCloud need an app password instead of your normal password. Companions can list and read your inbox, and send mail only after you approve each message."/>
+
+                        <TextBlock Text="Email address" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding EmailAddress, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Email address"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Username (leave blank to use the address)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding EmailUsername, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Email username"
+                                 Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderThickness="0" Padding="10" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="Password or app password" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <PasswordBox x:Name="EmailPasswordBox" AutomationProperties.Name="Email password"
+                                     Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderThickness="0" Padding="10" Margin="0,0,0,10"
+                                     PasswordChanged="EmailPasswordBox_PasswordChanged"/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Incoming server (IMAP)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EmailImapHost, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="IMAP server"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Port" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EmailImapPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="IMAP port"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Outgoing server (SMTP)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EmailSmtpHost, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="SMTP server"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Port" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EmailSmtpPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="SMTP port"
+                                         Background="{StaticResource BgCardBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderThickness="0" Padding="10"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Content="Save &amp; Test" HorizontalAlignment="Left" Padding="16,8,16,8"
+                                Command="{Binding SaveAndTestEmailCommand}"
+                                Background="{StaticResource AccentCyanBrush}" BorderThickness="0"
+                                Foreground="{StaticResource BgDeepBrush}" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding EmailStatus}" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

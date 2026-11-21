@@ -455,6 +455,9 @@ namespace Aurora.App.ViewModels
                 return Task.FromResult($"The '{friendlyName}' tool is not available for this companion because its tool access does not include that capability.");
             }
 
+            if (EmailTools.IsEmailTool(toolName ?? ""))
+                return EmailTools.ExecuteAsync(toolName!, input);
+
             return CameraTools.IsCameraTool(toolName)
                 ? CameraTools.ExecuteAsync(toolName, input)
                 : SystemTools.ExecuteAsync(toolName, input);
