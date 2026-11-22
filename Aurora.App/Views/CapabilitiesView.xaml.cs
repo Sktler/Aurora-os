@@ -28,6 +28,7 @@ namespace Aurora.App.Views
             CameraPermission.IsChecked = App.Settings.WindowsCameraEnabled;
             MicrophonePermission.IsChecked = App.Settings.WindowsMicrophoneEnabled;
             McpPermission.IsChecked = App.Settings.WindowsMcpEnabled;
+            RefreshPhoneLinkUi();
             ImageProviderText.Text = Localizer.FormatUiText("Provider: {0}. Image generation uses Aurora's configured provider and API key.", App.Settings.ImageProvider);
             Loaded += async (_, _) =>
             {
@@ -55,6 +56,89 @@ namespace Aurora.App.Views
             if (!App.Settings.WindowsCameraEnabled)
                 CameraPicker.ItemsSource = null;
             StatusText.Text = Localizer.GetUiText("Permissions saved. Aurora services will respect these settings.");
+        }
+
+        private void RefreshPhoneLinkUi()
+        {
+            var link = App.PhoneLink;
+            PhoneLinkToggle.Content = Localizer.GetUiText(link.IsRunning ? "Stop phone link" : "Start phone link");
+            PhoneLinkDetails.Visibility = link.IsRunning ? Visibility.Visible : Visibility.Collapsed;
+            if (!link.IsRunning) return;
+
+            var addresses = PhoneLinkService.GetLanAddresses();
+            if (addresses.Count == 0)
+            {
+                PhoneAddressText.Text = Localizer.GetUiText("No Wi-Fi or network connection found. Connect this PC to the same network as your phone.");
+                PhonePinText.Text = link.CurrentPin;
+                PhoneQrImage.Source = null;
+                return;
+            }
+
+            var url = link.PairingUrl(addresses[0])!;
+            PhoneAddressText.Text = Localizer.FormatUiText("Open on your phone: http://{0}:{1}", addresses[0], link.Port.ToString());
+            PhonePinText.Text = Localizer.FormatUiText("PIN: {0}", link.CurrentPin);
+            PhoneQrImage.Source = BuildQr(url);
+            PhoneStatusText.Text = Localizer.FormatUiText("Connected phones: {0}. The PIN changes every 5 minutes and after each pairing.", link.PairedDeviceCount.ToString());
+        }
+
+        private static System.Windows.Media.Imaging.BitmapSource BuildQr(string text)
+        {
+            using var generator = new QRCoder.QRCodeGenerator();
+            using var data = generator.CreateQrCode(text, QRCoder.QRCodeGenerator.ECCLevel.M);
+            var matrix = data.ModuleMatrix;
+            const int quiet = 4, scale = 8;
+            var modules = matrix.Count + quiet * 2;
+            var size = modules * scale;
+            var pixels = new byte[size * size];
+            Array.Fill(pixels, (byte)255);
+            for (var y = 0; y < matrix.Count; y++)
+                for (var x = 0; x < matrix.Count; x++)
+                    if (matrix[y][x])
+                        for (var dy = 0; dy < scale; dy++)
+                            for (var dx = 0; dx < scale; dx++)
+                                pixels[((y + quiet) * scale + dy) * size + (x + quiet) * scale + dx] = 0;
+            var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(size, size, 96, 96, System.Windows.Media.PixelFormats.Gray8, null, pixels, size);
+            bitmap.Freeze();
+            return bitmap;
+        }
+
+        private void PhoneLinkToggle_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (App.PhoneLink.IsRunning) App.PhoneLink.Stop();
+                else
+                {
+                    App.PhoneLink.Start();
+                    App.PhoneLink.PairedDevicesChanged -= PhoneLink_PairedChanged;
+                    App.PhoneLink.PairedDevicesChanged += PhoneLink_PairedChanged;
+                }
+                RefreshPhoneLinkUi();
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = Localizer.FormatUiText("Couldn't start the phone link: {0}", ex.Message);
+            }
+        }
+
+        private void PhoneLink_PairedChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(RefreshPhoneLinkUi);
+
+        private void NewPin_Click(object sender, RoutedEventArgs e) => RefreshPhoneLinkUi();
+
+        private void RevokePhones_Click(object sender, RoutedEventArgs e)
+        {
+            App.PhoneLink.RevokeAll();
+            StatusText.Text = Localizer.GetUiText("All paired phones were disconnected.");
+            if (App.PhoneLink.IsRunning) RefreshPhoneLinkUi();
+        }
+
+        private void PairBluetooth_Click(object sender, RoutedEventArgs e) => OpenSettingsUri("ms-settings:bluetooth");
+        private void OpenWifi_Click(object sender, RoutedEventArgs e) => OpenSettingsUri("ms-settings:network-wifi");
+
+        private void OpenSettingsUri(string uri)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true }); }
+            catch (Exception ex) { StatusText.Text = ex.Message; }
         }
 
         private void SaveWeatherLocation_Click(object sender, RoutedEventArgs e)

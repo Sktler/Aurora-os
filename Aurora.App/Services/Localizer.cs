@@ -343,6 +343,23 @@ namespace Aurora.App.Services
                 "Saisissez une ville (par exemple Boston, MA) pour afficher sa météo sur le tableau de bord. Laissez vide pour utiliser votre position Windows.",
                 "Geben Sie eine Stadt ein (zum Beispiel Boston, MA), um das Wetter im Dashboard anzuzeigen. Leer lassen, um Ihren Windows-Standort zu verwenden.");
             Add("Weather source", "Fuente del clima", "Source météo", "Wetterquelle");
+            Add("Connect your phone", "Conectar tu teléfono", "Connecter votre téléphone", "Telefon verbinden");
+            Add("Chat with Aurora from your phone over Wi-Fi. Both devices must be on the same network. Scan the QR code, or open the address and type the PIN.",
+                "Chatea con Aurora desde tu teléfono por Wi-Fi. Ambos dispositivos deben estar en la misma red. Escanea el código QR, o abre la dirección y escribe el PIN.",
+                "Discutez avec Aurora depuis votre téléphone via le Wi-Fi. Les deux appareils doivent être sur le même réseau. Scannez le code QR, ou ouvrez l'adresse et saisissez le code PIN.",
+                "Chatten Sie per WLAN mit Aurora von Ihrem Telefon. Beide Geräte müssen im selben Netzwerk sein. Scannen Sie den QR-Code oder öffnen Sie die Adresse und geben Sie die PIN ein.");
+            Add("Start phone link", "Iniciar enlace con el teléfono", "Démarrer la liaison téléphone", "Telefonverbindung starten");
+            Add("Stop phone link", "Detener enlace con el teléfono", "Arrêter la liaison téléphone", "Telefonverbindung beenden");
+            Add("Pair with Bluetooth", "Emparejar con Bluetooth", "Associer par Bluetooth", "Über Bluetooth koppeln");
+            Add("Wi-Fi settings", "Ajustes de Wi-Fi", "Paramètres Wi-Fi", "WLAN-Einstellungen");
+            Add("Disconnect phones", "Desconectar teléfonos", "Déconnecter les téléphones", "Telefone trennen");
+            Add("New PIN and QR code", "Nuevo PIN y código QR", "Nouveau code PIN et code QR", "Neue PIN und QR-Code");
+            Add("No Wi-Fi or network connection found. Connect this PC to the same network as your phone.", "No se encontró conexión Wi-Fi ni de red. Conecta este PC a la misma red que tu teléfono.", "Aucune connexion Wi-Fi ou réseau trouvée. Connectez ce PC au même réseau que votre téléphone.", "Keine WLAN- oder Netzwerkverbindung gefunden. Verbinden Sie diesen PC mit demselben Netzwerk wie Ihr Telefon.");
+            Add("Open on your phone: http://{0}:{1}", "Abre en tu teléfono: http://{0}:{1}", "Ouvrez sur votre téléphone : http://{0}:{1}", "Auf dem Telefon öffnen: http://{0}:{1}");
+            Add("PIN: {0}", "PIN: {0}", "PIN : {0}", "PIN: {0}");
+            Add("Connected phones: {0}. The PIN changes every 5 minutes and after each pairing.", "Teléfonos conectados: {0}. El PIN cambia cada 5 minutos y tras cada emparejamiento.", "Téléphones connectés : {0}. Le PIN change toutes les 5 minutes et après chaque association.", "Verbundene Telefone: {0}. Die PIN ändert sich alle 5 Minuten und nach jeder Kopplung.");
+            Add("Couldn't start the phone link: {0}", "No se pudo iniciar el enlace con el teléfono: {0}", "Impossible de démarrer la liaison téléphone : {0}", "Telefonverbindung konnte nicht gestartet werden: {0}");
+            Add("All paired phones were disconnected.", "Se desconectaron todos los teléfonos emparejados.", "Tous les téléphones associés ont été déconnectés.", "Alle gekoppelten Telefone wurden getrennt.");
             Add("Weather page URL (optional)", "URL de la página del clima (opcional)", "URL de la page météo (facultatif)", "URL der Wetterseite (optional)");
             Add("If set, Aurora reads the temperature from this page instead (best effort, for example a local news weather page).",
                 "Si se define, Aurora lee la temperatura de esta página (mejor esfuerzo, por ejemplo una página del clima de noticias locales).",

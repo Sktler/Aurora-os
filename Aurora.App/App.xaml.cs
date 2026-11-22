@@ -26,6 +26,11 @@ namespace Aurora.App
         public static VoiceService Voice { get; private set; } = null!;
         public static WakeWordService WakeWord { get; private set; } = null!;
         public static WeatherClient Weather { get; private set; } = null!;
+        public static PhoneLinkService PhoneLink { get; } = new((message, history) =>
+        {
+            if (AI == null || !AI.IsConfigured) return Task.FromResult("Aurora has no AI provider configured on the PC yet.");
+            return AI.SendAsync("You are Aurora, a friendly AI companion chatting with the user from their phone. Reply briefly.", history, message);
+        });
         public static WebSearchClient WebSearch { get; private set; } = null!;
         public static SpotifyClient Spotify { get; private set; } = null!;
         public static CameraService Camera { get; private set; } = null!;
