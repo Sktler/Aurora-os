@@ -51,6 +51,7 @@ namespace Aurora.App.Views
             base.OnClosed(e);
         }
 
+        private void PhoneLinkShortcut_Click(object sender, RoutedEventArgs e) => ToolsCapabilities.ShowPhonePanel();
         private void OpenMemory_Click(object sender, RoutedEventArgs e) => new MemoryWindow { Owner = this }.ShowDialog();
 
         private void OpenUrl(string url)

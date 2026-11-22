@@ -1003,8 +1003,10 @@
                     <Button Content="← Settings" Command="{Binding GoToHubCommand}" Padding="10,6,10,6"
                             Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Tools" FontSize="20" FontWeight="Bold" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                    <Button Content="☎ Phone link (QR / PIN)" Click="PhoneLinkShortcut_Click" Padding="12,6,12,6" Margin="18,0,0,0"
+                            Background="{DynamicResource BgCardBrush}" BorderThickness="0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
-                <local:CapabilitiesView/>
+                <local:CapabilitiesView x:Name="ToolsCapabilities"/>
 
             </StackPanel>
         </ScrollViewer>

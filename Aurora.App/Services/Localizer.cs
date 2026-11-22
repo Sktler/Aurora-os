@@ -337,6 +337,7 @@ namespace Aurora.App.Services
             Add("MCP servers & tools", "Servidores y herramientas MCP", "Serveurs et outils MCP", "MCP-Server und -Tools");
             Add("Save permissions", "Guardar permisos", "Enregistrer les autorisations", "Berechtigungen speichern");
             Add("Phone", "Teléfono", "Téléphone", "Telefon");
+            Add("☎ Phone link (QR / PIN)", "☎ Enlace de teléfono (QR / PIN)", "☎ Lien téléphone (QR / PIN)", "☎ Telefon-Verbindung (QR / PIN)");
             Add("Diagnostics", "Diagnóstico", "Diagnostic", "Diagnose");
             Add("Weather", "Clima", "Météo", "Wetter");
             Add("Save weather location", "Guardar ubicación del clima", "Enregistrer le lieu météo", "Wetterort speichern");
