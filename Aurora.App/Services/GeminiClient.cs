@@ -114,6 +114,20 @@ namespace Aurora.App.Services
         }
 
         /// <summary>Sends the companion's full history plus its system prompt, returns Gemini's reply text.</summary>
+        // Quota/rate-limit (429) responses are often momentary, so wait and retry before giving up.
+        private async Task<HttpResponseMessage> PostWithRetryAsync(string url, HttpContent content)
+        {
+            var delays = new[] { 2, 5, 10 };
+            for (var attempt = 0; ; attempt++)
+            {
+                var response = await _http.PostAsync(url, content);
+                if ((int)response.StatusCode != 429 || attempt >= delays.Length) return response;
+                var wait = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? delays[attempt];
+                response.Dispose();
+                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(wait, 1, 15)));
+            }
+        }
+
         public async Task<string> SendAsync(string systemPrompt, IEnumerable<ChatMessage> history, string newUserMessage)
         {
             if (!IsConfigured)
@@ -130,7 +144,7 @@ namespace Aurora.App.Services
 
             try
             {
-                var response = await _http.PostAsync(Endpoint, content);
+                var response = await PostWithRetryAsync(Endpoint, content);
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -250,7 +264,7 @@ namespace Aurora.App.Services
                 HttpResponseMessage response;
                 try
                 {
-                    response = await _http.PostAsync(requestEndpoint, content);
+                    response = await PostWithRetryAsync(requestEndpoint, content);
                     responseText = await response.Content.ReadAsStringAsync();
                 }
                 catch (Exception ex)
