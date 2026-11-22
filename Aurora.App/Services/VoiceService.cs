@@ -158,6 +158,7 @@ namespace Aurora.App.Services
         /// animation visibly pause between them, without ever changing the wording itself.</summary>
         public async Task SpeakAsync(string text, Action<bool>? onSpeechActivityChanged = null)
         {
+            text = SpeechFormatter.ToSpokenText(text);
             if (string.IsNullOrWhiteSpace(text)) return;
 
             _callGeneration.Value = System.Threading.Volatile.Read(ref _speechGeneration);

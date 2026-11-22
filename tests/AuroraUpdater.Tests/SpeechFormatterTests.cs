@@ -7,6 +7,14 @@ namespace AuroraUpdater.Tests;
 public class SpeechFormatterTests
 {
     [Fact]
+    public void ToSpokenText_removes_markdown_urls_and_emoji_but_keeps_words()
+    {
+        var spoken = SpeechFormatter.ToSpokenText("## Plan\n- **Open** the [docs](https://x.io/a) 😀\nSee https://x.io/b now");
+
+        Assert.Equal("Plan. Open the docs. See a link now", spoken);
+    }
+
+    [Fact]
     public void SplitIntoSentences_splits_on_sentence_terminators_without_altering_wording()
     {
         var sentences = SpeechFormatter.SplitIntoSentences("Hello there. How are you today? I'm doing great!");

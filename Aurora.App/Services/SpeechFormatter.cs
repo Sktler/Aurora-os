@@ -41,6 +41,27 @@ namespace Aurora.App.Services
 
         private static readonly Regex SentenceBoundary = new(@"(?<=[.!?])\s+", RegexOptions.Compiled);
 
+        /// <summary>Turns a displayed reply into text that sounds natural read aloud:
+        /// drops Markdown markers, code blocks, emoji and bare URLs while keeping every word.</summary>
+        public static string ToSpokenText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return "";
+            var s = Regex.Replace(text, @"```.*?```", " ", RegexOptions.Singleline);
+            s = Regex.Replace(s, @"!\[([^\]]*)\]\([^)]*\)", "$1");
+            s = Regex.Replace(s, @"\[([^\]]+)\]\((?:https?://|mailto:)[^)\s]*\)", "$1");
+            s = Regex.Replace(s, @"https?://\S+", "a link");
+            s = Regex.Replace(s, @"(?m)^\s{0,3}#{1,6}\s*", "");
+            s = Regex.Replace(s, @"(?m)^\s*(?:[-*+•]|\d+[.)])\s+", "");
+            s = Regex.Replace(s, @"(?m)^\s*>\s?", "");
+            s = Regex.Replace(s, @"(\*\*|__|~~|`)", "");
+            s = Regex.Replace(s, @"(?<![\w*])[*_](?=\S)|(?<=\S)[*_](?![\w*])", "");
+            s = Regex.Replace(s, @"[\u2600-\u27BF]|[\uD83C-\uDBFF][\uDC00-\uDFFF]|\uFE0F|\u200D", "");
+            s = Regex.Replace(s, @"[ \t]+", " ");
+            s = Regex.Replace(s, @"\s*\n\s*", ". ");
+            s = Regex.Replace(s, @"([.!?:;,])(\s*\.)+", "$1");
+            return s.Trim();
+        }
+
         /// <summary>Keeps a caller-supplied wpm target inside a sane, still-intelligible range.</summary>
         public static double ClampWordsPerMinute(double wpm) =>
             Math.Clamp(wpm, MinWordsPerMinute, MaxWordsPerMinute);
