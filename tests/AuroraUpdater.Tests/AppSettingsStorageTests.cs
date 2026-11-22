@@ -95,7 +95,7 @@ public sealed class AppSettingsStorageTests
         using var storage = new AppSettingsTestScope();
         var secretProperties = typeof(AppSettings).GetProperties()
             .Where(property => property.IsDefined(typeof(JsonIgnoreAttribute), inherit: false)).ToArray();
-        Assert.Equal(15, secretProperties.Length);
+        Assert.Equal(16, secretProperties.Length);
         var legacySecrets = secretProperties.ToDictionary(property => property.Name, property => "legacy-" + property.Name);
         var path = Path.Combine(storage.DirectoryPath, "settings.json");
         File.WriteAllText(path, JsonSerializer.Serialize(legacySecrets));
