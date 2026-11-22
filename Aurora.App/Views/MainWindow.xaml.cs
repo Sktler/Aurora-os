@@ -275,6 +275,8 @@ namespace Aurora.App.Views
                 case "home": Activate(); break;
                 case "chat": OpenChatWindow(); break;
                 case "settings": OpenSettings(); break;
+               case "phone": new CapabilitiesWindow(showPhone: true) { Owner = this }.ShowDialog(); break;
+               case "diagnostics": new DiagnosticsWindow { Owner = this }.Show(); break;
             }
         }
 

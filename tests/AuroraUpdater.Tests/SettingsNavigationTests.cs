@@ -119,7 +119,7 @@ public sealed class SettingsNavigationTests
         var fixedDestinations = home.Descendants(xaml + "Button")
             .Select(button => (string?)button.Attribute("Tag"))
             .Where(tag => tag != null && !tag.StartsWith('{')).ToArray();
-        Assert.Equal(new[] { "home", "chat", "settings" }, fixedDestinations);
+        Assert.Equal(new[] { "home", "chat", "settings", "phone", "diagnostics" }, fixedDestinations);
         Assert.Contains(home.Descendants(xaml + "ItemsControl"), control =>
             (string?)control.Attribute("ItemsSource") == "{Binding SettingsNavigation.PinnedEntries}");
 

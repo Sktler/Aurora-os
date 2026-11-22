@@ -336,6 +336,8 @@ namespace Aurora.App.Services
                 "Die Spracheingabe konnte nicht gestartet werden. Prüfe den Mikrofonzugriff, das ausgewählte Eingabegerät und die installierten Spracherkennungssprachen.");
             Add("MCP servers & tools", "Servidores y herramientas MCP", "Serveurs et outils MCP", "MCP-Server und -Tools");
             Add("Save permissions", "Guardar permisos", "Enregistrer les autorisations", "Berechtigungen speichern");
+            Add("Phone", "Teléfono", "Téléphone", "Telefon");
+            Add("Diagnostics", "Diagnóstico", "Diagnostic", "Diagnose");
             Add("Weather", "Clima", "Météo", "Wetter");
             Add("Save weather location", "Guardar ubicación del clima", "Enregistrer le lieu météo", "Wetterort speichern");
             Add("Enter a city (for example Boston, MA) to show its weather on the dashboard. Leave it empty to use your Windows location.",

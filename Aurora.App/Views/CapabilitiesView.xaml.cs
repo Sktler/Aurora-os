@@ -10,6 +10,8 @@ namespace Aurora.App.Views
     {
         private McpServerConnection? _connectedServer;
 
+        public void ShowPhonePanel() => PhonePanel.BringIntoView();
+
         public CapabilitiesView()
         {
             InitializeComponent();
