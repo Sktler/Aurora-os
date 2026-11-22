@@ -336,8 +336,7 @@ namespace Aurora.App.Services
             var buttons = new System.Windows.Controls.WrapPanel
             {
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
-                ItemWidth = 170,
-                ItemHeight = 32
+                Margin = new System.Windows.Thickness(0)
             };
             var allowOnce = CreateGrantButton("Allow once", ActionGrantScope.OneTime);
             allowOnce.IsDefault = !requireOneTimeApproval;
@@ -349,39 +348,42 @@ namespace Aurora.App.Services
             }
             buttons.Children.Add(CreateGrantButton("Deny", ActionGrantScope.None));
 
-            var owner = Application.Current?.MainWindow is { IsVisible: true } mainWindow ? mainWindow : null;
+            var layout = new System.Windows.Controls.Grid { Margin = new System.Windows.Thickness(16) };
+            layout.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            layout.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
+            var messageScroll = new System.Windows.Controls.ScrollViewer
+            {
+                VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+                Margin = new System.Windows.Thickness(0, 0, 0, 12),
+                Content = new System.Windows.Controls.TextBlock
+                {
+                    Text = message,
+                    TextWrapping = System.Windows.TextWrapping.Wrap,
+                    FontSize = 14,
+                    Foreground = System.Windows.Media.Brushes.White
+                }
+            };
+            System.Windows.Controls.Grid.SetRow(buttons, 1);
+            layout.Children.Add(messageScroll);
+            layout.Children.Add(buttons);
+
+            var workArea = SystemParameters.WorkArea;
             var window = new Window
             {
-                Width = 480,
-                SizeToContent = SizeToContent.Height,
-                MaxHeight = SystemParameters.WorkArea.Height,
-                WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.NoResize,
+                Width = Math.Min(560, workArea.Width),
+                Height = Math.Min(460, workArea.Height * 0.9),
+                MinWidth = 420,
+                MinHeight = 300,
+                MaxHeight = workArea.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.CanResize,
                 Title = "Aurora approval required",
-                ShowInTaskbar = false,
-                Owner = owner,
+                ShowInTaskbar = true,
                 Topmost = true,
                 Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x14, 0x14, 0x22)),
                 Foreground = System.Windows.Media.Brushes.White,
-                Content = new System.Windows.Controls.ScrollViewer
-                {
-                    Content = new System.Windows.Controls.StackPanel
-                    {
-                        Margin = new System.Windows.Thickness(16),
-                        Children =
-                        {
-                            new System.Windows.Controls.TextBlock
-                            {
-                                Text = message,
-                                TextWrapping = System.Windows.TextWrapping.Wrap,
-                                Margin = new System.Windows.Thickness(0, 0, 0, 12)
-                            },
-                            buttons
-                        }
-                    }
-                }
+                Content = layout
             };
-
             ActionGrantScope result = ActionGrantScope.None;
             foreach (System.Windows.Controls.Button button in buttons.Children)
             {
@@ -404,6 +406,8 @@ namespace Aurora.App.Services
                 Tag = scope,
                 Margin = new System.Windows.Thickness(8),
                 MinWidth = 150,
+                MinHeight = 36,
+                Padding = new System.Windows.Thickness(14, 6, 14, 6),
                 IsCancel = scope == ActionGrantScope.None,
                 Background = scope == ActionGrantScope.None
                     ? System.Windows.Media.Brushes.Firebrick
