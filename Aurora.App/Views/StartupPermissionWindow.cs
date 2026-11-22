@@ -18,6 +18,9 @@ namespace Aurora.App.Views
 
         public StartupPermissionWindow()
         {
+            // The implicit Window style does not apply to subclasses, so theme explicitly.
+            SetResourceReference(BackgroundProperty, "BgDeepBrush");
+            SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
             Title = "Aurora";
             Width = 560;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -136,6 +139,8 @@ namespace Aurora.App.Views
             var dialog = new Window
             {
                 Owner = this,
+                Background = (System.Windows.Media.Brush)Application.Current.FindResource("BgDeepBrush"),
+                Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("TextPrimaryBrush"),
                 Title = Localizer.FormatUiText("Aurora — {0} permission", Localizer.GetUiText(name)),
                 Width = 460,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,

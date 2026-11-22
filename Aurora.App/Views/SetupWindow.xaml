@@ -5,6 +5,7 @@
         Title="Aurora - AI Provider Setup" Height="900" Width="560"
         MinHeight="700" MinWidth="520"
         Background="{DynamicResource BgDeepBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         WindowStyle="SingleBorderWindow"
