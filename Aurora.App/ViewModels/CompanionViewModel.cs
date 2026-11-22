@@ -12,6 +12,13 @@ namespace Aurora.App.ViewModels
 {
     public partial class CompanionViewModel : ObservableObject
     {
+        public const string HumanStyleGuidance =
+            "STYLE: Talk like a warm, relaxed person, not a robot or a help-desk script. " +
+            "Use natural contractions and plain everyday words. Keep replies short and conversational unless the user asks for detail. " +
+            "Answer first, without preamble. Never say things like \"As an AI\", \"Certainly!\", \"I'd be happy to assist\", or \"I hope this helps\". " +
+            "Avoid bullet lists, headings, and bold text in casual conversation; use plain sentences, since replies may be spoken aloud. " +
+            "It's fine to show a little personality, react to what the user said, and ask a brief follow-up when it's natural.";
+
         public Companion Companion { get; }
         public ObservableCollection<ChatMessage> Messages { get; } = new();
         [ObservableProperty] private string _draftMessage = "";
@@ -399,7 +406,7 @@ namespace Aurora.App.ViewModels
                     "Use this as the authoritative current date and time for this request. " +
                     "When the user asks what day, date, or time it is, answer from this system context rather than guessing.";
                 var responseLanguageContext = Localizer.GetResponseLanguageInstruction();
-                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext + "\n\n" + responseLanguageContext;
+                var effectiveSystemPrompt = Companion.SystemPrompt + "\n\n" + authoritativeToolContext + "\n\n" + systemTimeContext                 + "\n\n" + responseLanguageContext + "\n\n" + HumanStyleGuidance;
 
                 var engine = App.GetChatEngineFor(Companion);
                 var reply = await engine.SendWithToolsAsync(effectiveSystemPrompt, historyForClaude, userText, toolDefinitions, ExecuteToolAsync);
