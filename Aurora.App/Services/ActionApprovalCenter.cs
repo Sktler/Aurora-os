@@ -361,6 +361,8 @@ namespace Aurora.App.Services
                 ShowInTaskbar = false,
                 Owner = owner,
                 Topmost = true,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x14, 0x14, 0x22)),
+                Foreground = System.Windows.Media.Brushes.White,
                 Content = new System.Windows.Controls.ScrollViewer
                 {
                     Content = new System.Windows.Controls.StackPanel
@@ -402,7 +404,14 @@ namespace Aurora.App.Services
                 Tag = scope,
                 Margin = new System.Windows.Thickness(8),
                 MinWidth = 150,
-                IsCancel = scope == ActionGrantScope.None
+                IsCancel = scope == ActionGrantScope.None,
+                Background = scope == ActionGrantScope.None
+                    ? System.Windows.Media.Brushes.Firebrick
+                    : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4F, 0x46, 0xC8)),
+                Foreground = System.Windows.Media.Brushes.White,
+                BorderBrush = System.Windows.Media.Brushes.White,
+                BorderThickness = new System.Windows.Thickness(1),
+                FontWeight = FontWeights.SemiBold
             };
         }
     }
