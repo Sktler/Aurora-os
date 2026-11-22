@@ -54,7 +54,17 @@ namespace Aurora.App.Services
                 .Where(a => a.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a) && !a.ToString().StartsWith("169.254."))
                 .Select(a => a.ToString())
                 .Distinct()
+                .OrderBy(LanRank)
                 .ToList();
+
+        // Real LAN ranges first; Tailscale/CGNAT (100.64/10) and other virtual ranges last.
+        private static int LanRank(string ip)
+        {
+            if (ip.StartsWith("192.168.") || ip.StartsWith("10.")) return 0;
+            if (ip.StartsWith("172.") && int.TryParse(ip.Split('.')[1], out var b) && b >= 16 && b <= 31) return 1;
+            if (ip.StartsWith("100.") && int.TryParse(ip.Split('.')[1], out var c) && c >= 64 && c <= 127) return 3;
+            return 2;
+        }
 
         public string CurrentPin
         {
