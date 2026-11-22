@@ -497,7 +497,9 @@ namespace Aurora.App.Services
         // Process-wide test overrides must be scoped and used by the serialized App.Settings collection.
         internal static string? ConfigDirectoryOverride { get; set; }
 
-        public static string ConfigDir => ConfigDirectoryOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
+        public static string ConfigDir => ConfigDirectoryOverride
+            ?? (Environment.GetEnvironmentVariable("AURORA_CONFIG_DIR") is { Length: > 0 } custom ? custom : null)
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Aurora");
         private static string ConfigPath => Path.Combine(ConfigDir, "settings.json");
         public static bool HasSavedConfiguration
         {
